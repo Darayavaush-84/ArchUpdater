@@ -750,6 +750,7 @@ class PrivilegedHelperTests(unittest.TestCase):
 
             with (
                 patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
+                patch.object(privileged_updates, "_require_executable", return_value=True),
                 patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
                 patch.object(privileged_updates, "stream_command", run_command),
                 patch.object(privileged_updates, "stream_subprocess", run_build),
@@ -805,6 +806,7 @@ class PrivilegedHelperTests(unittest.TestCase):
 
             with (
                 patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
+                patch.object(privileged_updates, "_require_executable", return_value=True),
                 patch.object(privileged_updates, "stream_command", run_command),
                 patch.object(privileged_updates, "stream_subprocess", run_build),
                 patch.object(privileged_updates.os, "chown", lambda *_args: None),
@@ -859,6 +861,7 @@ class PrivilegedHelperTests(unittest.TestCase):
 
             with (
                 patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
+                patch.object(privileged_updates, "_require_executable", return_value=True),
                 patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
                 patch.object(privileged_updates, "stream_command", run_command),
                 patch.object(privileged_updates, "stream_subprocess", run_build),
@@ -892,6 +895,7 @@ class PrivilegedHelperTests(unittest.TestCase):
 
             with (
                 patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
+                patch.object(privileged_updates, "_require_executable", return_value=True),
                 patch.object(privileged_updates, "stream_subprocess", run_build),
                 patch.object(privileged_updates.os, "chown", lambda *_args: None),
             ):

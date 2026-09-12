@@ -36,7 +36,7 @@ cmp --silent "${before_snapshot}" "${after_snapshot}" || {
     echo "The isolated preview modified the live Pacman sync database."
     exit 1
 }
-find "${preview_db}" -maxdepth 1 -type f -name '*.db' -print -quit | grep -q . || {
+find "${preview_db}/sync" -maxdepth 1 -type f -name '*.db' -print -quit | grep -q . || {
     echo "The isolated preview did not create private sync databases."
     exit 1
 }

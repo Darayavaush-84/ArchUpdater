@@ -57,7 +57,11 @@ class PreflightServiceTests(unittest.TestCase):
             lock_path.write_text("", encoding="utf-8")
             service = self._service(pacman_lock_path=lock_path)
 
-            issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
+            with (
+                patch.object(SystemPreflightEnvironment, "command_available", return_value=True),
+                patch.object(SystemPreflightEnvironment, "disk_space", return_value=(Path("/"), 100 * 1024**3)),
+            ):
+                issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
 
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].severity, PreflightSeverity.BLOCKING)
@@ -278,13 +282,13 @@ class PreflightServiceTests(unittest.TestCase):
                 else None
             )
 
-        def disk_usage(path: Path):
+        def disk_space(path: Path):
             checked_paths.append(str(path))
-            return types.SimpleNamespace(free=512 * 1024**2)
+            return path, 512 * 1024**2
 
         with (
             patch("shutil.which", side_effect=which),
-            patch("shutil.disk_usage", side_effect=disk_usage),
+            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(self._plan(self._update_item(UpdateSource.AUR, "aur-big")), [package])
 
