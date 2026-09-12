@@ -1,0 +1,22 @@
+include LICENSE
+include MANIFEST.in
+include README.md
+include constraints-ci.txt
+include install.sh
+include uninstall.sh
+include pyproject.toml
+
+recursive-include docs *.md *.png
+recursive-include i18n/ts *.ts
+recursive-include resources *.desktop *.policy
+recursive-include scripts *.py *.sh
+
+prune build
+prune dist
+prune tests
+prune .codex
+prune .git
+prune .pytest_cache
+prune .venv
+prune venv
+global-exclude __pycache__ *.py[cod] .codex

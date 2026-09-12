@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=ArchUpdater
+Comment=Check and install Arch-based system updates
+Exec=@ARCHUPDATER_EXEC@
+Icon=system-software-update
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true

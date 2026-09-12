@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install -c constraints-ci.txt -e ".[dev]"
+
+      - name: Validate translations without changing catalogs
+        run: scripts/check_translations.sh
+
+      - name: Confirm translation catalogs are unchanged
+        run: git diff --exit-code -- i18n/ts src/archupdater/i18n/resources
+
+      - name: Lint
+        run: ruff check src tests scripts
+
+      - name: Check dead code
+        run: python -m vulture src tests --min-confidence 80
+
+      - name: Test
+        run: env QT_QPA_PLATFORM=offscreen python -m unittest discover -s tests
+
+      - name: Seed stale build output
+        run: |
+          mkdir -p build/lib/archupdater
+          printf 'raise RuntimeError("stale build output was packaged")\n' > build/lib/archupdater/_stale_build_output.py
+
+      - name: Build clean distributions and validate contents
+        run: scripts/build_distribution.sh
+
+  arch-integration:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Arch runtime and test dependencies
+        run: >-
+          pacman -Syu --noconfirm --needed
+          python python-pip pyside6 python-packaging
+          pacman-contrib fakeroot polkit desktop-file-utils libxml2
+
+      - name: Run test suite on Arch
+        run: env QT_QPA_PLATFORM=offscreen PYTHONPATH=src python -m unittest discover -s tests
+
+      - name: Verify isolated Pacman preview
+        run: scripts/check_pacman_preview_isolation.sh
+
+      - name: Install and uninstall in the Arch container
+        run: |
+          ./install.sh
+          /opt/archupdater/current/venv/bin/python -c 'import archupdater; assert archupdater.__version__ == "1.0.0"'
+          archupdater-uninstall
+          test ! -e /opt/archupdater
+          test ! -e /usr/local/bin/archupdater
+          test ! -e /usr/lib/archupdater/archupdater-helper
