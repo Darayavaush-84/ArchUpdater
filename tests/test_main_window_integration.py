@@ -920,9 +920,12 @@ class MainWindowIntegrationTests(unittest.TestCase):
         network_information = FakeNetworkInformation(FakeReachability.Disconnected)
         network_api = FakeNetworkInformationApi(network_information)
 
-        with patch(
-            "archupdater.presentation.main_window.window.QNetworkInformation",
-            network_api,
+        with (
+            patch("archupdater.presentation.main_window.window.QNetworkInformation", network_api),
+            patch(
+                "archupdater.presentation.main_window.update_flow.MainWindowUpdateFlowCoordinator.start_check_updates",
+                return_value=True,
+            ) as start_check,
         ):
             self.window = MainWindow(
                 service=service,
@@ -931,7 +934,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
             )
             self._process_events(80)
 
-            self.assertEqual(service.check_calls, 0)
+            start_check.assert_not_called()
             self.assertEqual(
                 self.window.header_widget.system_status_label.text(),
                 "Waiting for network...",
@@ -943,9 +946,8 @@ class MainWindowIntegrationTests(unittest.TestCase):
 
             network_information.set_reachability(FakeReachability.Online)
             self._process_events(50)
-            self._wait_for_check(self.window)
-
-        self.assertEqual(service.check_calls, 1)
+            start_check.assert_called_once_with()
+            self.assertFalse(self.window._startup_network_retry_timer.isActive())
 
     def _create_window(
         self,

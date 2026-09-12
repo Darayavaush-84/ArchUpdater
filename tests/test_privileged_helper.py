@@ -384,6 +384,7 @@ class PrivilegedHelperTests(unittest.TestCase):
         )
         self.assertEqual(install_request.aur_review.vcs_sources, (source,))
 
+    @unittest.skipUnless(Path("/usr/bin/vercmp").is_file(), "Requires Arch vercmp")
     def test_dynamic_aur_artifact_accepts_new_version_and_rejects_non_newer(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
