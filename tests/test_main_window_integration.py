@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import time
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEventLoop, QTimer, Qt
 from support.network import FakeReachability, FakeNetworkInformation, FakeNetworkInformationApi
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QToolButton
@@ -225,6 +224,13 @@ class MainWindowIntegrationTests(unittest.TestCase):
         release_check = patch("archupdater.infrastructure.app_releases.AppReleaseChecker.check")
         release_check.start()
         self.addCleanup(release_check.stop)
+        network = FakeNetworkInformation(FakeReachability.Online)
+        network_patch = patch(
+            "archupdater.presentation.check_schedule.QNetworkInformation",
+            FakeNetworkInformationApi(network),
+        )
+        network_patch.start()
+        self.addCleanup(network_patch.stop)
 
     def tearDown(self) -> None:
         if self.window is not None:
@@ -943,23 +949,46 @@ class MainWindowIntegrationTests(unittest.TestCase):
             settings=settings or FakeSettingsService(),
             state_cache=state_cache or FakeStateCache(),
         )
+        self.window = window
         window.show()
         self._wait_for_check(window)
         self._process_events(50)
         return window
 
     def _wait_for_check(self, window: MainWindow, timeout_s: float = 2.0) -> None:
-        deadline = time.monotonic() + timeout_s
-        while window.update_controller.is_busy() and time.monotonic() < deadline:
-            self._process_events(20)
-        if window.update_controller.is_busy():
-            self.fail("Timed out while waiting for the initial update check to finish.")
+        def finished() -> bool:
+            return window._service.check_calls > 0 and not window.update_controller.is_busy()
+
+        if finished():
+            return
+        loop = QEventLoop()
+        poll = QTimer(loop)
+        poll.setInterval(10)
+        poll.timeout.connect(lambda: loop.quit() if finished() else None)
+        timeout = QTimer(loop)
+        timeout.setSingleShot(True)
+        timeout.timeout.connect(loop.quit)
+        poll.start()
+        timeout.start(int(timeout_s * 1000))
+        try:
+            loop.exec()
+        finally:
+            poll.stop()
+            timeout.stop()
+        thread = window.update_controller._worker_thread
+        self.assertTrue(
+            finished(),
+            "Initial check did not finish: "
+            f"calls={window._service.check_calls}, "
+            f"busy={window.update_controller.is_busy()}, "
+            f"thread_running={thread.isRunning() if thread else False}, "
+            f"waiting_for_network={window._check_schedule.is_waiting_for_network()}",
+        )
 
     def _process_events(self, delay_ms: int) -> None:
-        end = time.monotonic() + (delay_ms / 1000)
-        while time.monotonic() < end:
-            self._app.processEvents()
-            QTest.qWait(1)
+        loop = QEventLoop()
+        QTimer.singleShot(delay_ms, loop.quit)
+        loop.exec()
 
     def _counter_card(self, source: UpdateSource) -> CounterCardWidget:
         for card in self.window.header_widget.findChildren(CounterCardWidget):
