@@ -21,7 +21,7 @@ class InstallDependencyTests(unittest.TestCase):
         self.log = self.root / "calls"
         self.installed = self.root / "installed"
         self.installed.write_text("")
-        self.packages = ["git", "python", "pacman-contrib", "fakeroot", "polkit", "qt6-svg"]
+        self.packages = ["git", "python", "pacman-contrib", "fakeroot", "polkit", "qt6-svg", "github-cli"]
         pacman = self.bin / "pacman"
         pacman.write_text("""#!/bin/bash
 printf '%s\\n' "$*" >> "$TEST_CALLS"
@@ -71,7 +71,7 @@ printf '%s\\n' "$@" >> "$TEST_INSTALLED"
         result = self.run_dependencies()
         self.assertEqual(result.returncode, 0, result.stderr)
         transactions = [line for line in self.log.read_text().splitlines() if line.startswith("-S")]
-        self.assertEqual(transactions, ["-Syu --needed pacman-contrib qt6-svg"])
+        self.assertEqual(transactions, ["-Syu --needed pacman-contrib qt6-svg github-cli"])
         self.assertIn("STAGING_REACHED", result.stdout)
 
     def test_python_can_be_installed_before_it_is_required(self) -> None:

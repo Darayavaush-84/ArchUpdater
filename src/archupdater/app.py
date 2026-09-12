@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import QProcess
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import QApplication, QStyle
 
@@ -44,6 +45,17 @@ def main() -> int:
     translation_manager.install(app_settings.language_preference)
 
     window = MainWindow(settings=settings, translation_manager=translation_manager)
+
+    def restart_application() -> bool:
+        single_instance_guard.close()
+        started, _pid = QProcess.startDetached("/usr/local/bin/archupdater", [])
+        if not started:
+            single_instance_guard.acquire()
+            return False
+        app.quit()
+        return True
+
+    window.restart_application = restart_application
     window.setWindowIcon(app_icon)
     app.aboutToQuit.connect(window.update_controller.shutdown)
     tray_controller = TrayController(

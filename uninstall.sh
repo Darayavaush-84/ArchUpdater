@@ -6,6 +6,7 @@ APP_LAUNCHER="/usr/local/bin/archupdater"
 UNINSTALL_LAUNCHER="/usr/local/bin/archupdater-uninstall"
 HELPER_DIR="/usr/lib/archupdater"
 HELPER_WRAPPER="${HELPER_DIR}/archupdater-helper"
+SELF_UPDATE_WRAPPER="${HELPER_DIR}/archupdater-self-update"
 POLICY_DEST="/usr/share/polkit-1/actions/io.github.archupdater.policy"
 DESKTOP_DIR="/usr/share/applications"
 DESKTOP_DEST="${DESKTOP_DIR}/io.github.archupdater.desktop"
@@ -145,12 +146,24 @@ if [[ -e "${INSTALL_ROOT}" ]] && ! tree_is_root_locked; then
     echo "Error: refusing to remove an install root that is not root-owned and locked."
     exit 1
 fi
+if [[ -d "${INSTALL_ROOT}" ]]; then
+    [[ ! -L "${INSTALL_ROOT}/.self-update.lock" ]] || {
+        echo "Error: refusing a symlinked installation lock."
+        exit 1
+    }
+    exec {install_lock}>"${INSTALL_ROOT}/.self-update.lock"
+    flock -n "${install_lock}" || {
+        echo "Error: an ArchUpdater installation or recovery is running."
+        exit 1
+    }
+fi
 stop_running_archupdater
 
 rm -f -- \
     "${APP_LAUNCHER}" \
     "${UNINSTALL_LAUNCHER}" \
     "${HELPER_WRAPPER}" \
+    "${SELF_UPDATE_WRAPPER}" \
     "${POLICY_DEST}" \
     "${DESKTOP_DEST}"
 rmdir -- "${HELPER_DIR}" 2>/dev/null || true

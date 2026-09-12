@@ -1,6 +1,7 @@
 include LICENSE
 include MANIFEST.in
 include README.md
+include CHANGELOG.md
 include constraints-ci.txt
 include install.sh
 include uninstall.sh

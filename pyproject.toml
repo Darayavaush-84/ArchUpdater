@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "archupdater"
-version = "1.0.0"
+version = "1.0.1"
 description = "GUI-first desktop updater for Arch-based systems"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,6 +20,7 @@ Issues = "https://github.com/Darayavaush-84/ArchUpdater/issues"
 [project.scripts]
 archupdater = "archupdater.app:main"
 archupdater-helper = "archupdater.helper.privileged_helper:main"
+archupdater-self-update = "archupdater.helper.self_update:main"
 
 [project.optional-dependencies]
 dev = ["build>=1.6.1,<2", "ruff>=0.16.7,<1", "vulture>=2.16,<3"]

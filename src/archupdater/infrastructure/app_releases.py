@@ -9,6 +9,7 @@ from PySide6.QtCore import QObject, QUrl, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
 from archupdater import __version__
+from archupdater.domain.self_update import SelfUpdateRelease, self_update_release
 
 
 GITHUB_URL = "https://github.com/Darayavaush-84/ArchUpdater"
@@ -36,8 +37,8 @@ def newer_release_tag(payload: object, current_version: str) -> str:
 class AppReleaseChecker(QObject):
     release_checked = Signal(str)
     check_finished = Signal()
-    CHECK_INTERVAL_SECONDS = 6 * 60 * 60
-    RETRY_INTERVAL_SECONDS = 10 * 60
+    CACHE_TTL_SECONDS = 6 * 60 * 60
+    RETRY_COOLDOWN_SECONDS = 10 * 60
 
     def __init__(
         self,
@@ -54,9 +55,10 @@ class AppReleaseChecker(QObject):
         self._next_check_at = 0.0
         self._reply: QNetworkReply | None = None
         self.available_tag = ""
+        self.available_release: SelfUpdateRelease | None = None
 
-    def check(self) -> None:
-        if self._reply is not None or self._clock() < self._next_check_at:
+    def check(self, *, force: bool = False) -> None:
+        if self._reply is not None or (not force and self._clock() < self._next_check_at):
             return
         request = QNetworkRequest(QUrl(RELEASE_API_URL))
         request.setRawHeader(b"Accept", b"application/vnd.github+json")
@@ -70,7 +72,7 @@ class AppReleaseChecker(QObject):
         if reply is None:
             return
         self._reply = None
-        self._next_check_at = self._clock() + self.RETRY_INTERVAL_SECONDS
+        self._next_check_at = self._clock() + self.RETRY_COOLDOWN_SECONDS
         try:
             # Keep the last confirmed result on network/API failure, including
             # private or unavailable repositories (404).
@@ -79,7 +81,8 @@ class AppReleaseChecker(QObject):
             payload = json.loads(bytes(reply.readAll()))
             tag = newer_release_tag(payload, self._current_version)
             self.available_tag = tag
-            self._next_check_at = self._clock() + self.CHECK_INTERVAL_SECONDS
+            self.available_release = self_update_release(payload, self._current_version)
+            self._next_check_at = self._clock() + self.CACHE_TTL_SECONDS
             self.release_checked.emit(tag)
         except (ValueError, UnicodeError):
             pass

@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from support.network import FakeNetworkReply, FakeNetworkAccessManager
+from PySide6.QtCore import QTimer
 from PySide6.QtNetwork import QNetworkReply
 from PySide6.QtWidgets import QApplication
 
@@ -22,6 +23,29 @@ class AppReleaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
+
+    def test_release_checker_does_not_schedule_periodic_requests(self) -> None:
+        manager = FakeNetworkAccessManager(FakeNetworkReply(b'{"tag_name":"v1.1.0"}'))
+        checker = AppReleaseChecker(manager=manager)
+        self.assertEqual(manager.requests, [])
+        self.assertEqual(checker.findChildren(QTimer), [])
+        checker.check()
+        manager.reply.finished.emit()
+        self.assertEqual(checker.findChildren(QTimer), [])
+        self.assertEqual(len(manager.requests), 1)
+
+    def test_explicit_refresh_bypasses_cache_but_not_an_active_request(self) -> None:
+        manager = FakeNetworkAccessManager(FakeNetworkReply(b'{"tag_name":"v1.1.0"}'))
+        checker = AppReleaseChecker(manager=manager, clock=lambda: 100.0)
+        checker.check()
+        checker.check(force=True)
+        self.assertEqual(len(manager.requests), 1)
+        manager.reply.finished.emit()
+        manager.reply = FakeNetworkReply(b'{"tag_name":"v1.2.0"}')
+        checker.check(force=True)
+        self.assertEqual(len(manager.requests), 2)
+        manager.reply.finished.emit()
+        self.assertEqual(checker.available_tag, "v1.2.0")
 
     def test_compares_versions_numerically_and_accepts_v_prefix(self) -> None:
         self.assertEqual(newer_release_tag({"tag_name": "v0.10.0"}, "0.9.0.0"), "v0.10.0")
@@ -63,7 +87,7 @@ class AppReleaseTests(unittest.TestCase):
         self.assertTrue(manager.reply.deleted)
         checker.check()
         self.assertEqual(len(manager.requests), 1)
-        now[0] += checker.CHECK_INTERVAL_SECONDS
+        now[0] += checker.CACHE_TTL_SECONDS
         manager.reply = FakeNetworkReply(b'{"tag_name":"v1.0.0"}')
         checker.check()
         manager.reply.finished.emit()
@@ -94,7 +118,7 @@ class AppReleaseTests(unittest.TestCase):
                 self.assertTrue(manager.reply.deleted)
                 checker.check()
                 self.assertEqual(len(manager.requests), 1)
-                now[0] += checker.RETRY_INTERVAL_SECONDS
+                now[0] += checker.RETRY_COOLDOWN_SECONDS
                 manager.reply = FakeNetworkReply(b'{"tag_name":"v1.2.0"}')
                 checker.check()
                 self.assertEqual(len(manager.requests), 2)

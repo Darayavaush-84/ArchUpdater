@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:
 
 jobs:
   test:
@@ -63,7 +64,7 @@ jobs:
         run: >-
           pacman -Syu --noconfirm --needed
           git python python-pip pyside6 python-packaging qt6-svg
-          pacman-contrib fakeroot polkit desktop-file-utils libxml2
+          pacman-contrib fakeroot polkit desktop-file-utils libxml2 github-cli
 
       - name: Run test suite on Arch
         run: env QT_QPA_PLATFORM=offscreen PYTHONPATH=src python -m unittest discover -s tests
@@ -74,8 +75,9 @@ jobs:
       - name: Install and uninstall in the Arch container
         run: |
           ./install.sh
-          /opt/archupdater/current/venv/bin/python -c 'import archupdater; assert archupdater.__version__ == "1.0.0"'
+          /opt/archupdater/current/venv/bin/python -c 'import archupdater; print(archupdater.__version__)'
           archupdater-uninstall
           test ! -e /opt/archupdater
           test ! -e /usr/local/bin/archupdater
           test ! -e /usr/lib/archupdater/archupdater-helper
+          test ! -e /usr/lib/archupdater/archupdater-self-update

@@ -170,7 +170,7 @@ class PrivilegedHelperTests(unittest.TestCase):
                 }
             )
 
-    def test_polkit_policy_has_only_support_and_update_session_scopes(self) -> None:
+    def test_polkit_policy_has_explicit_scopes_and_separate_self_updater(self) -> None:
         policy_path = PROJECT_ROOT / "resources/polkit/io.github.archupdater.policy"
         root = ET.parse(policy_path).getroot()
         actions = root.findall("action")
@@ -182,6 +182,7 @@ class PrivilegedHelperTests(unittest.TestCase):
         expected_scopes = {
             "--archupdater-auth=update-session",
             "--archupdater-auth=support-packages",
+            "--archupdater-auth=self-update",
         }
         self.assertEqual(len(actions), len(expected_scopes))
         self.assertEqual(set(by_argv), expected_scopes)
@@ -195,7 +196,9 @@ class PrivilegedHelperTests(unittest.TestCase):
         for marker, action in by_argv.items():
             self.assertEqual(
                 action.findtext("annotate[@key='org.freedesktop.policykit.exec.path']"),
-                "/usr/lib/archupdater/archupdater-helper",
+                "/usr/lib/archupdater/archupdater-self-update"
+                if marker == "--archupdater-auth=self-update"
+                else "/usr/lib/archupdater/archupdater-helper",
             )
             defaults = action.find("defaults")
             self.assertIsNotNone(defaults)

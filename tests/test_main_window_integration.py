@@ -240,7 +240,19 @@ class MainWindowIntegrationTests(unittest.TestCase):
             self.window.deleteLater()
         self._process_events(50)
 
-    def test_github_opens_releases_only_when_newer_version_was_detected(self) -> None:
+    def test_only_startup_and_manual_scans_check_for_app_releases(self) -> None:
+        with patch("archupdater.infrastructure.app_releases.AppReleaseChecker.check") as release_check:
+            self.window = self._create_window(packages=[])
+            release_check.assert_called_once_with()
+            release_check.reset_mock()
+            self.window._check_schedule.request_scheduled_check()
+            self._wait_for_check(self.window)
+            release_check.assert_not_called()
+            self.window.action_bar.check_requested.emit()
+            self._wait_for_check(self.window)
+            release_check.assert_called_once_with(force=True)
+
+    def test_github_opens_update_dialog_only_when_newer_version_was_detected(self) -> None:
         self.window = self._create_window(packages=[])
         checker = self.window._release_checker
         with patch("archupdater.presentation.main_window.window.QDesktopServices.openUrl") as open_url:
@@ -250,9 +262,12 @@ class MainWindowIntegrationTests(unittest.TestCase):
             checker.available_tag = "v1.1.0"
             checker.release_checked.emit(checker.available_tag)
             self.assertEqual(self.window.action_bar.github_button.text(), "Update")
-            self.window.action_bar.github_button.click()
-            self.assertEqual(open_url.call_args.args[0].toString(),
-                             "https://github.com/Darayavaush-84/ArchUpdater/releases/latest")
+            with patch("archupdater.presentation.main_window.window.SelfUpdateDialog") as dialog:
+                dialog.return_value.exec.side_effect = lambda: self.assertTrue(self.window.update_controller.is_busy())
+                self.window.action_bar.github_button.click()
+                dialog.return_value.exec.assert_called_once()
+                self.assertFalse(self.window.update_controller.is_busy())
+            self.assertEqual(open_url.call_count, 1)
 
     def test_first_scan_populates_list_without_auto_selecting_details(self) -> None:
         self.window = self._create_window(

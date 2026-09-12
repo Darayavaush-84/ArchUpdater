@@ -85,12 +85,17 @@ class UpdateController(QObject):
         self._active_update_has_plasma_widgets = False
         self._active_update_requires_restart_advisory = False
         self._active_optional_sources: set[UpdateSource] | None = None
+        self._self_update_busy = False
 
     def set_active_optional_sources(self, sources: set[UpdateSource]) -> None:
         self._active_optional_sources = set(sources)
 
     def is_busy(self) -> bool:
-        return self._worker_thread is not None or self._update_client is not None
+        return self._self_update_busy or self._worker_thread is not None or self._update_client is not None
+
+    def set_self_update_busy(self, busy: bool) -> None:
+        self._self_update_busy = busy
+        self.busy_changed.emit(self.is_busy())
 
     def active_update_requires_restart_advisory(self) -> bool:
         return self._active_update_requires_restart_advisory

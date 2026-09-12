@@ -4,7 +4,7 @@ from typing import Any
 
 
 def connect_main_window_signals(window: Any) -> None:
-    window.action_bar.check_requested.connect(window._flow_coordinator.start_check_updates)
+    window.action_bar.check_requested.connect(window.start_manual_check)
     window.action_bar.update_requested.connect(window._flow_coordinator.start_update)
     window.action_bar.arch_news_requested.connect(window._open_arch_news)
     window.action_bar.preferences_requested.connect(window._open_preferences)

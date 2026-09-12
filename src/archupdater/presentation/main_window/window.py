@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from collections.abc import Callable
 from datetime import datetime
 
 from PySide6.QtCore import QUrl, Slot
@@ -13,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from archupdater import __version__
-from archupdater.infrastructure.app_releases import AppReleaseChecker, GITHUB_URL, RELEASES_URL
+from archupdater.infrastructure.app_releases import AppReleaseChecker, GITHUB_URL
 from archupdater.domain.check_results import UpdateCheckResult
 from archupdater.domain.enums import OperationState, UpdateSource
 from archupdater.domain.optional_sources import OptionalSourcesSnapshot
@@ -33,6 +34,7 @@ from archupdater.presentation.main_window.state import MainWindowState
 from archupdater.presentation.main_window.update_flow import MainWindowUpdateFlowCoordinator
 from archupdater.presentation.main_window.logic import source_texts, update_status_messages
 from archupdater.presentation.package_details_presenter import PackageDetailsPresenter
+from archupdater.presentation.self_update_dialog import SelfUpdateDialog
 from archupdater.presentation.plasma_restart_coordinator import PlasmaRestartCoordinator
 from archupdater.presentation.preflight_coordinator import UpdatePreflightCoordinator
 from archupdater.presentation.preferences_coordinator import PreferencesCoordinator
@@ -64,6 +66,7 @@ class MainWindow(QMainWindow):
         translation_manager: TranslationManager | None = None,
     ) -> None:
         super().__init__()
+        self.restart_application: Callable[[], bool] | None = None
         self._settings = settings or SettingsService()
         self._service = service or ApplicationContainer(
             aur_enabled_provider=lambda: self._settings.load_app_settings().aur_updates_enabled,
@@ -188,6 +191,7 @@ class MainWindow(QMainWindow):
             self._state.startup_notice_pending_visibility = True
         app_settings = self._background_behavior.load_app_settings()
         self._apply_background_behavior_settings(app_settings)
+        self._release_checker.check()
         self._check_schedule.start()
 
     def _build_ui(self) -> None:
@@ -220,7 +224,6 @@ class MainWindow(QMainWindow):
 
     def begin_check_ui(self) -> None:
         self._check_coordinator.begin_check_ui()
-        self._release_checker.check()
 
     def show_no_updates_selected_message(self) -> None:
         QMessageBox.information(
@@ -460,8 +463,22 @@ class MainWindow(QMainWindow):
         )
 
     def _open_github(self) -> None:
-        url = RELEASES_URL if self._release_checker.available_tag else GITHUB_URL
-        QDesktopServices.openUrl(QUrl(url))
+        if not self._release_checker.available_tag:
+            QDesktopServices.openUrl(QUrl(GITHUB_URL))
+            return
+        if self._update_controller.is_busy():
+            return
+        self._update_controller.set_self_update_busy(True)
+        try:
+            dialog = SelfUpdateDialog(
+                self._release_checker.available_release,
+                self._release_checker.available_tag,
+                restart=self.restart_application,
+                parent=self,
+            )
+            dialog.exec()
+        finally:
+            self._update_controller.set_self_update_busy(False)
 
     def _open_arch_news(self) -> None:
         self._arch_news_coordinator.open_news(self._state.arch_news)
@@ -583,8 +600,14 @@ class MainWindow(QMainWindow):
             ),
         )
 
+    def start_manual_check(self) -> bool:
+        started = self._flow_coordinator.start_check_updates()
+        if started:
+            self._release_checker.check(force=True)
+        return started
+
     def start_check_updates_from_tray(self) -> bool:
-        return self._flow_coordinator.start_check_updates()
+        return self.start_manual_check()
 
     def is_interactive_foreground(self) -> bool:
         return self.isVisible() and not self.isMinimized() and self.isActiveWindow()

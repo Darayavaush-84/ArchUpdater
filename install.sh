@@ -6,6 +6,7 @@ INSTALL_ROOT="${ARCHUPDATER_INSTALL_ROOT:-/opt/archupdater}"
 SYSTEM_BIN_DIR="/usr/local/bin"
 HELPER_DIR="/usr/lib/archupdater"
 HELPER_WRAPPER="${HELPER_DIR}/archupdater-helper"
+SELF_UPDATE_WRAPPER="${HELPER_DIR}/archupdater-self-update"
 POLICY_SRC="${PROJECT_ROOT}/resources/polkit/io.github.archupdater.policy"
 POLICY_DIR="/usr/share/polkit-1/actions"
 POLICY_DEST="${POLICY_DIR}/io.github.archupdater.policy"
@@ -120,7 +121,7 @@ validate_current_link() {
 
 require_commands() {
     local command
-    for command in install tar realpath mktemp mv ln date; do
+    for command in install tar realpath mktemp mv ln date flock; do
         command -v "${command}" >/dev/null 2>&1 || {
             echo "${command} is required."
             exit 1
@@ -138,7 +139,7 @@ PY
 }
 
 ensure_system_dependencies() {
-    local required_packages=(git python pacman-contrib fakeroot polkit qt6-svg)
+    local required_packages=(git python pacman-contrib fakeroot polkit qt6-svg github-cli)
     local missing_packages=()
     local package
 
@@ -273,6 +274,7 @@ for path in \
     "${UNINSTALL_LAUNCHER}" \
     "${HELPER_DIR}" \
     "${HELPER_WRAPPER}" \
+    "${SELF_UPDATE_WRAPPER}" \
     "${POLICY_DEST}" \
     "${DESKTOP_DEST}"
 do
@@ -311,6 +313,13 @@ install -d -o root -g root -m 0755 \
     "${POLICY_DIR}" \
     "${DESKTOP_DIR}"
 
+ensure_not_symlink "${INSTALL_ROOT}/.self-update.lock"
+exec {install_lock}>"${INSTALL_ROOT}/.self-update.lock"
+flock -n "${install_lock}" || {
+    echo "Error: another ArchUpdater installation or recovery is running."
+    exit 1
+}
+
 release_suffix="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 FINAL_RELEASE="${RELEASES_DIR}/${PACKAGE_VERSION}-${release_suffix}"
 install -d -o root -g root -m 0755 "${FINAL_RELEASE}"
@@ -328,7 +337,7 @@ if archupdater.__version__ != sys.argv[1]:
         f"Installed version mismatch: expected {sys.argv[1]}, found {archupdater.__version__}"
     )
 PY
-for entrypoint in archupdater archupdater-helper; do
+for entrypoint in archupdater archupdater-helper archupdater-self-update; do
     [[ -x "${STAGING_VENV}/bin/${entrypoint}" ]] || {
         echo "Error: staged entrypoint is missing: ${entrypoint}"
         exit 1
@@ -363,6 +372,15 @@ exec "${CURRENT_LINK}/venv/bin/archupdater-helper" "\$@"
 EOF
 install_executable_text "${HELPER_WRAPPER}" "${helper_wrapper_tmp}"
 
+self_update_tmp="$(mktemp "${HELPER_DIR}/.archupdater-self-update.XXXXXXXX")"
+cat > "${self_update_tmp}" <<EOF
+#!/bin/bash
+unset PYTHONPATH PYTHONHOME
+export PATH="/usr/bin:/bin"
+exec "${CURRENT_LINK}/venv/bin/python" -I -m archupdater.helper.self_update "\$@"
+EOF
+install_executable_text "${SELF_UPDATE_WRAPPER}" "${self_update_tmp}"
+
 uninstall_tmp="$(mktemp "${INSTALL_ROOT}/.uninstall.XXXXXXXX")"
 install -o root -g root -m 0755 "${UNINSTALL_SRC}" "${uninstall_tmp}"
 mv -fT -- "${uninstall_tmp}" "${UNINSTALL_DEST}"
@@ -390,6 +408,13 @@ PY
 chown root:root "${desktop_tmp}"
 chmod 0644 "${desktop_tmp}"
 mv -fT -- "${desktop_tmp}" "${DESKTOP_DEST}"
+
+# Retain the immediate predecessor for recovery, including after a manual upgrade.
+if [[ -n "${previous_release}" ]]; then
+    previous_link="${INSTALL_ROOT}/.previous-${release_suffix}"
+    ln -s "releases/${previous_release##*/}" "${previous_link}"
+    mv -fT -- "${previous_link}" "${INSTALL_ROOT}/previous"
+fi
 
 # Switch the active release only after every generated integration file is ready.
 ln -s "releases/${FINAL_RELEASE##*/}" "${next_link}"

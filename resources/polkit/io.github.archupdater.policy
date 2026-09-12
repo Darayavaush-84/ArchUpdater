@@ -26,4 +26,23 @@
     <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/archupdater/archupdater-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">--archupdater-auth=support-packages</annotate>
   </action>
+  <action id="io.github.archupdater.self-update">
+    <description>Update ArchUpdater</description>
+    <description xml:lang="it">Aggiorna ArchUpdater</description>
+    <description xml:lang="de">ArchUpdater aktualisieren</description>
+    <description xml:lang="fr">Mettre à jour ArchUpdater</description>
+    <description xml:lang="es">Actualizar ArchUpdater</description>
+    <message>Authentication is required to update ArchUpdater or restore its previous version.</message>
+    <message xml:lang="it">Autenticazione richiesta per aggiornare ArchUpdater o ripristinare la versione precedente.</message>
+    <message xml:lang="de">Zum Aktualisieren von ArchUpdater oder Wiederherstellen der vorherigen Version ist eine Authentifizierung erforderlich.</message>
+    <message xml:lang="fr">Une authentification est nécessaire pour mettre à jour ArchUpdater ou restaurer sa version précédente.</message>
+    <message xml:lang="es">Se requiere autenticación para actualizar ArchUpdater o restaurar su versión anterior.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/archupdater/archupdater-self-update</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">--archupdater-auth=self-update</annotate>
+  </action>
 </policyconfig>

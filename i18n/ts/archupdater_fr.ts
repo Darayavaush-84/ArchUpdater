@@ -842,27 +842,27 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="174"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="177"/>
         <source>Ready to check for updates.</source>
         <translation>Prêt à vérifier les mises à jour.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="179"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="182"/>
         <source>Ready to scan</source>
         <translation>Prêt à analyser</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="185"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="188"/>
         <source>The previous update session did not finish cleanly. A fresh scan is recommended.</source>
         <translation>La session de mise à jour précédente ne s&apos;est pas terminée correctement. Une nouvelle analyse est recommandée.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="228"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="231"/>
         <source>No Updates Selected</source>
         <translation>Aucune mise à jour sélectionnée</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="229"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="232"/>
         <source>There are no selected updates to install.</source>
         <translation>Aucune mise à jour sélectionnée à installer.</translation>
     </message>
@@ -1065,7 +1065,7 @@
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="216"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="400"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="403"/>
         <source>Checking for updates...</source>
         <translation>Recherche des mises à jour...</translation>
     </message>
@@ -1324,67 +1324,67 @@ Consultez le journal d’activité avant de réessayer.</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="79"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="248"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="251"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="240"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="243"/>
         <source>Starting integrated updater...</source>
         <translation>Démarrage du programme de mise à jour intégré...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="242"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="245"/>
         <source>Starting updater</source>
         <translation>Démarrage de la mise à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="290"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="293"/>
         <source>PKGBUILD review was cancelled.</source>
         <translation>Examen du PKGBUILD annulé.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="314"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="317"/>
         <source>Skipped AUR update: {package}</source>
         <translation>Mise à jour AUR ignorée : {package}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="357"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="360"/>
         <source>Last checked: Never</source>
         <translation>Dernière vérification : jamais</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="362"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="365"/>
         <source>Last checked: {timestamp}</source>
         <translation>Dernière vérification : {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="377"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="380"/>
         <source>Next check: {timestamp}</source>
         <translation>Prochaine vérification : {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="395"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="398"/>
         <source>Update check failed</source>
         <translation>Échec de la recherche de mises à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="409"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="412"/>
         <source>Checked with Warnings</source>
         <translation>Vérifié avec des avertissements</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="423"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="426"/>
         <source>Pacman packages are selected and installed together as one full system upgrade.</source>
         <translation>Les paquets Pacman sont sélectionnés et installés ensemble dans une seule mise à jour complète du système.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="503"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="520"/>
         <source>Shutdown Required</source>
         <translation>Arrêt nécessaire</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="505"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="522"/>
         <source>The updated firmware requires a full shutdown. Save your work and power the computer off completely before using it again.
 
 Devices: {devices}</source>
@@ -1393,12 +1393,12 @@ Devices: {devices}</source>
 Périphériques : {devices}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="514"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="531"/>
         <source>Restart Recommended</source>
         <translation>Redémarrage recommandé</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="516"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="533"/>
         <source>Some updated system components are already running. Restart when convenient to fully apply them.
 
 Packages: {packages}</source>
@@ -1407,57 +1407,57 @@ Packages: {packages}</source>
 Paquets : {packages}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="523"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="540"/>
         <source>Restart Plasma Shell</source>
         <translation>Redémarrer Plasma Shell</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="525"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="542"/>
         <source>KDE Store add-ons were updated. Restart plasmashell now to fully apply the changes?</source>
         <translation>Les modules KDE Store ont été mis à jour. Redémarrer plasmashell maintenant pour appliquer complètement les changements ?</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="535"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="552"/>
         <source>Restart Failed</source>
         <translation>Échec du redémarrage</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="195"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="536"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="553"/>
         <source>Plasma shell could not be restarted automatically.</source>
         <translation>Plasma Shell n&apos;a pas pu être redémarré automatiquement.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="579"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="596"/>
         <source>Operation in progress</source>
         <translation>Opération en cours</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="581"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="598"/>
         <source>ArchUpdater cannot quit while an update check or installation is running. Wait for the operation to finish.</source>
         <translation>ArchUpdater ne peut pas se fermer pendant une recherche ou une installation de mises à jour. Attendez la fin de l’opération.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="629"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="634"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="640"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="652"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="657"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="663"/>
         <source>Waiting for network...</source>
         <translation>En attente du réseau...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="630"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="653"/>
         <source>Last checked: Waiting for network</source>
         <translation>Dernière vérification : en attente du réseau</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="635"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="641"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="658"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="664"/>
         <source>The startup scan will begin automatically when the network is online.</source>
         <translation>La vérification initiale commencera automatiquement lorsque le réseau sera disponible.</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="74"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="404"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="407"/>
         <source>Waiting for Authentication</source>
         <translation>En attente d’authentification</translation>
     </message>
@@ -2204,6 +2204,21 @@ Ils peuvent être utilisés par d’autres outils en dehors d’ArchUpdater.</tr
 <context>
     <name>PreferencesDialog</name>
     <message>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="29"/>
+        <source>Ask every time</source>
+        <translation>Demander à chaque fois</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="30"/>
+        <source>Restart automatically</source>
+        <translation>Redémarrer automatiquement</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="31"/>
+        <source>Do not restart automatically</source>
+        <translation>Ne pas redémarrer automatiquement</translation>
+    </message>
+    <message>
         <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="47"/>
         <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="55"/>
         <source>Preferences</source>
@@ -2215,137 +2230,147 @@ Ils peuvent être utilisés par d’autres outils en dehors d’ArchUpdater.</tr
         <translation>Ajustez la langue, le comportement au démarrage, l&apos;intégration à la zone de notification et les vérifications automatiques.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="105"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="74"/>
+        <source>Save</source>
+        <translation>Enregistrer</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="79"/>
+        <source>Cancel</source>
+        <translation>Annuler</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="107"/>
         <source>Language</source>
         <translation>Langue</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="111"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="113"/>
         <source>Use the system language or choose a language manually for ArchUpdater.</source>
         <translation>Utilisez la langue du système ou choisissez-en une manuellement pour ArchUpdater.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="135"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="137"/>
         <source>Application language</source>
         <translation>Langue de l&apos;application</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="146"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="148"/>
         <source>Update Sources</source>
         <translation>Sources de mise à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="152"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="154"/>
         <source>Manage installed AUR helpers, Flatpak support, and firmware tools used by ArchUpdater.</source>
         <translation>Gérez les assistants AUR installés, la prise en charge de Flatpak et les outils de micrologiciel utilisés par ArchUpdater.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="159"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="161"/>
         <source>Manage Update Sources</source>
         <translation>Gérer les sources de mise à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="173"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="175"/>
         <source>Startup and Background</source>
         <translation>Démarrage et arrière-plan</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="179"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="181"/>
         <source>Choose how ArchUpdater starts, stays available in the system tray, and checks for updates automatically while it is running.</source>
         <translation>Choisissez comment ArchUpdater démarre, reste disponible dans la zone de notification et vérifie automatiquement les mises à jour pendant son exécution.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="192"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="194"/>
         <source>Start ArchUpdater automatically when you sign in</source>
         <translation>Démarrer ArchUpdater automatiquement à l&apos;ouverture de session</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="195"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="197"/>
         <source>Startup</source>
         <translation>Démarrage</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="198"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="200"/>
         <source>Keep ArchUpdater available in the system tray</source>
         <translation>Garder ArchUpdater disponible dans la zone de notification</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="201"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="203"/>
         <source>System tray</source>
         <translation>Zone de notification</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="204"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="206"/>
         <source>Show tray notifications for background events</source>
         <translation>Afficher les notifications de la zone de notification pour les événements en arrière-plan</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="209"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="211"/>
         <source>Notifications</source>
         <translation>Notifications</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="212"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="214"/>
         <source>Check for updates automatically</source>
         <translation>Vérifier automatiquement les mises à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="215"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="217"/>
         <source>Automatic checks</source>
         <translation>Vérifications automatiques</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="231"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="233"/>
         <source>Check interval</source>
         <translation>Intervalle de vérification</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="234"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="236"/>
         <source>Remove unused Flatpak runtimes after Flatpak updates</source>
         <translation>Supprimer les environnements d’exécution Flatpak inutilisés après les mises à jour Flatpak</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="239"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="241"/>
         <source>Flatpak cleanup</source>
         <translation>Nettoyage Flatpak</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="253"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="255"/>
         <source>Add-on restart</source>
         <translation>Redémarrage des modules</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="257"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="259"/>
         <source>Some KDE Store add-ons require restarting plasmashell before their updates are fully applied.</source>
         <translation>Certains modules KDE Store nécessitent de redémarrer plasmashell avant que leurs mises à jour soient entièrement appliquées.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="290"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="292"/>
         <source>Every 6 hours</source>
         <translation>Toutes les 6 heures</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="292"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="294"/>
         <source>Every 12 hours</source>
         <translation>Toutes les 12 heures</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="294"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="296"/>
         <source>Every 24 hours</source>
         <translation>Toutes les 24 heures</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="296"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="298"/>
         <source>Every 3 days</source>
         <translation>Tous les 3 jours</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="298"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="300"/>
         <source>Every week</source>
         <translation>Chaque semaine</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="299"/>
+        <location filename="../../src/archupdater/presentation/preferences_dialog.py" line="301"/>
         <source>Every {hours} hours</source>
         <translation>Toutes les {hours} heures</translation>
     </message>
@@ -2893,6 +2918,91 @@ Ils peuvent être utilisés par d’autres outils en dehors d’ArchUpdater.</tr
     </message>
 </context>
 <context>
+    <name>SelfUpdateDialog</name>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="41"/>
+        <source>Update ArchUpdater</source>
+        <translation>Mettre à jour ArchUpdater</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="45"/>
+        <source>Installed: {current} · Available: {latest}</source>
+        <translation>Installée : {current} · Disponible : {latest}</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="57"/>
+        <source>The update is verified before installation. Administrator authorization is required.</source>
+        <translation>La mise à jour est vérifiée avant l’installation. Une autorisation administrateur est nécessaire.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="69"/>
+        <source>Update and Restart</source>
+        <translation>Mettre à jour et redémarrer</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="73"/>
+        <source>View on GitHub</source>
+        <translation>Voir sur GitHub</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="77"/>
+        <source>Restore Previous Version</source>
+        <translation>Restaurer la version précédente</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="82"/>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="89"/>
+        <source>This release has no verified update package. Open GitHub for installation instructions.</source>
+        <translation>Cette version ne propose pas de paquet de mise à jour vérifié. Consultez GitHub pour les instructions d’installation.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="95"/>
+        <source>Run the latest install.sh once to enable updates from this window.</source>
+        <translation>Exécutez une fois le dernier fichier install.sh pour activer les mises à jour depuis cette fenêtre.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="119"/>
+        <source>Downloading and verifying the release...</source>
+        <translation>Téléchargement et vérification de la version...</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="121"/>
+        <source>Authorizing and installing the verified release...</source>
+        <translation>Autorisation et installation de la version vérifiée...</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="129"/>
+        <source>Update cancelled or failed. The current version remains available.
+{details}</source>
+        <translation>Mise à jour annulée ou échouée. La version actuelle reste disponible.
+{details}</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="135"/>
+        <source>Restart Now</source>
+        <translation>Redémarrer maintenant</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="138"/>
+        <source>Previous version restored.</source>
+        <translation>Version précédente restaurée.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="140"/>
+        <source>ArchUpdater was updated successfully.</source>
+        <translation>ArchUpdater a été mis à jour avec succès.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/self_update_dialog.py" line="150"/>
+        <source>Could not restart automatically. Close and reopen ArchUpdater, or restore the previous version.</source>
+        <translation>Le redémarrage automatique a échoué. Fermez puis rouvrez ArchUpdater, ou restaurez la version précédente.</translation>
+    </message>
+</context>
+<context>
     <name>StatusHeaderWidget</name>
     <message>
         <location filename="../../src/archupdater/presentation/widgets/status_header.py" line="107"/>
@@ -3016,87 +3126,87 @@ Ils peuvent être utilisés par d’autres outils en dehors d’ArchUpdater.</tr
 <context>
     <name>UpdateController</name>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="151"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="156"/>
         <source>The update controller is shutting down.</source>
         <translation>Le contrôleur des mises à jour est en cours d’arrêt.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="153"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="158"/>
         <source>Another operation is already running.</source>
         <translation>Une autre opération est déjà en cours.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="162"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="214"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="295"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="306"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="167"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="219"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="300"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="311"/>
         <source>Installing Updates</source>
         <translation>Installation des mises à jour</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="163"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="307"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="168"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="312"/>
         <source>Starting the integrated update session.</source>
         <translation>Démarrage de la session de mise à jour intégrée.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="215"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="296"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="220"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="301"/>
         <source>Running selected updates.</source>
         <translation>Exécution des mises à jour sélectionnées.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="329"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="334"/>
         <source>Updates completed</source>
         <translation>Mises à jour terminées</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="330"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="335"/>
         <source>Selected updates completed successfully.</source>
         <translation>Les mises à jour sélectionnées ont été terminées avec succès.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="339"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="344"/>
         <source>Updates completed with skipped items</source>
         <translation>Mises à jour terminées avec des éléments ignorés</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="340"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="345"/>
         <source>Some selected updates were skipped.</source>
         <translation>Certaines mises à jour sélectionnées ont été ignorées.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="349"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="354"/>
         <source>No updates installed</source>
         <translation>Aucune mise à jour installée</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="350"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="355"/>
         <source>No selected updates were installed.</source>
         <translation>Aucune des mises à jour sélectionnées n’a été installée.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="357"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="362"/>
         <source>Update cancelled</source>
         <translation>Mise à jour annulée</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="358"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="363"/>
         <source>The update was cancelled.</source>
         <translation>La mise à jour a été annulée.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="365"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="370"/>
         <source>Update completed with issues</source>
         <translation>Mise à jour terminée avec des problèmes</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="367"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="372"/>
         <source>Update failed</source>
         <translation>La mise à jour a échoué</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="368"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="373"/>
         <source>Selected updates failed.</source>
         <translation>Les mises à jour sélectionnées ont échoué.</translation>
     </message>

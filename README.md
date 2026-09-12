@@ -2,7 +2,7 @@
 
 **A simple, direct way to keep your Arch desktop up to date.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
 [![CI](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
@@ -11,6 +11,8 @@ Python/PySide6 desktop application. Open it, see what needs attention, review th
 and update. The interface keeps the next action clear, while details and logs stay within reach.
 
 ![ArchUpdater showing available system, AUR and Flatpak updates](docs/screenshots/overview.png)
+
+See the [changelog](CHANGELOG.md) for release history.
 
 ## Why ArchUpdater?
 
@@ -61,13 +63,43 @@ install or remove supported optional-source packages there. AUR helpers must be 
 The system tray provides an animated busy icon, an update count and status indicators.
 Automatic checks and background notifications are configurable. The GitHub button shows a
 small green **Update** label when it detects a newer stable ArchUpdater release; clicking it
-opens the release page. It does not install an ArchUpdater release automatically.
+opens release notes and an **Update and Restart** action. Checking is automatic;
+installation always requires your approval.
 
 ![ArchUpdater after a check with no available updates](docs/screenshots/up-to-date.png)
 
 *Screenshots are captured from the actual 1.0.0 interface with demonstration package and
 progress data. They illustrate the workflow, not the current versions available in repositories.
 Appearance also depends on your Qt theme and display scaling.*
+
+## Updating ArchUpdater itself
+
+Click the green **Update** label beside the GitHub icon, review the release notes, then
+choose **Update and Restart**. Release availability is checked at startup and when you
+manually choose **Check for Updates**, including from the system tray. There are no
+periodic checks for ArchUpdater releases.
+
+The app downloads the release as your normal user. It verifies a GitHub artifact attestation
+that binds the wheel to this repository, its release workflow and the selected version tag.
+The authorized installer verifies its own private copy again before installing it. No GitHub
+account or token is needed. Releases without an attestation offer manual installation instead.
+
+Self-updates install **only ArchUpdater**, offline, using dependencies already available on
+your computer. They do not run Pacman or install additional dependencies. A separate environment
+is checked before switching the active version; failures leave the current version available.
+The previous version is retained for recovery. Updates are unavailable while another ArchUpdater
+operation is running.
+
+**Existing installations:** run the latest `sudo ./install.sh` once to install the new
+self-update helper, authorization policy and GitHub CLI. After that, newer attested releases
+can be installed from the app. If a future release requires newer dependencies, use its
+`install.sh` to review and install them.
+
+If ArchUpdater cannot start after an update, restore the saved version with:
+
+```bash
+pkexec /usr/lib/archupdater/archupdater-self-update --archupdater-auth=self-update --rollback
+```
 
 ## Install
 
@@ -82,7 +114,7 @@ sudo ./install.sh
 ```
 
 The installer detects and installs missing system dependencies (`git`, `python`,
-`pacman-contrib`, `fakeroot`, `polkit`, and `qt6-svg`). If any are missing, it runs
+`pacman-contrib`, `fakeroot`, `polkit`, `qt6-svg`, and `github-cli`). If any are missing, it runs
 `pacman -Syu --needed` and asks you to review the transaction, including system updates.
 If all are installed, this step is skipped. Python dependencies are installed automatically.
 
@@ -166,3 +198,13 @@ to follow are welcome.
 
 ArchUpdater is licensed under **GPL-3.0-or-later**. See [LICENSE](LICENSE).
 The GitHub logo is a trademark of GitHub, Inc.; its asset notice is included in the project.
+
+## Publishing releases
+
+Set the new `X.Y.Z` version in `pyproject.toml` and `src/archupdater/__init__.py`, update
+version references in the README, and commit the tested changes. Push a **new** matching
+`vX.Y.Z` tag. The Release workflow runs CI, builds the distributions, attests the wheel and
+creates a GitHub release with the wheel, source archive, attestation bundle and checksums.
+The workflow uses GitHub's short-lived identity; no signing key or additional secret is needed.
+Never move an existing release tag or replace its assets. The self-updater accepts only a
+strictly newer stable version, and publishing an already existing release fails.

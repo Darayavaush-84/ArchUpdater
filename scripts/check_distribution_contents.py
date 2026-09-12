@@ -85,6 +85,7 @@ def check_sdist(path: Path) -> list[str]:
         PurePosixPath("LICENSE"),
         PurePosixPath("MANIFEST.in"),
         PurePosixPath("README.md"),
+        PurePosixPath("CHANGELOG.md"),
         PurePosixPath("constraints-ci.txt"),
         PurePosixPath("install.sh"),
         PurePosixPath("uninstall.sh"),

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QT_TRANSLATE_NOOP
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -26,9 +26,9 @@ class PreferencesDialog(QDialog):
     optional_sources_snapshot_changed = Signal(object)
     AUTO_CHECK_INTERVAL_OPTIONS = (6, 12, 24, 72, 168)
     PLASMA_RESTART_OPTIONS = (
-        ("ask", "Ask every time"),
-        ("auto", "Restart automatically"),
-        ("never", "Do not restart automatically"),
+        ("ask", QT_TRANSLATE_NOOP("PreferencesDialog", "Ask every time")),
+        ("auto", QT_TRANSLATE_NOOP("PreferencesDialog", "Restart automatically")),
+        ("never", QT_TRANSLATE_NOOP("PreferencesDialog", "Do not restart automatically")),
     )
     def __init__(
         self,
@@ -71,10 +71,12 @@ class PreferencesDialog(QDialog):
         save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
         cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         if save_button is not None:
+            save_button.setText(self.tr("Save"))
             save_button.setProperty("actionKind", "primary")
             save_button.setProperty("uiRole", "dialogFooter")
             save_button.setProperty("density", "compact")
         if cancel_button is not None:
+            cancel_button.setText(self.tr("Cancel"))
             cancel_button.setProperty("actionKind", "neutral")
             cancel_button.setProperty("uiRole", "dialogFooter")
             cancel_button.setProperty("density", "compact")

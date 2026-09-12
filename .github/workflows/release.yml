@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Require a matching stable version
+        run: |
+          python - <<'PY'
+          import os, re, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          assert re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version)
+          assert os.environ["GITHUB_REF"] == f"refs/tags/v{version}", "Tag and package version differ"
+          changelog = Path("CHANGELOG.md").read_text()
+          notes = changelog.split(f"## [{version}]", 1)[1].split("\n", 1)[1].split("\n## [", 1)[0].strip()
+          assert notes, "Missing release changelog"
+          (Path(os.environ["RUNNER_TEMP"]) / "archupdater-release-notes.md").write_text(notes + "\n")
+          PY
+      - name: Build distributions
+        run: |
+          python -m pip install -c constraints-ci.txt ".[dev]"
+          scripts/build_distribution.sh
+      - name: Attest the update wheel
+        id: provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.whl
+      - name: Publish a new release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUNDLE_PATH: ${{ steps.provenance.outputs.bundle-path }}
+        run: |
+          wheels=(dist/*.whl)
+          cp -- "$BUNDLE_PATH" "${wheels[0]}.sigstore.json"
+          (cd dist && sha256sum -- *.whl *.tar.gz *.sigstore.json > SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" dist/*.whl dist/*.tar.gz dist/*.sigstore.json dist/SHA256SUMS --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/archupdater-release-notes.md"
