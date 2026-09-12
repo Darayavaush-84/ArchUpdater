@@ -74,13 +74,19 @@ Appearance also depends on your Qt theme and display scaling.*
 ArchUpdater targets **Arch Linux and Arch-based distributions**, with Python **3.12+**.
 It uses PySide6 and the system's package tools. KDE Plasma is needed for Plasma-specific features.
 
-Install the basic system dependencies, reviewing the Pacman transaction as usual:
+[Download the project ZIP](https://github.com/Darayavaush-84/ArchUpdater/archive/refs/heads/main.zip),
+extract it, and open a terminal in the extracted folder:
 
 ```bash
-sudo pacman -Syu --needed git python pacman-contrib fakeroot polkit qt6-svg
+sudo ./install.sh
 ```
 
-Clone the project and run its installer:
+The installer detects and installs missing system dependencies (`git`, `python`,
+`pacman-contrib`, `fakeroot`, `polkit`, and `qt6-svg`). If any are missing, it runs
+`pacman -Syu --needed` and asks you to review the transaction, including system updates.
+If all are installed, this step is skipped. Python dependencies are installed automatically.
+
+If you already have Git, you can also clone the project:
 
 ```bash
 git clone https://github.com/Darayavaush-84/ArchUpdater.git
@@ -93,8 +99,7 @@ The GUI runs as your normal user; privileged operations request authorization wh
 
 The installer creates a versioned Python environment under `/opt/archupdater/releases`,
 adds the launcher and integrates the privileged helper and Polkit policy. It switches
-`/opt/archupdater/current` only after checking the staged installation. The installer itself
-does not perform a system upgrade or install missing system packages.
+`/opt/archupdater/current` only after checking the staged installation.
 
 To install a newer checked-out version, run `sudo ./install.sh` again.
 

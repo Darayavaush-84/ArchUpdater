@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
-import types
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,19 +17,29 @@ from archupdater.domain.package_metadata import (
 from archupdater.domain.packages import PackageUpdate
 from archupdater.domain.update_plan import UpdatePlan, UpdatePlanAction, UpdatePlanItem
 from archupdater.application.preflight import UpdatePreflightService
-from archupdater.services.preflight import SystemPreflightEnvironment
+from support.environment import FakePreflightEnvironment
 
 
 class PreflightServiceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._directory.cleanup)
+        self.root = Path(self._directory.name)
+        self.helper = self.root / "archupdater-helper"
+        self.helper.touch()
+        self.environment = FakePreflightEnvironment()
+
     def _service(
         self,
         *,
         command_runner=None,
         **kwargs,
     ) -> UpdatePreflightService:
-        kwargs.setdefault("privileged_helper_path", Path(sys.executable))
+        kwargs.setdefault("privileged_helper_path", self.helper)
+        kwargs.setdefault("pacman_lock_path", self.root / "db.lck")
+        self.environment.command_runner = command_runner
         return UpdatePreflightService(
-            environment=SystemPreflightEnvironment(command_runner=command_runner),
+            environment=self.environment,
             **kwargs,
         )
 
@@ -57,11 +66,7 @@ class PreflightServiceTests(unittest.TestCase):
             lock_path.write_text("", encoding="utf-8")
             service = self._service(pacman_lock_path=lock_path)
 
-            with (
-                patch.object(SystemPreflightEnvironment, "command_available", return_value=True),
-                patch.object(SystemPreflightEnvironment, "disk_space", return_value=(Path("/"), 100 * 1024**3)),
-            ):
-                issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
+            issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
 
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0].severity, PreflightSeverity.BLOCKING)
@@ -70,7 +75,7 @@ class PreflightServiceTests(unittest.TestCase):
     def test_missing_flatpak_blocks_flatpak_update(self) -> None:
         service = self._service()
 
-        with patch("shutil.which", return_value=None):
+        with patch.object(self.environment, "command_available", return_value=False):
             issues = service.check(self._plan(self._flatpak_cleanup_item("user")), [])
 
         self.assertEqual(issues[0].severity, PreflightSeverity.BLOCKING)
@@ -82,7 +87,7 @@ class PreflightServiceTests(unittest.TestCase):
         def which(command: str) -> str | None:
             return None if command == "kpackagetool6" else f"/usr/bin/{command}"
 
-        with patch("shutil.which", side_effect=which):
+        with patch.object(self.environment, "command_available", side_effect=which):
             issues = service.check(
                 self._plan(
                     UpdatePlanItem(
@@ -113,10 +118,8 @@ class PreflightServiceTests(unittest.TestCase):
         )
 
         with (
-            patch("shutil.which", side_effect=which),
-            patch("shutil.disk_usage") as disk_usage,
+            patch.object(self.environment, "command_available", side_effect=which),
         ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
             issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
 
         self.assertEqual(issues, [])
@@ -131,10 +134,8 @@ class PreflightServiceTests(unittest.TestCase):
             return None if command == "pkexec" else f"/usr/bin/{command}"
 
         with (
-            patch("shutil.which", side_effect=which),
-            patch("shutil.disk_usage") as disk_usage,
+            patch.object(self.environment, "command_available", side_effect=which),
         ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
             issues = service.check(self._plan(self._update_item(UpdateSource.AUR, "example")), [])
 
         self.assertEqual(issues[0].severity, PreflightSeverity.BLOCKING)
@@ -153,12 +154,7 @@ class PreflightServiceTests(unittest.TestCase):
             command_runner=command_runner,
         )
 
-        with (
-            patch("shutil.which", return_value="/usr/bin/tool"),
-            patch("shutil.disk_usage") as disk_usage,
-        ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
-            issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
+        issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
 
         self.assertEqual(issues, [])
 
@@ -173,12 +169,7 @@ class PreflightServiceTests(unittest.TestCase):
             command_runner=command_runner,
         )
 
-        with (
-            patch("shutil.which", return_value="/usr/bin/tool"),
-            patch("shutil.disk_usage") as disk_usage,
-        ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
-            issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
+        issues = service.check(self._plan(self._update_item(UpdateSource.SYSTEM, "linux")), [])
 
         self.assertEqual(issues, [])
 
@@ -193,18 +184,13 @@ class PreflightServiceTests(unittest.TestCase):
             command_runner=command_runner,
         )
 
-        with (
-            patch("shutil.which", return_value="/usr/bin/tool"),
-            patch("shutil.disk_usage") as disk_usage,
-        ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
-            issues = service.check(
-                self._plan(
-                    self._update_item(UpdateSource.SYSTEM, "linux"),
-                    self._update_item(UpdateSource.AUR, "example"),
-                ),
-                [],
-            )
+        issues = service.check(
+            self._plan(
+                self._update_item(UpdateSource.SYSTEM, "linux"),
+                self._update_item(UpdateSource.AUR, "example"),
+            ),
+            [],
+        )
 
         self.assertEqual(issues, [])
 
@@ -225,10 +211,8 @@ class PreflightServiceTests(unittest.TestCase):
         )
 
         with (
-            patch("shutil.which", side_effect=which),
-            patch("shutil.disk_usage") as disk_usage,
+            patch.object(self.environment, "command_available", side_effect=which),
         ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
             issues = service.check(self._plan(self._update_item(UpdateSource.AUR, "example")), [])
 
         self.assertEqual(issues, [])
@@ -252,10 +236,8 @@ class PreflightServiceTests(unittest.TestCase):
             )
 
         with (
-            patch("shutil.which", side_effect=which),
-            patch("shutil.disk_usage") as disk_usage,
+            patch.object(self.environment, "command_available", side_effect=which),
         ):
-            disk_usage.return_value = types.SimpleNamespace(free=100 * 1024**3)
             issues = service.check(self._plan(self._update_item(UpdateSource.AUR, "example")), [])
 
         self.assertEqual(issues, [])
@@ -287,8 +269,8 @@ class PreflightServiceTests(unittest.TestCase):
             return path, 512 * 1024**2
 
         with (
-            patch("shutil.which", side_effect=which),
-            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
+            patch.object(self.environment, "command_available", side_effect=which),
+            patch.object(self.environment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(self._plan(self._update_item(UpdateSource.AUR, "aur-big")), [package])
 
@@ -305,8 +287,8 @@ class PreflightServiceTests(unittest.TestCase):
             return path, 100 * 1024**3
 
         with (
-            patch("shutil.which", return_value="/usr/bin/flatpak"),
-            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
+            patch.object(self.environment, "command_available", return_value=True),
+            patch.object(self.environment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(
                 self._plan(self._flatpak_item("app/org.example.App/x86_64/stable", "user")),
@@ -326,8 +308,8 @@ class PreflightServiceTests(unittest.TestCase):
             return path, 100 * 1024**3
 
         with (
-            patch("shutil.which", return_value="/usr/bin/flatpak"),
-            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
+            patch.object(self.environment, "command_available", return_value=True),
+            patch.object(self.environment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(
                 self._plan(self._flatpak_item("app/org.example.App/x86_64/stable", "system")),
@@ -357,10 +339,10 @@ class PreflightServiceTests(unittest.TestCase):
         )
 
         with (
-            patch("shutil.which", return_value="/usr/bin/flatpak"),
-            patch("shutil.disk_usage") as disk_usage,
+            patch.object(self.environment, "command_available", return_value=True),
+            patch.object(self.environment, "disk_space") as disk_usage,
         ):
-            disk_usage.return_value = types.SimpleNamespace(free=2 * 1024**3)
+            disk_usage.side_effect = lambda path: (path, 2 * 1024**3)
             issues = service.check(
                 self._plan(self._flatpak_item("app/org.example.Big/x86_64/stable", "user")),
                 [package],

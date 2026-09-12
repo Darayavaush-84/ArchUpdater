@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0"]
+requires = ["setuptools==84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
-dependencies = ["PySide6>=6.11.1,<7", "packaging>=26.2,<27"]
+dependencies = ["PySide6>=6.11.2,<7", "packaging>=26.3,<27"]
 
 [project.urls]
 Homepage = "https://github.com/Darayavaush-84/ArchUpdater"
@@ -22,7 +22,7 @@ archupdater = "archupdater.app:main"
 archupdater-helper = "archupdater.helper.privileged_helper:main"
 
 [project.optional-dependencies]
-dev = ["build>=1.5,<2", "ruff>=0.15.22,<1", "vulture>=2.16,<3"]
+dev = ["build>=1.6.1,<2", "ruff>=0.16.7,<1", "vulture>=2.16,<3"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

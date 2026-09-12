@@ -7,39 +7,18 @@ import sys
 import tempfile
 import zipfile
 import unittest
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from archupdater.domain.command_log import CommandLogEntry
+from support.commands import CommandResponse, FakeCommandRunner
 from archupdater.domain.enums import UpdateSource
 from archupdater.domain.update_plan import UpdatePlanItem
 from archupdater.services.plasma_widgets_store import StoreWidgetDetail, StoreWidgetDownload
 from archupdater.services.plasma_widgets_update import PlasmaWidgetsUpdateService
 
 
-class _Runner:
-    def __init__(self, exit_code: int = 0) -> None:
-        self.exit_code = exit_code
-        self.commands: list[list[str]] = []
-
-    def run(
-        self,
-        command: list[str],
-        *,
-        timeout_seconds: float | None = None,
-    ) -> CommandLogEntry:
-        self.commands.append(command)
-        return CommandLogEntry(
-            command=command,
-            exit_code=self.exit_code,
-            stdout="updated\n" if self.exit_code == 0 else "",
-            stderr="" if self.exit_code == 0 else "failed\n",
-            started_at=datetime.now(),
-            duration_ms=1,
-        )
 
 
 class _StoreClient:
@@ -140,7 +119,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
             ],
         )
         store_client = _StoreClient(detail)
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         cache = _CacheStub()
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
@@ -193,7 +172,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
                 )
             ],
         )
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
             store_client=_FlakyStoreClient(detail),
@@ -253,7 +232,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
                 )
             ],
         )
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
             store_client=_StoreClient(detail),
@@ -298,7 +277,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
                 )
             ],
         )
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         downloads: list[str] = []
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
@@ -341,7 +320,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
                 )
             ],
         )
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         downloads: list[str] = []
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
@@ -384,7 +363,7 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
                 )
             ],
         )
-        runner = _Runner()
+        runner = FakeCommandRunner([CommandResponse(stdout="updated\n")])
         service = PlasmaWidgetsUpdateService(
             runner=runner,  # type: ignore[arg-type]
             store_client=_StoreClient(detail),

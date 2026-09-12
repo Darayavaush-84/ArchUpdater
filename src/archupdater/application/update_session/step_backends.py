@@ -741,25 +741,6 @@ def _parse_checkupdates_versions(output: str) -> dict[str, str]:
     return versions
 
 
-def _payload_versions(result: CommandRunResult) -> dict[str, str] | None:
-    payload = result.payload
-    if not isinstance(payload, dict) or payload.get("reason") != "plan_changed":
-        return None
-    raw_versions = payload.get("actual_versions")
-    if not isinstance(raw_versions, dict):
-        return None
-    versions: dict[str, str] = {}
-    for raw_name, raw_version in raw_versions.items():
-        if not isinstance(raw_name, str) or not isinstance(raw_version, str):
-            return None
-        name = raw_name.strip()
-        version = raw_version.strip()
-        if not name or not version or len(name) > 512 or len(version) > 512:
-            return None
-        versions[name] = version
-    return versions
-
-
 def _confirm_plan_change(
     context: BackendRunContext,
     *,
@@ -777,40 +758,6 @@ def _confirm_plan_change(
         }
     )
     return response is True
-
-
-def _retry_changed_privileged_plan(
-    context: BackendRunContext,
-    result: CommandRunResult,
-    *,
-    action: HelperAction,
-    title: str,
-    failure_message: str,
-    refs: list[str] | None = None,
-) -> CommandRunResult:
-    actual_versions = _payload_versions(result)
-    if actual_versions is None:
-        return result
-    if not actual_versions:
-        return CommandRunResult(
-            True,
-            context.translate("No reviewed updates remain available."),
-            payload={"changed": False},
-        )
-    if not _confirm_plan_change(
-        context,
-        title=title,
-        actual_versions=actual_versions,
-    ):
-        return result
-    return context.run_privileged(
-        HelperRequest(
-            action=action,
-            refs=list(actual_versions) if refs is not None else None,
-            expected_versions=actual_versions,
-        ),
-        failure_message=failure_message,
-    )
 
 
 def _privileged_transaction_changed(result: CommandRunResult) -> bool:

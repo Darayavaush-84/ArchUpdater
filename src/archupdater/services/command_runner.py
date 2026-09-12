@@ -66,7 +66,6 @@ class CommandRunner:
             timeout=timeout,
         )
 
-        finished_at = datetime.now()
         exit_code = process.returncode if process.returncode is not None else process.wait()
         if timed_out:
             timeout_message = (
@@ -84,7 +83,6 @@ class CommandRunner:
             stdout=stdout,
             stderr=stderr,
             started_at=started_at,
-            duration_ms=int((finished_at - started_at).total_seconds() * 1000),
             timed_out=timed_out,
         )
 

@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import Qt
+from support.network import FakeReachability, FakeNetworkInformation, FakeNetworkInformationApi
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QToolButton
 
@@ -208,37 +209,10 @@ class FailsAfterFirstCheckService(FakeUpdateService):
         raise PacmanServiceError("post-update refresh failed", logs=[])
 
 
-class FakeReachability:
-    Disconnected = object()
-    Online = object()
 
 
-class FakeNetworkInformation(QObject):
-    reachabilityChanged = Signal(object)
-
-    def __init__(self, reachability: object) -> None:
-        super().__init__()
-        self._reachability = reachability
-
-    def reachability(self) -> object:
-        return self._reachability
-
-    def set_reachability(self, reachability: object) -> None:
-        self._reachability = reachability
-        self.reachabilityChanged.emit(reachability)
 
 
-class FakeNetworkInformationApi:
-    Reachability = FakeReachability
-
-    def __init__(self, network_information: FakeNetworkInformation) -> None:
-        self._network_information = network_information
-
-    def loadDefaultBackend(self) -> bool:
-        return True
-
-    def instance(self) -> FakeNetworkInformation:
-        return self._network_information
 
 
 class MainWindowIntegrationTests(unittest.TestCase):
@@ -921,7 +895,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
         network_api = FakeNetworkInformationApi(network_information)
 
         with (
-            patch("archupdater.presentation.main_window.window.QNetworkInformation", network_api),
+            patch("archupdater.presentation.check_schedule.QNetworkInformation", network_api),
             patch(
                 "archupdater.presentation.main_window.update_flow.MainWindowUpdateFlowCoordinator.start_check_updates",
                 return_value=True,
@@ -947,7 +921,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
             network_information.set_reachability(FakeReachability.Online)
             self._process_events(50)
             start_check.assert_called_once_with()
-            self.assertFalse(self.window._startup_network_retry_timer.isActive())
+            self.assertFalse(self.window._check_schedule.is_waiting_for_network())
 
     def _create_window(
         self,

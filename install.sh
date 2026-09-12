@@ -120,7 +120,7 @@ validate_current_link() {
 
 require_commands() {
     local command
-    for command in python3 install tar realpath mktemp mv ln date; do
+    for command in install tar realpath mktemp mv ln date; do
         command -v "${command}" >/dev/null 2>&1 || {
             echo "${command} is required."
             exit 1
@@ -137,24 +137,37 @@ if sys.version_info < (3, 12):
 PY
 }
 
-require_pacman_discovery_dependencies() {
+ensure_system_dependencies() {
+    local required_packages=(git python pacman-contrib fakeroot polkit qt6-svg)
     local missing_packages=()
+    local package
 
-    if ! command -v checkupdates >/dev/null 2>&1; then
-        missing_packages+=(pacman-contrib)
+    if ! command -v pacman >/dev/null 2>&1; then
+        echo "Error: this installer requires an Arch-based system with Pacman."
+        return 1
     fi
-    if ! command -v fakeroot >/dev/null 2>&1; then
-        missing_packages+=(fakeroot)
-    fi
+    for package in "${required_packages[@]}"; do
+        if ! pacman -Q "${package}" >/dev/null 2>&1; then
+            missing_packages+=("${package}")
+        fi
+    done
     if [[ "${#missing_packages[@]}" -eq 0 ]]; then
         return 0
     fi
 
-    echo "Error: missing required system packages: ${missing_packages[*]}"
-    echo "ArchUpdater will not upgrade the operating system from its installer."
-    echo "Run the following command, review the Pacman transaction, then rerun this installer:"
-    echo "  sudo pacman -Syu --needed ${missing_packages[*]}"
-    exit 1
+    echo "Installing missing system dependencies: ${missing_packages[*]}"
+    echo "Pacman will also perform a full system upgrade to keep packages compatible."
+    echo "Review and confirm the Pacman transaction below to continue."
+    if ! pacman -Syu --needed "${missing_packages[@]}"; then
+        echo "Error: dependency installation was cancelled or failed. ArchUpdater was not installed."
+        return 1
+    fi
+    for package in "${required_packages[@]}"; do
+        if ! pacman -Q "${package}" >/dev/null 2>&1; then
+            echo "Error: required system package is still missing: ${package}"
+            return 1
+        fi
+    done
 }
 
 prepare_clean_source_tree() {
@@ -252,8 +265,6 @@ fi
 
 require_commands
 validate_install_root "${INSTALL_ROOT}"
-require_supported_python
-require_pacman_discovery_dependencies
 
 for path in \
     "${INSTALL_ROOT}" \
@@ -273,6 +284,9 @@ if [[ -e "${INSTALL_ROOT}" ]] && ! tree_is_root_locked "${INSTALL_ROOT}"; then
     echo "Error: existing install root is not fully root-owned and non-writable by other users."
     exit 1
 fi
+
+ensure_system_dependencies
+require_supported_python
 
 PACKAGE_VERSION="$(
     python3 - "${PROJECT_ROOT}/pyproject.toml" <<'PY'

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from PySide6.QtCore import QCoreApplication
+
 from archupdater.domain.enums import OperationState
 from archupdater.domain.update_plan import UpdatePlan
 from archupdater.presentation.main_window.logic import build_update_plan
@@ -67,11 +69,13 @@ class MainWindowOperationPresenter:
 
     def _operation_state_text(self, state: OperationState) -> str:
         mapping = {
-            OperationState.IDLE: self._window.tr("Idle"),
-            OperationState.CHECKING: self._window.tr("Checking"),
-            OperationState.WAITING_AUTH: self._window.tr("Waiting for Authentication"),
-            OperationState.UPDATING: self._window.tr("Updating"),
-            OperationState.COMPLETED: self._window.tr("Completed"),
-            OperationState.ERROR: self._window.tr("Error"),
+            OperationState.IDLE: QCoreApplication.translate("MainWindow", "Idle"),
+            OperationState.CHECKING: QCoreApplication.translate("MainWindow", "Checking"),
+            OperationState.WAITING_AUTH: QCoreApplication.translate(
+                "MainWindow", "Waiting for Authentication"
+            ),
+            OperationState.UPDATING: QCoreApplication.translate("MainWindow", "Updating"),
+            OperationState.COMPLETED: QCoreApplication.translate("MainWindow", "Completed"),
+            OperationState.ERROR: QCoreApplication.translate("MainWindow", "Error"),
         }
         return mapping[state]

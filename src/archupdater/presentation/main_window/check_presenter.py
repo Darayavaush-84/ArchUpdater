@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from PySide6.QtCore import QCoreApplication
+
 from archupdater.domain.check_results import ArchNewsCheckState, UpdateCheckResult
 from archupdater.domain.enums import OperationState
 from archupdater.domain.packages import UpdateCounters
@@ -20,7 +22,7 @@ class MainWindowCheckPresenter:
         self._state = state
 
     def tr(self, text: str) -> str:
-        return self._window.tr(text)
+        return QCoreApplication.translate("MainWindowCheckPresenter", text)
 
     def set_check_operation_state(self, state: OperationState, message: str) -> None:
         self._window._set_operation_state(state, message)
@@ -97,9 +99,7 @@ class MainWindowCheckPresenter:
         window._set_operation_state(OperationState.COMPLETED, state_message)
         if result.warnings:
             window.action_bar.set_status_text(
-                self.tr("Check warnings: {warnings}").format(
-                    warnings="; ".join(result.warnings)
-                )
+                self.tr("Check warnings: {warnings}").format(warnings="; ".join(result.warnings))
             )
         window._update_selection_actions()
 

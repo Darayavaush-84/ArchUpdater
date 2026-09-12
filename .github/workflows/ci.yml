@@ -28,6 +28,7 @@ jobs:
       - name: Validate translations without changing catalogs
         env:
           PYSIDE6_LCONVERT: /usr/lib/qt6/bin/lconvert
+          ARCHUPDATER_TRANSLATION_STRICT: "1"
         run: scripts/check_translations.sh
 
       - name: Confirm translation catalogs are unchanged

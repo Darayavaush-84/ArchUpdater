@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from PySide6.QtCore import QCoreApplication
+
 from archupdater.domain.check_results import UpdateCheckResult
 from archupdater.domain.enums import OperationState
 
@@ -34,9 +36,11 @@ class MainWindowCheckCoordinator:
         view = self._view
         view.set_check_operation_state(
             OperationState.CHECKING,
-            view.tr("Checking repositories and package metadata..."),
+            QCoreApplication.translate(
+                "MainWindow", "Checking repositories and package metadata..."
+            ),
         )
-        view.apply_check_progress(view.tr("Preparing"), 10)
+        view.apply_check_progress(QCoreApplication.translate("MainWindow", "Preparing"), 10)
         if view.has_post_update_refresh_pending():
             view.show_post_update_refreshing_state()
             return

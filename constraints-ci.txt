@@ -1,7 +1,7 @@
-PySide6==6.11.1
-packaging==26.2
-build==1.5.0
+PySide6==6.11.2
+packaging==26.3
+build==1.6.1
 pyproject_hooks==1.2.0
-ruff==0.15.22
+ruff==0.16.7
 vulture==2.16
-setuptools==83.0.0
+setuptools==84.0.0

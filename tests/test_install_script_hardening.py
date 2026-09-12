@@ -35,12 +35,6 @@ class InstallScriptHardeningTests(unittest.TestCase):
             self.script.index('mv -fT -- "${next_link}" "${CURRENT_LINK}"'),
         )
 
-    def test_installer_never_runs_pacman_or_auto_installs_system_dependencies(self) -> None:
-        self.assertIn("pacman-contrib", self.script)
-        self.assertIn("fakeroot", self.script)
-        self.assertIn("will not upgrade the operating system", self.script)
-        self.assertNotIn("pacman -Syu --needed --noconfirm", self.script)
-
     def test_installer_sanitizes_python_environment_for_launchers(self) -> None:
         self.assertIn("unset PYTHONPATH PYTHONHOME", self.script)
         self.assertIn('export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"', self.script)

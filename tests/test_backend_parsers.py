@@ -1,33 +1,38 @@
 from __future__ import annotations
 
+import json
 import os
 import re
-import time
-import json
-from datetime import datetime
+import shutil
 import sys
-import subprocess
 import tempfile
+import time
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from archupdater.domain.enums import FlatpakRefKind, UpdateSource
+from support.aur import LocalGitAurReviewManager, create_git_checkout
+
+from archupdater.domain.aur import AurVcsSource
 from archupdater.domain.command_log import CommandLogEntry
+from archupdater.domain.enums import FlatpakRefKind, UpdateSource
 from archupdater.domain.package_metadata import (
     AurPackageMetadata,
     FlatpakPackageMetadata,
     SystemPackageMetadata,
 )
 from archupdater.domain.packages import PackageUpdate
-from archupdater.domain.aur import AurVcsSource
 from archupdater.domain.update_plan import UpdatePlanItem
+from archupdater.services import aur_metadata
 from archupdater.services.aur import (
     AurPkgbuildFetchError,
     AurUpdateService,
 )
+from archupdater.services.aur_rpc import AurRpcClient
+from archupdater.services.aur_vcs import AurVcsTracker
 from archupdater.services.command_runner import CommandRunner
 from archupdater.services.firmware import FirmwareUpdateService
 from archupdater.services.flatpak import FlatpakUpdateService
@@ -60,7 +65,7 @@ class BackendParserTests(unittest.TestCase):
         self.assertEqual(unparsed_lines, ["warning: transient issue"])
 
     def test_aur_parse_update_output_reports_non_matching_lines(self) -> None:
-        packages, unparsed_lines = self.aur._parse_update_output(
+        packages, unparsed_lines = aur_metadata.parse_update_output(
             "paru-bin 2.0-1 -> 2.1-1\nwarning: unexpected\n"
         )
 
@@ -68,17 +73,18 @@ class BackendParserTests(unittest.TestCase):
         self.assertEqual(unparsed_lines, ["warning: unexpected"])
 
     def test_aur_parse_update_output_accepts_repository_prefixed_names(self) -> None:
-        packages, unparsed_lines = self.aur._parse_update_output(
-            "\x1b[1maur/paru-bin\x1b[0m 2.0-1 -> 2.1-1\n"
-            "chaotic-aur/example-helper 1.0-1 -> 1.1-1\n"
+        packages, unparsed_lines = aur_metadata.parse_update_output(
+            "\x1b[1maur/paru-bin\x1b[0m 2.0-1 -> 2.1-1\nchaotic-aur/example-helper 1.0-1 -> 1.1-1\n"
         )
 
         self.assertEqual([package.name for package in packages], ["paru-bin", "example-helper"])
-        self.assertEqual([package.backend_id for package in packages], ["paru-bin", "example-helper"])
+        self.assertEqual(
+            [package.backend_id for package in packages], ["paru-bin", "example-helper"]
+        )
         self.assertEqual(unparsed_lines, [])
 
     def test_aur_latest_commit_is_a_dynamic_version(self) -> None:
-        package = self.aur._parse_update_lines(
+        package = aur_metadata.parse_update_lines(
             "nct6687d-dkms-git r197.cd73522-1 -> latest-commit"
         )[0]
 
@@ -103,24 +109,21 @@ class BackendParserTests(unittest.TestCase):
                 vcs_state_path=Path(directory) / "aur-vcs.json",
             )
             service.record_vcs_install("example-git", "r2.aaaaaaa-1", (source,))
-            packages = service._parse_update_lines(
-                "example-git r2.aaaaaaa-1 -> latest-commit"
-            )
+            packages = aur_metadata.parse_update_lines("example-git r2.aaaaaaa-1 -> latest-commit")
             log = CommandLogEntry(
                 command=["git", "ls-remote"],
                 exit_code=0,
                 stdout="",
                 stderr="",
                 started_at=datetime(2026, 8, 2),
-                duration_ms=1,
             )
 
             with patch.object(
-                AurUpdateService,
-                "_remote_vcs_commit",
+                AurVcsTracker,
+                "remote_commit",
                 return_value=("a" * 40, log),
             ):
-                filtered = service._filter_stale_dynamic_updates(
+                filtered = service.vcs.filter_stale_updates(
                     packages,
                     local_output="Name : example-git\nVersion : r2.aaaaaaa-1\n",
                     logs=[],
@@ -128,11 +131,11 @@ class BackendParserTests(unittest.TestCase):
             self.assertEqual(filtered, [])
 
             with patch.object(
-                AurUpdateService,
-                "_remote_vcs_commit",
+                AurVcsTracker,
+                "remote_commit",
                 return_value=("b" * 40, log),
             ):
-                filtered = service._filter_stale_dynamic_updates(
+                filtered = service.vcs.filter_stale_updates(
                     packages,
                     local_output="Name : example-git\nVersion : r2.aaaaaaa-1\n",
                     logs=[],
@@ -149,10 +152,9 @@ class BackendParserTests(unittest.TestCase):
                         stdout=output,
                         stderr="Git diagnostic",
                         started_at=datetime.now(),
-                        duration_ms=1,
                     )
                     with patch.object(CommandRunner, "run", return_value=log):
-                        commit, actual_log = self.aur._remote_vcs_commit(
+                        commit, actual_log = self.aur.vcs.remote_commit(
                             "https://example.invalid/repo.git", None
                         )
                     self.assertEqual(commit, "")
@@ -167,10 +169,9 @@ class BackendParserTests(unittest.TestCase):
                     stdout=f"{'A' * 40}\tHEAD\n",
                     stderr="",
                     started_at=datetime.now(),
-                    duration_ms=1,
                 )
                 with patch.object(CommandRunner, "run", return_value=log):
-                    commit, _log = self.aur._remote_vcs_commit(
+                    commit, _log = self.aur.vcs.remote_commit(
                         "https://example.invalid/repo.git", None
                     )
                 self.assertEqual(commit, "a" * 40 if exit_code == 0 else "")
@@ -186,12 +187,14 @@ class BackendParserTests(unittest.TestCase):
         for architecture, native_source in (("x86_64", "amd"), ("aarch64", "arm")):
             with self.subTest(architecture=architecture):
                 with (
-                    patch("archupdater.services.aur.platform.machine", return_value=architecture),
+                    patch(
+                        "archupdater.services.aur_vcs.platform.machine", return_value=architecture
+                    ),
                     patch.object(
-                        AurUpdateService, "_remote_vcs_commit", return_value=("a" * 40, None)
+                        AurVcsTracker, "remote_commit", return_value=("a" * 40, None)
                     ) as resolve_commit,
                 ):
-                    sources = self.aur._resolve_vcs_sources(srcinfo)
+                    sources = self.aur.vcs.resolve_sources(srcinfo)
                 self.assertEqual([source.name for source in sources], ["common", native_source])
                 self.assertEqual(
                     [call.args[0] for call in resolve_commit.call_args_list],
@@ -220,10 +223,10 @@ class BackendParserTests(unittest.TestCase):
             )
             service = AurUpdateService(runner=CommandRunner(), vcs_state_path=state_path)
 
-            self.assertEqual(service._load_vcs_state()["packages"], {})
+            self.assertEqual(service.vcs.store.load()["packages"], {})
 
     def test_aur_rpc_dates_are_formatted_in_utc(self) -> None:
-        self.assertEqual(self.aur._format_timestamp(86_399), "1970-01-01")
+        self.assertEqual(aur_metadata.format_timestamp(86_399), "1970-01-01")
 
     def test_pacman_load_metadata_uses_pacman_cli_details(self) -> None:
         class _Log:
@@ -310,7 +313,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 return CommandLogEntry(
                     command=command,
@@ -318,7 +320,6 @@ class BackendParserTests(unittest.TestCase):
                     stdout="",
                     stderr="",
                     started_at=datetime(2026, 5, 27),
-                    duration_ms=1,
                 )
 
         runner = _Runner()
@@ -371,7 +372,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 if command[:2] == ["pacman", "-Qu"]:
                     return CommandLogEntry(
@@ -380,7 +380,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="linux 6.9.1.arch1-1 -> 6.9.2.arch1-1 [ignored]\n",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 if command == ["pacman-conf", "IgnorePkg"]:
                     return CommandLogEntry(
@@ -389,7 +388,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="linux\n",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 return CommandLogEntry(
                     command=command,
@@ -397,7 +395,6 @@ class BackendParserTests(unittest.TestCase):
                     stdout="",
                     stderr="metadata unavailable",
                     started_at=datetime(2026, 5, 27),
-                    duration_ms=1,
                 )
 
         runner = _Runner()
@@ -440,7 +437,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="linux 1.0-1 -> 1.1-1\n",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 if command[:2] == ["pacman", "-Qu"]:
                     return CommandLogEntry(
@@ -449,7 +445,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="linux 1.0-1 -> 1.1-1\n",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 if command == ["pacman-conf", "IgnorePkg"]:
                     return CommandLogEntry(
@@ -458,7 +453,6 @@ class BackendParserTests(unittest.TestCase):
                         stdout="",
                         stderr="",
                         started_at=datetime(2026, 5, 27),
-                        duration_ms=1,
                     )
                 self.metadata_commands.append(command)
                 assert self.checkupdates_db is not None
@@ -469,7 +463,6 @@ class BackendParserTests(unittest.TestCase):
                     stdout="",
                     stderr="metadata unavailable",
                     started_at=datetime(2026, 5, 27),
-                    duration_ms=1,
                 )
 
         runner = _Runner()
@@ -518,7 +511,6 @@ class BackendParserTests(unittest.TestCase):
                     stdout="",
                     stderr="temporary sync failure",
                     started_at=datetime(2026, 5, 27),
-                    duration_ms=1,
                 )
 
             def assertTrue(self, value: bool) -> None:
@@ -586,7 +578,6 @@ class BackendParserTests(unittest.TestCase):
                     stdout="linux 6.9.1.arch1-1 -> 6.9.2.arch1-1\n",
                     stderr="",
                     started_at=datetime(2026, 5, 27),
-                    duration_ms=1,
                 )
 
         runner = _Runner()
@@ -598,7 +589,7 @@ class BackendParserTests(unittest.TestCase):
         self.assertEqual(runner.calls[0], (["pacman", "-Qu"], None))
 
     def test_aur_metadata_combines_helper_local_and_rpc_details(self) -> None:
-        packages = self.aur._parse_update_lines("paru-bin 2.0-1 -> 2.1-1")
+        packages = aur_metadata.parse_update_lines("paru-bin 2.0-1 -> 2.1-1")
         helper_metadata = "\n".join(
             [
                 "Name            : paru-bin",
@@ -619,9 +610,9 @@ class BackendParserTests(unittest.TestCase):
             ]
         )
 
-        self.aur._apply_metadata(packages, helper_metadata)
-        self.aur._apply_local_metadata(packages, local_metadata)
-        self.aur._apply_aur_rpc_metadata(
+        aur_metadata.apply_metadata(packages, helper_metadata)
+        aur_metadata.apply_local_metadata(packages, local_metadata)
+        aur_metadata.apply_aur_rpc_metadata(
             packages,
             {
                 "paru-bin": {
@@ -669,7 +660,7 @@ class BackendParserTests(unittest.TestCase):
         service = AurUpdateService(runner=_Runner())  # type: ignore[arg-type]
         with (
             patch.object(AurUpdateService, "detect_helper", return_value="paru"),
-            patch.object(AurUpdateService, "_fetch_aur_rpc_metadata", return_value={}),
+            patch.object(AurRpcClient, "fetch_metadata", return_value={}),
         ):
             result = service.check_updates()
 
@@ -699,7 +690,7 @@ class BackendParserTests(unittest.TestCase):
         )
 
     def test_aur_metadata_keeps_multiline_optional_dependencies_separate(self) -> None:
-        sections = self.aur._parse_sections(
+        sections = aur_metadata.parse_sections(
             "\n".join(
                 [
                     "Name            : example",
@@ -711,61 +702,25 @@ class BackendParserTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.aur._split_metadata_list(sections[0]["Optional Deps"]),
+            aur_metadata.split_metadata_list(sections[0]["Optional Deps"]),
             ["first: first integration", "second: second integration"],
         )
 
+    @unittest.skipUnless(shutil.which("git"), "requires local Git")
     def test_aur_pkgbuild_review_uses_package_base(self) -> None:
-        class _PkgbuildAurUpdateService(AurUpdateService):
-            def __init__(self, runner: CommandRunner) -> None:
-                super().__init__(runner=runner)
-                self.fetched: list[str] = []
-
-            def _clone_checkout(self, package_base: str, checkout_path: Path) -> None:
-                self.fetched.append(package_base)
-                checkout_path.mkdir()
-                (checkout_path / "PKGBUILD").write_text(
-                    "pkgbase=foo\npkgname=(libfoo)\npkgver=1.0\npkgrel=1\n",
-                    encoding="utf-8",
-                )
-                (checkout_path / ".SRCINFO").write_text(
-                    "pkgbase = foo\n\tmakedepends = cmake\n"
-                    "pkgname = libfoo\n\tdepends = libbar\n",
-                    encoding="utf-8",
-                )
-                (checkout_path / "libfoo.install").write_text(
-                    "post_install() { :; }\n",
-                    encoding="utf-8",
-                )
-                subprocess.run(
-                    ["git", "-C", str(checkout_path), "init", "-q"],
-                    check=True,
-                )
-                subprocess.run(
-                    ["git", "-C", str(checkout_path), "add", "--all"],
-                    check=True,
-                )
-                subprocess.run(
-                    [
-                        "git",
-                        "-C",
-                        str(checkout_path),
-                        "-c",
-                        "user.name=ArchUpdater Tests",
-                        "-c",
-                        "user.email=tests@example.invalid",
-                        "commit",
-                        "-qm",
-                        "fixture",
-                    ],
-                    check=True,
-                )
-
-        service = _PkgbuildAurUpdateService(runner=CommandRunner())
+        manager = LocalGitAurReviewManager(
+            {
+                "PKGBUILD": "pkgbase=foo\npkgname=(libfoo)\npkgver=1.0\npkgrel=1\n",
+                ".SRCINFO": "pkgbase = foo\n\tmakedepends = cmake\npkgname = libfoo\n\tdepends = libbar\n",
+                "libfoo.install": "post_install() { :; }\n",
+            }
+        )
+        service = AurUpdateService(runner=manager.runner, reviews=manager)
 
         review = service.fetch_pkgbuild_review("libfoo", "foo")
+        self.addCleanup(service.discard_pkgbuild_review, review)
 
-        self.assertEqual(service.fetched, ["foo"])
+        self.assertEqual(manager.fetched, ["foo"])
         self.assertEqual(review.package_name, "libfoo")
         self.assertEqual(review.package_base, "foo")
         self.assertIn("pkgname=(libfoo)", review.pkgbuild)
@@ -778,52 +733,35 @@ class BackendParserTests(unittest.TestCase):
         self.assertIn("post_install", review.rendered_content())
         service.discard_pkgbuild_review(review)
 
+    @unittest.skipUnless(shutil.which("git"), "requires local Git")
     def test_aur_review_rejects_binary_tracked_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             checkout = Path(directory)
-            subprocess.run(["git", "-C", str(checkout), "init", "-q"], check=True)
-            (checkout / "PKGBUILD").write_text("pkgname=example\n", encoding="utf-8")
-            (checkout / "payload.bin").write_bytes(b"text\0binary")
-            subprocess.run(
-                ["git", "-C", str(checkout), "add", "--all"],
-                check=True,
-            )
-            subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    str(checkout),
-                    "-c",
-                    "user.name=ArchUpdater Tests",
-                    "-c",
-                    "user.email=tests@example.invalid",
-                    "commit",
-                    "-qm",
-                    "fixture",
-                ],
-                check=True,
+            create_git_checkout(
+                checkout,
+                {
+                    "PKGBUILD": "pkgname=example\n",
+                    "payload.bin": b"text\0binary",
+                },
             )
 
             with self.assertRaisesRegex(AurPkgbuildFetchError, "not reviewable UTF-8"):
-                self.aur._checkout_snapshot(checkout)
+                self.aur.reviews._checkout_snapshot(checkout)
 
     def test_aur_rpc_metadata_uses_chunked_post_requests(self) -> None:
-        class _ChunkedAurUpdateService(AurUpdateService):
+        class _ChunkedAurRpcClient(AurRpcClient):
             AUR_RPC_CHUNK_SIZE = 2
 
-        service = _ChunkedAurUpdateService(runner=CommandRunner())
+        service = _ChunkedAurRpcClient()
         calls: list[list[str]] = []
 
         def fetch_chunk(names: list[str]) -> dict[str, object]:
             calls.append(names)
             return {
-                "results": [
-                    {"Name": name, "Maintainer": f"{name}-maintainer"}
-                    for name in names
-                ]
+                "results": [{"Name": name, "Maintainer": f"{name}-maintainer"} for name in names]
             }
 
-        service._fetch_aur_rpc_chunk = fetch_chunk  # type: ignore[method-assign]
+        service.fetch_chunk = fetch_chunk  # type: ignore[method-assign]
         packages = [
             PackageUpdate(
                 f"pkg-{index}",
@@ -835,7 +773,7 @@ class BackendParserTests(unittest.TestCase):
             for index in range(5)
         ]
 
-        metadata = service._fetch_aur_rpc_metadata(packages)
+        metadata = service.fetch_metadata(packages)
 
         self.assertEqual(calls, [["pkg-0", "pkg-1"], ["pkg-2", "pkg-3"], ["pkg-4"]])
         self.assertEqual(metadata["pkg-4"]["Maintainer"], "pkg-4-maintainer")
@@ -1023,7 +961,9 @@ class BackendParserTests(unittest.TestCase):
         metadata = package.source_metadata
         self.assertIsInstance(metadata, FlatpakPackageMetadata)
         self.assertEqual(package.name, "nvidia-595-71-05")
-        self.assertEqual(package.backend_id, "runtime/org.freedesktop.Platform.GL.nvidia-595-71-05/x86_64/1.4")
+        self.assertEqual(
+            package.backend_id, "runtime/org.freedesktop.Platform.GL.nvidia-595-71-05/x86_64/1.4"
+        )
         self.assertEqual(metadata.ref_kind, FlatpakRefKind.RUNTIME)
         self.assertEqual(metadata.installation_scope, "system")
         self.assertEqual(metadata.remote, "flathub")
@@ -1247,7 +1187,6 @@ class BackendParserTests(unittest.TestCase):
             stdout=stdout,
             stderr=stderr,
             started_at=datetime.now(),
-            duration_ms=1,
         )
 
 

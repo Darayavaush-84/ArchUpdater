@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QDialog,
@@ -38,7 +38,7 @@ def show_arch_news_dialog(
     enable_ok: bool,
 ) -> ArchNewsDialogResult:
     dialog = QDialog(parent)
-    dialog.setWindowTitle(parent.tr("Arch Linux News"))
+    dialog.setWindowTitle(QCoreApplication.translate("MainWindow", "Arch Linux News"))
     dialog.resize(780, 420)
     deleted_read_ids: set[str] = set()
 
@@ -58,24 +58,24 @@ def show_arch_news_dialog(
         _news_tree(
             parent,
             unread_items,
-            empty_text=parent.tr("No unread Arch Linux news."),
+            empty_text=QCoreApplication.translate("MainWindow", "No unread Arch Linux news."),
         ),
-        parent.tr("New ({count})").format(count=len(unread_items)),
+        QCoreApplication.translate("MainWindow", "New ({count})").format(count=len(unread_items)),
     )
     read_tree = _news_tree(
-            parent,
-            read_items,
-            empty_text=parent.tr("No read Arch Linux news."),
-            checkable=bool(read_items),
-        )
+        parent,
+        read_items,
+        empty_text=QCoreApplication.translate("MainWindow", "No read Arch Linux news."),
+        checkable=bool(read_items),
+    )
     tabs.addTab(
         read_tree,
-        parent.tr("Read ({count})").format(count=len(read_items)),
+        QCoreApplication.translate("MainWindow", "Read ({count})").format(count=len(read_items)),
     )
     layout.addWidget(tabs)
 
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
-    delete_button = QPushButton(parent.tr("Delete Selected Read"))
+    delete_button = QPushButton(QCoreApplication.translate("MainWindow", "Delete Selected Read"))
     delete_button.setIcon(
         dialog.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
         if hasattr(QStyle.StandardPixmap, "SP_TrashIcon")
@@ -117,7 +117,9 @@ def show_arch_news_dialog(
             if index >= 0:
                 read_tree.takeTopLevelItem(index)
         if read_tree.topLevelItemCount() == 0:
-            empty_row = QTreeWidgetItem([parent.tr("No read Arch Linux news."), "", ""])
+            empty_row = QTreeWidgetItem(
+                [QCoreApplication.translate("MainWindow", "No read Arch Linux news."), "", ""]
+            )
             empty_row.setDisabled(True)
             read_tree.addTopLevelItem(empty_row)
         refresh_delete_button()
@@ -143,7 +145,13 @@ def _news_tree(
 ) -> QTreeWidget:
     tree = QTreeWidget()
     tree.setColumnCount(3)
-    tree.setHeaderLabels([parent.tr("News"), parent.tr("Date"), parent.tr("Summary")])
+    tree.setHeaderLabels(
+        [
+            QCoreApplication.translate("MainWindow", "News"),
+            QCoreApplication.translate("MainWindow", "Date"),
+            QCoreApplication.translate("MainWindow", "Summary"),
+        ]
+    )
     tree.setRootIsDecorated(False)
     tree.setAlternatingRowColors(True)
     tree.setMinimumHeight(240)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
@@ -48,9 +48,11 @@ def build_main_window_ui(parent: QMainWindow) -> MainWindowUi:
     close_row = QHBoxLayout()
     close_row.addStretch(1)
     close_details_button = QToolButton()
-    close_details_button.setIcon(parent.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarCloseButton))
-    close_details_button.setToolTip(parent.tr("Close"))
-    close_details_button.setAccessibleName(parent.tr("Close"))
+    close_details_button.setIcon(
+        parent.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarCloseButton)
+    )
+    close_details_button.setToolTip(QCoreApplication.translate("MainWindow", "Close"))
+    close_details_button.setAccessibleName(QCoreApplication.translate("MainWindow", "Close"))
     close_row.addWidget(close_details_button)
     side_layout.addLayout(close_row)
     side_layout.addWidget(details_panel, stretch=1)

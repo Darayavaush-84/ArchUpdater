@@ -3,6 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from PySide6.QtCore import QCoreApplication
+
+from archupdater.application.preflight import UpdatePreflightService
+from archupdater.application.update_sources.source_backend import SourceBackendRegistry
+from archupdater.application.update_sources.source_backends import build_source_backend_registry
 from archupdater.application.updates import UpdateApplication
 from archupdater.application.use_cases import (
     CheckUpdates,
@@ -11,6 +16,7 @@ from archupdater.application.use_cases import (
     RunPreflightChecks,
 )
 from archupdater.domain.optional_sources import OptionalSourcesSnapshot
+from archupdater.infrastructure.widget_match_cache import WidgetMatchCache
 from archupdater.services.arch_news import ArchNewsService
 from archupdater.services.aur import AurUpdateService
 from archupdater.services.command_runner import CommandRunner
@@ -25,10 +31,6 @@ from archupdater.services.plasma_widgets_update import (
     PlasmaWidgetsUpdateService as PlasmaWidgetsInstallerService,
 )
 from archupdater.services.preflight import SystemPreflightEnvironment
-from archupdater.application.preflight import UpdatePreflightService
-from archupdater.application.update_sources.source_backend import SourceBackendRegistry
-from archupdater.application.update_sources.source_backends import build_source_backend_registry
-from archupdater.infrastructure.widget_match_cache import WidgetMatchCache
 
 
 @dataclass(slots=True)
@@ -73,11 +75,19 @@ class ApplicationContainer:
             aur_enabled_setter=self.aur_enabled_setter,
         )
         self.arch_news = ArchNewsService()
-        self.preflight = UpdatePreflightService(environment=SystemPreflightEnvironment())
+
+        def preflight_translate(text: str) -> str:
+            return QCoreApplication.translate("UpdatePreflightService", text)
+
+        self.preflight = UpdatePreflightService(
+            environment=SystemPreflightEnvironment(translate=preflight_translate),
+            translate=preflight_translate,
+        )
 
     def updates(self) -> UpdateApplication:
         return UpdateApplication(
             check_updates_use_case=CheckUpdates(
+                translate=lambda text: QCoreApplication.translate("UpdateService", text),
                 source_registry_provider=self.source_backend_registry,
                 arch_news_provider=self.arch_news,
                 optional_sources_provider=self.optional_sources_snapshot,

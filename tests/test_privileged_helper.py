@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from archupdater.helper import privileged_helper
 from archupdater.helper.actions import common, privileged_updates, support_packages
+from archupdater.helper.actions import update_commands, aur_workspace, aur_artifacts, flatpak_updates, firmware_updates
 from archupdater.helper.privileged_helper import (
     HelperAuthorizationScope,
     HelperValidationError,
@@ -393,11 +394,11 @@ class PrivilegedHelperTests(unittest.TestCase):
             (output / "example-git.pkg.tar.zst").write_bytes(b"package")
 
             with patch.object(
-                privileged_updates,
+                aur_artifacts,
                 "_package_file_identity",
                 return_value=("example-git", "r2.bbbbbbb-1", platform.machine()),
             ):
-                artifact, version = privileged_updates._verified_built_artifact(
+                artifact, version = aur_artifacts._verified_built_artifact(
                     output,
                     package_name="example-git",
                     expected_version="latest-commit",
@@ -417,7 +418,7 @@ class PrivilegedHelperTests(unittest.TestCase):
             (output / "example-git.pkg.tar.zst").write_bytes(b"package")
             with (
                 patch.object(
-                    privileged_updates,
+                    aur_artifacts,
                     "_package_file_identity",
                     return_value=("example-git", "r1.aaaaaaa-1", platform.machine()),
                 ),
@@ -426,7 +427,7 @@ class PrivilegedHelperTests(unittest.TestCase):
                     "newer concrete version",
                 ),
             ):
-                privileged_updates._verified_built_artifact(
+                aur_artifacts._verified_built_artifact(
                     output,
                     package_name="example-git",
                     expected_version="latest-commit",
@@ -443,7 +444,7 @@ class PrivilegedHelperTests(unittest.TestCase):
             (output / "example-git.pkg.tar.zst").write_bytes(b"package")
             with (
                 patch.object(
-                    privileged_updates,
+                    aur_artifacts,
                     "_package_file_identity",
                     return_value=("example-git", "r1.aaaaaaa-1", platform.machine()),
                 ),
@@ -452,7 +453,7 @@ class PrivilegedHelperTests(unittest.TestCase):
                     "newer concrete version",
                 ),
             ):
-                privileged_updates._verified_built_artifact(
+                aur_artifacts._verified_built_artifact(
                     output,
                     package_name="example-git",
                     expected_version="latest-commit",
@@ -471,7 +472,7 @@ class PrivilegedHelperTests(unittest.TestCase):
             dynamic_version=True,
         )
         with patch.object(
-            privileged_updates,
+            update_commands,
             "stream_command",
             return_value=(
                 0,
@@ -481,7 +482,7 @@ class PrivilegedHelperTests(unittest.TestCase):
                 ],
             ),
         ):
-            privileged_updates._validate_current_aur_versions(
+            aur_artifacts._validate_current_aur_versions(
                 [target],
                 emit_log=lambda _message: None,
             )
@@ -666,10 +667,10 @@ class PrivilegedHelperTests(unittest.TestCase):
             return 0, []
 
         with (
-            patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
-                privileged_updates,
+                update_commands,
                 "stream_command",
                 run_command,
             ),
@@ -696,10 +697,10 @@ class PrivilegedHelperTests(unittest.TestCase):
         commands: list[list[str]] = []
 
         with (
-            patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
-                privileged_updates,
+                update_commands,
                 "stream_command",
                 lambda command, *, emit_log, **_kwargs: commands.append(command) or (0, []),
             ),
@@ -750,12 +751,12 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
-                patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-                patch.object(privileged_updates, "_require_executable", return_value=True),
-                patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
-                patch.object(privileged_updates, "stream_command", run_command),
-                patch.object(privileged_updates, "stream_subprocess", run_build),
-                patch.object(privileged_updates.os, "chown", lambda *_args: None),
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+                patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+                patch.object(update_commands, "stream_command", run_command),
+                patch.object(update_commands, "stream_subprocess", run_build),
+                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
@@ -806,11 +807,11 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
-                patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-                patch.object(privileged_updates, "_require_executable", return_value=True),
-                patch.object(privileged_updates, "stream_command", run_command),
-                patch.object(privileged_updates, "stream_subprocess", run_build),
-                patch.object(privileged_updates.os, "chown", lambda *_args: None),
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+                patch.object(update_commands, "stream_command", run_command),
+                patch.object(update_commands, "stream_subprocess", run_build),
+                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
@@ -861,12 +862,12 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
-                patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-                patch.object(privileged_updates, "_require_executable", return_value=True),
-                patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
-                patch.object(privileged_updates, "stream_command", run_command),
-                patch.object(privileged_updates, "stream_subprocess", run_build),
-                patch.object(privileged_updates.os, "chown", lambda *_args: None),
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+                patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+                patch.object(update_commands, "stream_command", run_command),
+                patch.object(update_commands, "stream_subprocess", run_build),
+                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur_group(
                     review,
@@ -895,10 +896,10 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
-                patch.object(privileged_updates, "PACMAN_PATH", _ExistingPath()),
-                patch.object(privileged_updates, "_require_executable", return_value=True),
-                patch.object(privileged_updates, "stream_subprocess", run_build),
-                patch.object(privileged_updates.os, "chown", lambda *_args: None),
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+                patch.object(update_commands, "stream_subprocess", run_build),
+                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
@@ -929,10 +930,10 @@ class PrivilegedHelperTests(unittest.TestCase):
             return 0, []
 
         with (
-            patch.object(privileged_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(flatpak_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
-                privileged_updates,
+                update_commands,
                 "stream_command",
                 run_command,
             ),
@@ -965,9 +966,9 @@ class PrivilegedHelperTests(unittest.TestCase):
             return (0, [f"{runtime_ref}\t\t49"]) if remote_queries == 1 else (0, [])
 
         with (
-            patch.object(privileged_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
-            patch.object(privileged_updates, "stream_command", run_command),
+            patch.object(flatpak_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(update_commands, "stream_command", run_command),
         ):
             exit_code = privileged_updates.run_flatpak_system_update(
                 [runtime_ref],
@@ -984,10 +985,10 @@ class PrivilegedHelperTests(unittest.TestCase):
         events: list[tuple[object, dict[str, object]]] = []
 
         with (
-            patch.object(privileged_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(flatpak_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
-                privileged_updates,
+                update_commands,
                 "stream_command",
                 lambda command, *, emit_log, **_kwargs: (
                     (0, ["app/org.kde.Krita/x86_64/stable\t5.2.0"])
@@ -1010,10 +1011,10 @@ class PrivilegedHelperTests(unittest.TestCase):
         commands: list[list[str]] = []
 
         with (
-            patch.object(privileged_updates, "FWUPDMGR_PATH", _ExistingPath("/usr/bin/fwupdmgr")),
-            patch.object(privileged_updates, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+            patch.object(firmware_updates, "FWUPDMGR_PATH", _ExistingPath("/usr/bin/fwupdmgr")),
+            patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
-                privileged_updates,
+                update_commands,
                 "stream_command",
                 lambda command, *, emit_log, **_kwargs: commands.append(command) or (0, []),
             ),
@@ -1042,11 +1043,11 @@ class PrivilegedHelperTests(unittest.TestCase):
 
     def test_critical_commands_are_wrapped_in_a_shutdown_inhibitor(self) -> None:
         with patch.object(
-            privileged_updates,
+            update_commands,
             "SYSTEMD_INHIBIT_PATH",
             _ExistingPath("/usr/bin/systemd-inhibit"),
         ):
-            command = privileged_updates._critical_command(["/usr/bin/pacman", "-Su"])
+            command = update_commands._critical_command(["/usr/bin/pacman", "-Su"])
 
         self.assertEqual(command[0], "/usr/bin/systemd-inhibit")
         self.assertIn("--what=shutdown:sleep", command)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QCheckBox, QMessageBox, QWidget
 
 from archupdater.domain.enums import PreflightSeverity, UpdateSource
@@ -20,9 +21,11 @@ def confirm_preflight_issues(
     if blocking:
         QMessageBox.warning(
             parent,
-            parent.tr("Update Cannot Start"),
+            QCoreApplication.translate("MainWindow", "Update Cannot Start"),
             preflight_message(
-                parent.tr("Resolve these problems before installing updates."),
+                QCoreApplication.translate(
+                    "MainWindow", "Resolve these problems before installing updates."
+                ),
                 blocking,
             ),
         )
@@ -30,9 +33,11 @@ def confirm_preflight_issues(
 
     answer = QMessageBox.warning(
         parent,
-        parent.tr("Preflight Warnings"),
+        QCoreApplication.translate("MainWindow", "Preflight Warnings"),
         preflight_message(
-            parent.tr("ArchUpdater found warnings before installing updates."),
+            QCoreApplication.translate(
+                "MainWindow", "ArchUpdater found warnings before installing updates."
+            ),
             issues,
         ),
         QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok,
@@ -74,13 +79,14 @@ def ask_flatpak_cleanup_scopes(
 
     box = QMessageBox(parent)
     box.setIcon(QMessageBox.Icon.Question)
-    box.setWindowTitle(parent.tr("Clean Up Flatpak Runtimes"))
+    box.setWindowTitle(QCoreApplication.translate("MainWindow", "Clean Up Flatpak Runtimes"))
     box.setText(
-        parent.tr(
-            "After installing the selected Flatpak updates, remove unused Flatpak runtimes for the selected installation scopes?"
+        QCoreApplication.translate(
+            "MainWindow",
+            "After installing the selected Flatpak updates, remove unused Flatpak runtimes for the selected installation scopes?",
         )
     )
-    remember_checkbox = QCheckBox(parent.tr("Remember this choice"))
+    remember_checkbox = QCheckBox(QCoreApplication.translate("MainWindow", "Remember this choice"))
     remember_checkbox.setChecked(True)
     box.setCheckBox(remember_checkbox)
     box.setStandardButtons(QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes)

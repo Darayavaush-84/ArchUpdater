@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime
 
-from PySide6.QtCore import QTimer, QUrl, Slot
+from PySide6.QtCore import QUrl, Slot
 from PySide6.QtGui import QCloseEvent, QDesktopServices, QShowEvent
-from PySide6.QtNetwork import QNetworkInformation
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -25,6 +24,7 @@ from archupdater.i18n.manager import TranslationManager
 from archupdater.presentation.arch_news_coordinator import ArchNewsCoordinator
 from archupdater.presentation.arch_news_dialog import ArchNewsDialogResult, show_arch_news_dialog
 from archupdater.presentation.background_behavior import BackgroundBehaviorController
+from archupdater.presentation.check_schedule import CheckScheduleController
 from archupdater.presentation.main_window.bindings import connect_main_window_signals
 from archupdater.presentation.main_window.check_coordinator import MainWindowCheckCoordinator
 from archupdater.presentation.main_window.check_presenter import MainWindowCheckPresenter
@@ -56,8 +56,6 @@ from archupdater.infrastructure.settings import AppSettings, SettingsService
 
 
 class MainWindow(QMainWindow):
-    STARTUP_NETWORK_RETRY_MS = 3000
-
     def __init__(
         self,
         service: UpdateApplication | None = None,
@@ -117,20 +115,18 @@ class MainWindow(QMainWindow):
         )
 
         self._tray_controller: TrayController | None = None
-        self._auto_check_timer = QTimer(self)
-        self._auto_check_timer.setSingleShot(True)
-        self._auto_check_timer.timeout.connect(self._run_scheduled_check)
-        self._startup_network_retry_timer = QTimer(self)
-        self._startup_network_retry_timer.setSingleShot(True)
-        self._startup_network_retry_timer.timeout.connect(
-            self._start_initial_check_when_network_ready
+        self._check_schedule = CheckScheduleController(
+            is_busy=self._update_controller.is_busy,
+            start_check=lambda: self._flow_coordinator.start_check_updates(),
+            defer_next_check=self._defer_next_auto_check,
+            show_waiting_for_network=self._show_waiting_for_network_state,
+            parent=self,
         )
-        self._startup_network_signal_connected = False
         self._allow_close = False
         self._background_behavior = BackgroundBehaviorController(
             settings=self._settings,
             autostart_service=self._autostart_service,
-            auto_check_timer=self._auto_check_timer,
+            auto_check_timer=self._check_schedule.timer,
         )
         self._plasma_restart_coordinator = PlasmaRestartCoordinator(
             service=self._service,
@@ -192,8 +188,7 @@ class MainWindow(QMainWindow):
             self._state.startup_notice_pending_visibility = True
         app_settings = self._background_behavior.load_app_settings()
         self._apply_background_behavior_settings(app_settings)
-        self._auto_check_timer.stop()
-        QTimer.singleShot(0, self._start_initial_check_when_network_ready)
+        self._check_schedule.start()
 
     def _build_ui(self) -> None:
         ui = build_main_window_ui(self)
@@ -630,37 +625,6 @@ class MainWindow(QMainWindow):
         )
         self._update_next_check_label()
 
-    def _start_initial_check_when_network_ready(self) -> None:
-        if self._update_controller.is_busy():
-            return
-
-        if self._network_is_ready_for_update_check():
-            self._stop_startup_network_wait()
-            self._flow_coordinator.start_check_updates()
-            return
-
-        self._show_waiting_for_network_state()
-        self._ensure_startup_network_wait_connected()
-        if not self._startup_network_retry_timer.isActive():
-            self._startup_network_retry_timer.start(self.STARTUP_NETWORK_RETRY_MS)
-
-    def _network_is_ready_for_update_check(self) -> bool:
-        network_information = self._network_information_instance()
-        if network_information is None:
-            return True
-        return (
-            network_information.reachability()
-            == QNetworkInformation.Reachability.Online
-        )
-
-    def _network_information_instance(self):  # noqa: ANN202
-        try:
-            if not QNetworkInformation.loadDefaultBackend():
-                return None
-            return QNetworkInformation.instance()
-        except RuntimeError:
-            return None
-
     def _show_waiting_for_network_state(self) -> None:
         self.header_widget.set_system_status(self.tr("Waiting for network..."))
         self.header_widget.set_last_checked(self.tr("Last checked: Waiting for network"))
@@ -676,46 +640,6 @@ class MainWindow(QMainWindow):
             self.tr("Waiting for network..."),
             self.tr("The startup scan will begin automatically when the network is online."),
         )
-
-    def _ensure_startup_network_wait_connected(self) -> None:
-        if self._startup_network_signal_connected:
-            return
-        network_information = self._network_information_instance()
-        if network_information is None:
-            return
-        try:
-            network_information.reachabilityChanged.connect(
-                self._handle_startup_network_reachability_changed
-            )
-        except (RuntimeError, TypeError):
-            return
-        self._startup_network_signal_connected = True
-
-    def _stop_startup_network_wait(self) -> None:
-        self._startup_network_retry_timer.stop()
-        if not self._startup_network_signal_connected:
-            return
-        network_information = self._network_information_instance()
-        if network_information is not None:
-            try:
-                network_information.reachabilityChanged.disconnect(
-                    self._handle_startup_network_reachability_changed
-                )
-            except (RuntimeError, TypeError):
-                pass
-        self._startup_network_signal_connected = False
-
-    @Slot(object)
-    def _handle_startup_network_reachability_changed(self, _reachability: object) -> None:
-        if self._network_is_ready_for_update_check():
-            self._start_initial_check_when_network_ready()
-
-    def _run_scheduled_check(self) -> None:
-        if self._update_controller.is_busy():
-            self._defer_next_auto_check()
-            return
-        if not self._flow_coordinator.start_check_updates():
-            self._defer_next_auto_check()
 
     def _load_arch_news_history(self) -> None:
         self._state.arch_news = self._state_cache.load_arch_news_items()
@@ -744,6 +668,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
 
+        self._check_schedule.stop()
         self._update_controller.shutdown()
         super().closeEvent(event)
 
