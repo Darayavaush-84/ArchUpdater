@@ -77,7 +77,7 @@ It uses PySide6 and the system's package tools. KDE Plasma is needed for Plasma-
 Install the basic system dependencies, reviewing the Pacman transaction as usual:
 
 ```bash
-sudo pacman -Syu --needed git python pacman-contrib fakeroot polkit
+sudo pacman -Syu --needed git python pacman-contrib fakeroot polkit qt6-svg
 ```
 
 Clone the project and run its installer:

@@ -20,7 +20,14 @@ jobs:
       - name: Install package
         run: python -m pip install -c constraints-ci.txt -e ".[dev]"
 
+      - name: Install Qt translation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-l10n-tools
+
       - name: Validate translations without changing catalogs
+        env:
+          PYSIDE6_LCONVERT: /usr/lib/qt6/bin/lconvert
         run: scripts/check_translations.sh
 
       - name: Confirm translation catalogs are unchanged
@@ -54,7 +61,7 @@ jobs:
       - name: Install Arch runtime and test dependencies
         run: >-
           pacman -Syu --noconfirm --needed
-          python python-pip pyside6 python-packaging
+          git python python-pip pyside6 python-packaging qt6-svg
           pacman-contrib fakeroot polkit desktop-file-utils libxml2
 
       - name: Run test suite on Arch

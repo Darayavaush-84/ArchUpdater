@@ -296,13 +296,13 @@ class PreflightServiceTests(unittest.TestCase):
         checked_paths: list[str] = []
         service = self._service(minimum_free_bytes=1)
 
-        def disk_usage(path: Path):
+        def disk_space(path: Path):
             checked_paths.append(str(path))
-            return types.SimpleNamespace(free=100 * 1024**3)
+            return path, 100 * 1024**3
 
         with (
             patch("shutil.which", return_value="/usr/bin/flatpak"),
-            patch("shutil.disk_usage", side_effect=disk_usage),
+            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(
                 self._plan(self._flatpak_item("app/org.example.App/x86_64/stable", "user")),
@@ -317,13 +317,13 @@ class PreflightServiceTests(unittest.TestCase):
         checked_paths: list[str] = []
         service = self._service(minimum_free_bytes=1)
 
-        def disk_usage(path: Path):
+        def disk_space(path: Path):
             checked_paths.append(str(path))
-            return types.SimpleNamespace(free=100 * 1024**3)
+            return path, 100 * 1024**3
 
         with (
             patch("shutil.which", return_value="/usr/bin/flatpak"),
-            patch("shutil.disk_usage", side_effect=disk_usage),
+            patch.object(SystemPreflightEnvironment, "disk_space", side_effect=disk_space),
         ):
             issues = service.check(
                 self._plan(self._flatpak_item("app/org.example.App/x86_64/stable", "system")),
