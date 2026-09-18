@@ -31,13 +31,21 @@ def handle_question_request(
         if not question_id or not isinstance(message, str) or not message.strip() or len(message) > 16384:
             cancel_question(question_id)
             return
-        answer = QMessageBox.question(
-            parent,
-            QCoreApplication.translate("UpdateInteractionDialogs", "Pacman confirmation"),
-            message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
+        details = data.get("details", "")
+        if not isinstance(details, str) or len(details) > 128 * 1024:
+            cancel_question(question_id)
+            return
+        title = QCoreApplication.translate("UpdateInteractionDialogs", "Pacman confirmation")
+        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        if details:
+            dialog = QMessageBox(QMessageBox.Icon.Warning, title, message, buttons, parent)
+            dialog.setDefaultButton(QMessageBox.StandardButton.No)
+            dialog.setDetailedText(details)
+            answer = dialog.exec()
+        else:
+            answer = QMessageBox.question(
+                parent, title, message, buttons, QMessageBox.StandardButton.No,
+            )
         submit_response(question_id, answer == QMessageBox.StandardButton.Yes)
         return
     if data.get("question_type") == "transaction_change":
@@ -98,7 +106,7 @@ def _handle_transaction_change(
         QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok,
         QMessageBox.StandardButton.Cancel,
     )
-    submit_response(question_id, answer is QMessageBox.StandardButton.Ok)
+    submit_response(question_id, answer == QMessageBox.StandardButton.Ok)
 
 
 def _review_from_payload(data: dict[object, object]) -> AurPkgbuildReview | None:

@@ -22,8 +22,8 @@ from archupdater.application.update_session.protocol import (
 class IntegratedBatchUpdateClient(QObject):
     LOG_DEDUPE_LIMIT = 200
     START_TIMEOUT_MS = 3000
-    EVENT_READ_CHUNK_CHARACTERS = 1024 * 1024
-    MAX_EVENT_LINE_CHARACTERS = 24 * 1024 * 1024
+    EVENT_READ_CHUNK_BYTES = 1024 * 1024
+    MAX_EVENT_LINE_BYTES = 24 * 1024 * 1024
     MAX_STDOUT_LINE_CHARACTERS = 16 * 1024
 
     status_changed = Signal(str)
@@ -60,7 +60,8 @@ class IntegratedBatchUpdateClient(QObject):
         self._temporary_dir: tempfile.TemporaryDirectory[str] | None = None
         self._events_path: Path | None = None
         self._read_offset = 0
-        self._event_buffer = ""
+        self._event_buffer = b""
+        self._event_error: str | None = None
         self._output_buffer = ""
         self._stdout_log_dedupe: list[str] = []
         self._event_log_dedupe: list[str] = []
@@ -79,7 +80,8 @@ class IntegratedBatchUpdateClient(QObject):
         self._pending_completion = None
         self._process_started = False
         self._read_offset = 0
-        self._event_buffer = ""
+        self._event_buffer = b""
+        self._event_error = None
         self._output_buffer = ""
         self._stdout_log_dedupe = []
         self._event_log_dedupe = []
@@ -153,32 +155,45 @@ class IntegratedBatchUpdateClient(QObject):
         return payload
 
     def _poll_events(self) -> None:
-        if self._events_path is None or not self._events_path.exists():
+        if self._events_path is None or self._event_error is not None:
             return
-
-        with self._events_path.open("r", encoding="utf-8") as handle:
-            handle.seek(self._read_offset)
-            chunk = handle.read(self.EVENT_READ_CHUNK_CHARACTERS)
-            self._read_offset = handle.tell()
-
+        try:
+            with self._events_path.open("rb") as handle:
+                handle.seek(self._read_offset)
+                chunk = handle.read(self.EVENT_READ_CHUNK_BYTES)
+                self._read_offset = handle.tell()
+        except OSError as exc:
+            self.log_received.emit(str(exc))
+            self._fail_event_stream(self.tr("The update process returned an invalid completion result."))
+            return
         if not chunk:
             return
 
+        # A read may stop in the middle of a UTF-8 character or JSON record.
+        # Decode only newline-terminated records and retain the remaining bytes.
         self._event_buffer += chunk
-        if len(self._event_buffer) > self.MAX_EVENT_LINE_CHARACTERS:
-            self._event_buffer = ""
-            self._record_completion(
-                False,
-                self.tr("The update process returned an oversized event."),
-                BatchOutcome.FAILED.value,
-            )
-            self._process.kill()
-            return
-        while "\n" in self._event_buffer:
-            line, self._event_buffer = self._event_buffer.split("\n", 1)
-            line = line.strip()
+        while b"\n" in self._event_buffer:
+            raw_line, self._event_buffer = self._event_buffer.split(b"\n", 1)
+            if len(raw_line) > self.MAX_EVENT_LINE_BYTES:
+                self._fail_event_stream(self.tr("The update process returned an oversized event."))
+                return
+            try:
+                line = raw_line.decode("utf-8").strip()
+            except UnicodeDecodeError:
+                self._fail_event_stream(self.tr("The update process returned an invalid completion result."))
+                return
             if line:
                 self._handle_event_line(line)
+        if len(self._event_buffer) > self.MAX_EVENT_LINE_BYTES:
+            self._fail_event_stream(self.tr("The update process returned an oversized event."))
+
+    def _fail_event_stream(self, message: str) -> None:
+        self._event_error = message
+        self._poll_timer.stop()
+        # Stop a batch whose questions/results can no longer be delivered. Its
+        # critical helper supervises an already running transaction to completion.
+        if self._process.state() != QProcess.ProcessState.NotRunning:
+            self._process.terminate()
 
     def _handle_event_line(self, line: str) -> None:
         try:
@@ -307,7 +322,13 @@ class IntegratedBatchUpdateClient(QObject):
             self._output_buffer = ""
             self._discarding_oversize_stdout_line = False
         self._drain_events()
-        if self._pending_completion is not None and not self._did_emit_completed:
+        if self._event_error is not None or self._event_buffer.strip():
+            self._emit_completed(
+                False,
+                self._event_error or self.tr("The update process returned an invalid completion result."),
+                BatchOutcome.FAILED.value,
+            )
+        elif self._pending_completion is not None and not self._did_emit_completed:
             self._emit_completed(*self._pending_completion)
         elif not self._process_started and not self._did_emit_completed:
             self._emit_completed(
@@ -337,7 +358,7 @@ class IntegratedBatchUpdateClient(QObject):
         if self._did_emit_completed or self._pending_completion is not None:
             return
         self._pending_completion = (success, message, outcome)
-        if self._process.state() == QProcess.ProcessState.NotRunning:
+        if not self._process_started and self._process.state() == QProcess.ProcessState.NotRunning:
             self._emit_completed(success, message, outcome)
 
     def _on_error(self, _error: QProcess.ProcessError) -> None:
@@ -402,7 +423,8 @@ class IntegratedBatchUpdateClient(QObject):
             self._temporary_dir = None
         self._events_path = None
         self._read_offset = 0
-        self._event_buffer = ""
+        self._event_buffer = b""
+        self._event_error = None
         self._output_buffer = ""
         self._stdout_log_dedupe = []
         self._pending_completion = None

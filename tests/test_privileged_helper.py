@@ -664,12 +664,16 @@ class PrivilegedHelperTests(unittest.TestCase):
             commands.append(command)
             self.assertEqual(_kwargs["env"]["LC_ALL"], "C")
             self.assertTrue(_kwargs["survive_parent_exit"])
+            emit_log("Packages (1) linux-6.9-1")
+            emit_log("Total Installed Size: 1 MiB")
             self.assertEqual(
                 _kwargs["input_handler"](":: Proceed with installation? [Y/n] "), "y\n"
             )
             return 0, []
 
         with (
+            patch("archupdater.helper.actions.system_updates._installed_package_versions",
+                  return_value={"linux": "6.9-1"}),
             patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
             patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
@@ -700,6 +704,8 @@ class PrivilegedHelperTests(unittest.TestCase):
         commands: list[list[str]] = []
 
         with (
+            patch("archupdater.helper.actions.system_updates._installed_package_versions",
+                  return_value={"linux": "6.9-1"}),
             patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
             patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
             patch.object(
@@ -920,16 +926,13 @@ class PrivilegedHelperTests(unittest.TestCase):
 
     def test_run_flatpak_system_update_uses_fixed_command_and_separator(self) -> None:
         commands: list[list[str]] = []
-        remote_queries = 0
 
         def run_command(command, *, emit_log, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             commands.append(command)
-            if "remote-ls" not in command:
-                return 0, []
-            remote_queries += 1
-            if remote_queries == 1:
-                return 0, ["app/org.kde.Krita/x86_64/stable\t5.2.0"]
+            if "remote-ls" in command:
+                return 0, [f"app/org.kde.Krita/x86_64/stable\t5.2.0\tstable\t{'a' * 12}"]
+            if "info" in command:
+                return 0, ["a" * 64]
             return 0, []
 
         with (
@@ -958,15 +961,14 @@ class PrivilegedHelperTests(unittest.TestCase):
     def test_run_flatpak_system_update_uses_branch_for_runtime_version(self) -> None:
         runtime_ref = "runtime/org.gnome.Platform/x86_64/49"
         commands: list[list[str]] = []
-        remote_queries = 0
 
         def run_command(command, *, emit_log, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             commands.append(command)
-            if "remote-ls" not in command:
-                return 0, []
-            remote_queries += 1
-            return (0, [f"{runtime_ref}\t\t49"]) if remote_queries == 1 else (0, [])
+            if "remote-ls" in command:
+                return 0, [f"{runtime_ref}\t\t49\t{'a' * 12}"]
+            if "info" in command:
+                return 0, ["a" * 64]
+            return 0, []
 
         with (
             patch.object(flatpak_updates, "FLATPAK_PATH", _ExistingPath("/usr/bin/flatpak")),
@@ -982,9 +984,9 @@ class PrivilegedHelperTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         preview_command = next(command for command in commands if "remote-ls" in command)
-        self.assertIn("--columns=ref,version,branch", preview_command)
+        self.assertIn("--columns=ref,version,branch,commit", preview_command)
 
-    def test_run_flatpak_system_update_fails_if_selected_ref_remains_available(self) -> None:
+    def test_run_flatpak_system_update_fails_if_old_commit_is_still_installed(self) -> None:
         events: list[tuple[object, dict[str, object]]] = []
 
         with (
@@ -994,9 +996,9 @@ class PrivilegedHelperTests(unittest.TestCase):
                 update_commands,
                 "stream_command",
                 lambda command, *, emit_log, **_kwargs: (
-                    (0, ["app/org.kde.Krita/x86_64/stable\t5.2.0"])
+                    (0, [f"app/org.kde.Krita/x86_64/stable\t5.2.0\tstable\t{'a' * 12}"])
                     if "remote-ls" in command
-                    else (0, [])
+                    else (0, ["b" * 64] if "info" in command else [])
                 ),
             ),
         ):

@@ -9,6 +9,7 @@ from archupdater.domain.arch_news import ArchNewsItem
 
 
 class AppStateCache:
+    LAST_SUCCESSFUL_CHECK_KEY = "cache/last_successful_check_at"
     UPDATE_SESSION_ACTIVE_KEY = "cache/update_session_active"
     ARCH_NEWS_ITEMS_KEY = "cache/arch_news_items_v1"
     ARCH_NEWS_READ_IDS_KEY = "cache/arch_news_read_ids_v1"
@@ -20,6 +21,17 @@ class AppStateCache:
 
     def __init__(self, settings: QSettings | None = None) -> None:
         self._settings = settings or QSettings()
+
+    def load_last_successful_check(self) -> datetime | None:
+        value = self._datetime_or_none(self._settings.value(self.LAST_SUCCESSFUL_CHECK_KEY))
+        return value.astimezone() if value is not None else None
+
+    def store_last_successful_check(self, checked_at: datetime) -> None:
+        self._settings.setValue(
+            self.LAST_SUCCESSFUL_CHECK_KEY,
+            checked_at.astimezone(timezone.utc).isoformat(),
+        )
+        self._settings.sync()
 
     def load_arch_news_items(self) -> list[ArchNewsItem]:
         raw_value = self._settings.value(self.ARCH_NEWS_ITEMS_KEY, "")

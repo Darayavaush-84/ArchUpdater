@@ -13,7 +13,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QPlainTextEdit, QWidget
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState
+from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateSource
+from archupdater.domain.update_plan import UpdatePlan, UpdatePlanItem
+from archupdater.application.update_session.protocol import BatchOutcome
+from archupdater.presentation.update_controller import UpdateController
 from archupdater.domain.progress import UpdateProgressSnapshot, UpdateProgressStep
 from archupdater import __version__
 from archupdater.presentation.update_progress_dialog import UpdateProgressDialog
@@ -91,6 +94,37 @@ class UpdateProgressDialogTests(unittest.TestCase):
         self.dialog.auto_close_checkbox.setChecked(True)
         self.assertTrue(self.dialog._success_close_timer.isActive())
         self.dialog.auto_close_checkbox.setChecked(False)
+        self.assertFalse(self.dialog._success_close_timer.isActive())
+
+    def test_partial_success_with_failed_aur_keeps_results_open(self) -> None:
+        controller = UpdateController(Mock())
+        controller._initialize_progress(UpdatePlan([
+            UpdatePlanItem(UpdateSource.SYSTEM, "linux", expected_version="2-1"),
+            UpdatePlanItem(UpdateSource.AUR, "audit-git", expected_version="2-1"),
+        ]))
+        self.dialog = UpdateProgressDialog()
+        controller.update_progress_changed.connect(self.dialog.apply_snapshot)
+        self.dialog.auto_close_checkbox.setChecked(True)
+        for source, success in (("system", True), ("aur", False)):
+            controller._handle_update_status("running_" + source)
+            controller._handle_runner_progress({
+                "type": "step_completed", "step": source,
+                "success": success, "changed": success, "incomplete": False,
+            })
+        controller._handle_update_completed(True, "", BatchOutcome.PARTIAL_SUCCESS.value)
+        self.assertEqual(self.dialog._latest_snapshot.summary_failed, ["AUR"])
+        self.assertEqual(self.dialog._latest_snapshot.summary_incomplete, [])
+        self.dialog.show()
+        QTest.qWait(self.dialog._success_close_timer.interval() + 100)
+        self.assertTrue(self.dialog.isVisible())
+
+    def test_unexecuted_steps_prevent_automatic_close(self) -> None:
+        self.dialog = UpdateProgressDialog()
+        self.dialog.auto_close_checkbox.setChecked(True)
+        self.dialog.apply_snapshot(UpdateProgressSnapshot(
+            title="Updates completed", subtitle="", steps=[], percent=100,
+            final_state=True, success=True, summary_not_executed=["AUR"],
+        ))
         self.assertFalse(self.dialog._success_close_timer.isActive())
 
     def test_step_rows_do_not_duplicate_the_live_log_panel(self) -> None:

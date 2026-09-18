@@ -67,13 +67,18 @@ def _run_helper_command(
     emit_log: EmitLog,
     survive_parent_exit: bool = False,
     success_payload: dict[str, object] | None = None,
+    expected_versions: dict[str, str] | None = None,
 ) -> int:
+    handler: PacmanPromptHandler | None = None
     if str(PACMAN_PATH) in command:
+        handler = PacmanPromptHandler(
+            emit_event=emit_event, emit_log=emit_log, expected_versions=expected_versions,
+        )
         return_code, _output = stream_command(
             command,
-            emit_log=emit_log,
+            emit_log=handler.observe_output,
             survive_parent_exit=survive_parent_exit,
-            input_handler=PacmanPromptHandler(emit_event=emit_event, emit_log=emit_log),
+            input_handler=handler,
             env={**os.environ, "LC_ALL": "C", "LANG": "C"},
         )
     elif survive_parent_exit:
@@ -84,6 +89,16 @@ def _run_helper_command(
         )
     else:
         return_code, _output = stream_command(command, emit_log=emit_log)
+    if return_code != 0 and handler is not None and handler.transaction_declined:
+        emit_event(
+            HelperEventType.COMPLETED,
+            success=False,
+            message=QCoreApplication.translate(
+                "BatchUpdateRunner", "The changed system transaction was not approved.",
+            ),
+            reason="plan_changed",
+        )
+        return 3
     if return_code != 0:
         emit_event(
             HelperEventType.COMPLETED,

@@ -7,6 +7,7 @@ import select
 import signal
 import struct
 import subprocess
+import threading
 import termios
 import time
 from collections.abc import Callable
@@ -79,6 +80,28 @@ def stream_subprocess(
     survive_parent_exit: bool = False,
     input_handler: Callable[[str], str | None] | None = None,
 ) -> tuple[int, list[str]]:
+    with _CommandConnection(survive_parent_exit) as connection:
+        return _stream_subprocess(
+            command, emit_log=emit_log, cwd=cwd, env=env, preexec_fn=preexec_fn,
+            start_new_session=start_new_session, timeout_seconds=timeout_seconds,
+            survive_parent_exit=survive_parent_exit, input_handler=input_handler,
+            connection=connection,
+        )
+
+
+def _stream_subprocess(
+    command: list[str],
+    *,
+    emit_log: EmitLog,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+    preexec_fn: Callable[[], None] | None = None,
+    start_new_session: bool = False,
+    timeout_seconds: float | None = None,
+    survive_parent_exit: bool = False,
+    input_handler: Callable[[str], str | None] | None = None,
+    connection: _CommandConnection,
+) -> tuple[int, list[str]]:
     collected: list[str] = []
     collected_bytes = 0
     emitted_bytes = 0
@@ -90,6 +113,8 @@ def stream_subprocess(
     slave_fd = -1
 
     try:
+        if connection.disconnected:
+            return 130, []
         master_fd, slave_fd = pty.openpty()
         _set_terminal_size(slave_fd)
 
@@ -125,6 +150,13 @@ def stream_subprocess(
             except OSError:
                 pass
 
+    def close_disconnected_input() -> None:
+        if connection.disconnected and proc.stdin is not None and not proc.stdin.closed:
+            try:
+                proc.stdin.close()
+            except OSError:
+                pass
+
     def flush_completed_lines(text: str) -> None:
         nonlocal pending_line, dropping_oversize_line
         normalized = _normalize_terminal_output(text)
@@ -136,13 +168,23 @@ def stream_subprocess(
                 if len(line_fragment) > remaining:
                     dropping_oversize_line = True
             if input_handler is not None and pending_line and not dropping_oversize_line:
-                response = input_handler(pending_line)
-                if response is not None:
+                response = connection.request_input(input_handler, pending_line)
+                close_disconnected_input()
+                if response is not None and not connection.disconnected:
                     emit_stream_line(pending_line)
                     pending_line = ""
-                    assert proc.stdin is not None
-                    proc.stdin.write(response.encode("utf-8"))
-                    proc.stdin.flush()
+                    close_disconnected_input()
+                    if not connection.disconnected:
+                        assert proc.stdin is not None
+                        try:
+                            proc.stdin.write(response.encode("utf-8"))
+                            proc.stdin.flush()
+                        except BrokenPipeError:
+                            # The child can exit while its last prompt is drained.
+                            try:
+                                proc.stdin.close()
+                            except OSError:
+                                pass
             if not separator:
                 break
             emit_stream_line(pending_line + ("…" if dropping_oversize_line else ""))
@@ -161,23 +203,28 @@ def stream_subprocess(
                 collected.append(clean_line)
                 collected_bytes += encoded_size
         if clean_line and emitted_bytes + encoded_size <= MAX_STREAM_LOG_BYTES:
-            emit_log(clean_line)
+            connection.log(emit_log, clean_line)
             emitted_bytes += encoded_size
         elif clean_line and not output_truncated:
             output_truncated = True
-            output_limit_exceeded = True
-            emit_log(
-                QCoreApplication.translate(
+            # Bound memory/logging without interrupting a critical transaction.
+            output_limit_exceeded = not survive_parent_exit
+            if survive_parent_exit:
+                # No further decisions can be reviewed through a suppressed log.
+                # EOF declines pending prompts, but leaves an install running.
+                connection.disconnected = True
+            if output_limit_exceeded:
+                connection.log(emit_log, QCoreApplication.translate(
                     "PrivilegedHelper",
                     "The command was terminated after exceeding the output safety limit.",
-                )
-            )
+                ))
 
     deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
     timed_out = False
     os.set_blocking(master_fd, False)
     try:
         while True:
+            close_disconnected_input()
             if deadline is not None and time.monotonic() >= deadline:
                 timed_out = True
                 _terminate_process(proc, process_group=start_new_session)
@@ -233,6 +280,77 @@ def stream_subprocess(
     if output_limit_exceeded:
         return 125, collected
     return return_code, collected
+
+
+class _DisconnectedInput(Exception):
+    """Interrupt a pending frontend answer without terminating the child."""
+
+
+class _CommandConnection:
+    """Keep the supervisor alive until a critical child has finished.
+
+    SIGTERM/SIGINT and broken frontend pipes are deferred; normal commands retain
+    their existing cancellation behavior. Only the main-thread helper installs
+    process-wide signal handlers. The PTY and caller-owned workspaces stay alive
+    until the stream has been drained and this context exits.
+    """
+
+    def __init__(self, critical: bool) -> None:
+        self.critical = critical
+        self.disconnected = False
+        self._waiting_for_input = False
+        self._signal: int | None = None
+        self._pipe_error: BrokenPipeError | None = None
+        self._handlers: dict[int, object] = {}
+
+    def __enter__(self) -> _CommandConnection:
+        if self.critical and threading.current_thread() is threading.main_thread():
+            for signum in (signal.SIGTERM, signal.SIGINT):
+                self._handlers[signum] = signal.signal(signum, self._disconnect)
+        return self
+
+    def __exit__(self, exc_type, _exc, _traceback) -> None:  # noqa: ANN001
+        for signum, handler in self._handlers.items():
+            signal.signal(signum, handler)
+        if exc_type is None:
+            if self._signal is not None:
+                raise SystemExit(128 + self._signal)
+            if self._pipe_error is not None:
+                raise self._pipe_error
+
+    def _disconnect(self, signum: int, _frame: object) -> None:
+        self.disconnected = True
+        self._signal = signum
+        if self._waiting_for_input:
+            raise _DisconnectedInput()
+
+    def log(self, emit_log: EmitLog, line: str) -> None:
+        if self.disconnected:
+            return
+        try:
+            emit_log(line)
+        except BrokenPipeError as exc:
+            if not self.critical:
+                raise
+            self.disconnected = True
+            self._pipe_error = exc
+
+    def request_input(self, handler: Callable[[str], str | None], line: str) -> str | None:
+        if self.disconnected:
+            return None
+        self._waiting_for_input = True
+        try:
+            return handler(line)
+        except _DisconnectedInput:
+            return None
+        except BrokenPipeError as exc:
+            if not self.critical:
+                raise
+            self.disconnected = True
+            self._pipe_error = exc
+            return None
+        finally:
+            self._waiting_for_input = False
 
 
 def _terminate_process(process: subprocess.Popen[bytes], *, process_group: bool) -> None:

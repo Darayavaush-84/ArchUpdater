@@ -73,10 +73,12 @@ and artifact verification are separate modules. `update_commands.py` owns shared
 execution and shutdown inhibition. The build still runs as the unprivileged build user;
 artifact validation and installation remain in the privileged process.
 
-`CheckScheduleController` owns the startup network subscription and check timers. The main
-window supplies callbacks for starting checks and showing status; `BackgroundBehaviorController`
-still applies user preferences and calculates the next scheduled check. Closing the window
-for real stops timers and disconnects the network subscription; hiding to the tray retains them.
+`CheckScheduleController` owns one automatic check timer and the network subscription used
+when a due check is offline. `BackgroundBehaviorController` calculates the remaining interval
+from the last successful check, persisted by `AppStateCache` and restored at launch. There is
+no separate startup scan; disabled automatic checks also stay disabled at login. Manual checks
+use the normal check flow and reset the same deadline on success. Closing the window for real
+stops the timer and disconnects the network subscription; hiding to the tray retains them.
 
 `presentation/theme.py` assembles the stylesheet from `presentation/styles/`. `palette.py`
 derives colors once, and the section builders retain the original cascade order. Keep this

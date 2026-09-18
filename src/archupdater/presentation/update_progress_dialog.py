@@ -308,6 +308,8 @@ class UpdateProgressDialog(QDialog):
             and snapshot.final_state
             and snapshot.success
             and not snapshot.summary_incomplete
+            and not snapshot.summary_failed
+            and not snapshot.summary_not_executed
             and self.auto_close_checkbox.isChecked()
         ):
             self._success_close_timer.start()

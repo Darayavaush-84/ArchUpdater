@@ -43,7 +43,9 @@ class AurPkgbuildReviewDialog(QDialog):
 
         warning = QLabel(
             self.tr(
-                "AUR PKGBUILD files are community-maintained build scripts. Read them before continuing."
+                "AUR PKGBUILD files are community-maintained build scripts. "
+                "They may contain malicious code, install malware, and compromise your system. "
+                "Read them carefully before continuing."
             )
         )
         warning.setObjectName("mutedText")

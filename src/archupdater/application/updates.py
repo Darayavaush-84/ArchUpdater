@@ -56,6 +56,8 @@ class UpdateApplication:
         use_local_system_db: bool = False,
         cancel_requested: Callable[[], bool] | None = None,
     ) -> UpdateCheckResult:
+        if cancel_requested is None or not cancel_requested():
+            self.optional_sources_reader.refresh()
         return self.check_updates_use_case.run(
             progress_callback=progress_callback,
             active_optional_sources=active_optional_sources,

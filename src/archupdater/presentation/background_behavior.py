@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Protocol
 
-from PySide6.QtCore import QCoreApplication, QTimer
+from PySide6.QtCore import QCoreApplication
+
+from archupdater.presentation.check_schedule import CheckScheduleController
 
 from archupdater.presentation.tray_controller import TrayController
 from archupdater.infrastructure.settings import AppSettings, SettingsService
@@ -20,15 +22,17 @@ class BackgroundBehaviorController:
         *,
         settings: SettingsService,
         autostart_service: AutostartStatusService,
-        auto_check_timer: QTimer,
+        check_schedule: CheckScheduleController,
     ) -> None:
         self._settings = settings
         self._autostart_service = autostart_service
-        self._auto_check_timer = auto_check_timer
+        self._check_schedule = check_schedule
 
     def load_app_settings(self) -> AppSettings:
-        return self._settings.load_app_settings(
-            default_start_on_login=self._autostart_service.is_enabled()
+        enabled = self._autostart_service.is_enabled()
+        return replace(
+            self._settings.load_app_settings(default_start_on_login=enabled),
+            start_on_login=enabled,
         )
 
     def auto_check_enabled(self) -> bool:
@@ -56,17 +60,13 @@ class BackgroundBehaviorController:
         last_checked_at: datetime | None = None,
         defer_if_due: bool = False,
     ) -> None:
-        if not app_settings.auto_check_enabled:
-            self._auto_check_timer.stop()
-            return
-
         delay_ms = self.auto_check_delay_ms(app_settings, last_checked_at=last_checked_at)
         if delay_ms is None:
-            self._auto_check_timer.stop()
+            self._check_schedule.schedule(None)
             return
         if delay_ms <= 0 and defer_if_due:
             delay_ms = self._auto_check_interval_ms(app_settings)
-        self._auto_check_timer.start(max(1, delay_ms))
+        self._check_schedule.schedule(delay_ms)
 
     def auto_check_delay_ms(
         self,
@@ -82,7 +82,7 @@ class BackgroundBehaviorController:
             return 0
 
         reference_time = now or datetime.now()
-        elapsed_ms = int((reference_time - last_checked_at).total_seconds() * 1000)
+        elapsed_ms = int((reference_time.timestamp() - last_checked_at.timestamp()) * 1000)
         elapsed_ms = max(0, elapsed_ms)
         return max(0, interval_ms - elapsed_ms)
 
@@ -93,17 +93,24 @@ class BackgroundBehaviorController:
         last_checked_at: datetime | None,
         now: datetime | None = None,
     ) -> datetime | None:
-        delay_ms = self.auto_check_delay_ms(
-            app_settings,
-            last_checked_at=last_checked_at,
-            now=now,
-        )
-        if delay_ms is None:
+        if not app_settings.auto_check_enabled:
             return None
         reference_time = now or datetime.now()
-        return reference_time if delay_ms <= 0 else reference_time + timedelta(milliseconds=delay_ms)
+        if self._check_schedule.timer.isActive():
+            delay_ms = max(0, self._check_schedule.timer.remainingTime())
+        else:
+            delay_ms = self.auto_check_delay_ms(
+                app_settings, last_checked_at=last_checked_at, now=reference_time,
+            )
+        if delay_ms is None:
+            return None
+        return datetime.fromtimestamp(
+            reference_time.timestamp() + delay_ms / 1000, tz=reference_time.tzinfo,
+        )
 
-    def set_auto_check_schedule(self, interval_hours: int | None) -> str | None:
+    def set_auto_check_schedule(
+        self, interval_hours: int | None, *, last_checked_at: datetime | None = None,
+    ) -> str | None:
         current_settings = self.load_app_settings()
         normalized_enabled = interval_hours is not None
         normalized_interval = (
@@ -124,7 +131,7 @@ class BackgroundBehaviorController:
             auto_check_interval_hours=normalized_interval,
         )
         self._settings.save_app_settings(updated_settings)
-        self.apply_auto_check_settings(updated_settings, defer_if_due=True)
+        self.apply_auto_check_settings(updated_settings, last_checked_at=last_checked_at)
 
         if normalized_enabled:
             return self._translate("Automatic checks set to every {hours} hours.").format(

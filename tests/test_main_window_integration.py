@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import QEventLoop, QTimer, Qt
+from PySide6.QtCore import QEventLoop, QSettings, QTimer, Qt
 from support.network import FakeReachability, FakeNetworkInformation, FakeNetworkInformationApi
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QToolButton
@@ -31,13 +32,14 @@ from archupdater.presentation.widgets.status_header import CounterCardWidget
 from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.services.pacman import PacmanServiceError
 from archupdater.infrastructure.settings import AppSettings
+from archupdater.infrastructure.app_state_cache import AppStateCache
 
 
 class FakeSettingsService:
     def __init__(
         self,
         *,
-        auto_check_enabled: bool = False,
+        auto_check_enabled: bool = True,
         auto_check_interval_hours: int = 24,
         cleanup_unused_flatpak_runtimes: bool = False,
         cleanup_preference_set: bool = True,
@@ -71,9 +73,16 @@ class FakeSettingsService:
 class FakeStateCache:
     def __init__(self, *, unclean: bool = False) -> None:
         self.unclean = unclean
+        self.last_checked_at: datetime | None = None
         self.read_arch_news_ids: set[str] = set()
         self.deleted_arch_news_ids: set[str] = set()
         self.arch_news_items: list[ArchNewsItem] = []
+
+    def load_last_successful_check(self) -> datetime | None:
+        return self.last_checked_at
+
+    def store_last_successful_check(self, checked_at: datetime) -> None:
+        self.last_checked_at = checked_at
 
     def load_arch_news_items(self) -> list[ArchNewsItem]:
         return [
@@ -850,7 +859,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertFalse(self.window.action_bar.notice_label.isHidden())
         self.assertIn("did not finish cleanly", self.window.action_bar.notice_label.text())
 
-    def test_startup_begins_empty_before_first_fresh_check_finishes(self) -> None:
+    def test_first_enabled_check_starts_without_saved_history(self) -> None:
         service = FakeUpdateService(
             UpdateCheckResult(packages=[], checked_at=datetime.now(), logs=[], warnings=[])
         )
@@ -872,23 +881,100 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertEqual(self._visible_package_names(), [])
         self.assertEqual(self.window.header_widget.counter_labels["system"].text(), "0")
 
-    def test_startup_refresh_runs_even_when_automatic_checks_are_scheduled_later(self) -> None:
-        service = FakeUpdateService(
-            UpdateCheckResult(packages=[], checked_at=datetime.now(), logs=[], warnings=[])
-        )
+    def _persistent_check_cache(self, checked_at: datetime | None = None) -> AppStateCache:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        settings = QSettings(str(Path(directory.name) / "state.ini"), QSettings.Format.IniFormat)
+        cache = AppStateCache(settings)
+        if checked_at is not None:
+            cache.store_last_successful_check(checked_at)
+        return cache
 
-        self.window = MainWindow(
-            service=service,
-            settings=FakeSettingsService(auto_check_enabled=True, auto_check_interval_hours=168),
-            state_cache=FakeStateCache(),
-        )
-        self._process_events(100)
+    def _close_test_window(self) -> None:
+        self.window.update_controller.shutdown()
+        self.window._allow_close = True
+        self.window.close()
+        self.window.deleteLater()
+        self.window = None
+        self._process_events(30)
+
+    def test_restart_before_deadline_preserves_the_remaining_interval(self) -> None:
+        for hours, elapsed in ((24, 23), (168, 24)):
+            with self.subTest(hours=hours):
+                checked_at = datetime.now() - timedelta(hours=elapsed)
+                cache = self._persistent_check_cache(checked_at)
+                service = FakeUpdateService(UpdateCheckResult([], datetime.now(), []))
+                self.window = MainWindow(service=service, state_cache=cache,
+                    settings=FakeSettingsService(auto_check_interval_hours=hours))
+                self._process_events(60)
+                self.assertEqual(service.check_calls, 0)
+                self.assertAlmostEqual(
+                    (self.window.next_auto_check_at() - datetime.now()).total_seconds() / 3600,
+                    hours - elapsed, delta=0.01,
+                )
+                self.assertIn(checked_at.strftime("%Y-%m-%d %H:%M:%S"),
+                              self.window.header_widget.last_checked_label.text())
+                self._close_test_window()
+
+    def test_overdue_check_runs_once_and_reopening_uses_its_saved_timestamp(self) -> None:
+        checked_at = datetime.now()
+        cache = self._persistent_check_cache(checked_at - timedelta(days=8))
+        service = FakeUpdateService(UpdateCheckResult([], checked_at, []))
+        settings = FakeSettingsService(auto_check_interval_hours=168)
+        self.window = MainWindow(service=service, settings=settings, state_cache=cache)
         self._wait_for_check(self.window)
-
         self.assertEqual(service.check_calls, 1)
-        self.assertEqual(self._visible_package_names(), [])
+        self.assertEqual(cache.load_last_successful_check().timestamp(), checked_at.timestamp())
+        self._close_test_window()
+        reopened = AppStateCache(QSettings(cache._settings.fileName(), QSettings.Format.IniFormat))
+        self.window = MainWindow(service=service, settings=settings, state_cache=reopened)
+        self._process_events(60)
+        self.assertEqual(service.check_calls, 1)
+        self.assertAlmostEqual((self.window.next_auto_check_at() - datetime.now()).total_seconds(),
+                               168 * 3600, delta=1)
 
-    def test_startup_refresh_failure_keeps_startup_screen_empty(self) -> None:
+    def test_manual_check_before_deadline_resets_the_same_schedule(self) -> None:
+        checked_at = datetime.now()
+        cache = self._persistent_check_cache(checked_at - timedelta(days=1))
+        service = FakeUpdateService(UpdateCheckResult([], checked_at, []))
+        self.window = MainWindow(service=service, state_cache=cache,
+            settings=FakeSettingsService(auto_check_interval_hours=168))
+        self._process_events(60)
+        self.assertEqual(service.check_calls, 0)
+        self.assertTrue(self.window.start_manual_check())
+        self._wait_for_check(self.window)
+        self.assertEqual(cache.load_last_successful_check().timestamp(), checked_at.timestamp())
+        self.assertAlmostEqual((self.window.next_auto_check_at() - datetime.now()).total_seconds(),
+                               168 * 3600, delta=1)
+
+    def test_disabled_automatic_checks_stay_disabled_at_login_and_allow_manual_checks(self) -> None:
+        for last_check in (None, datetime.now() - timedelta(days=8)):
+            with self.subTest(last_check=last_check):
+                service = FakeUpdateService(UpdateCheckResult([], datetime.now(), []))
+                self.window = MainWindow(service=service,
+                    state_cache=self._persistent_check_cache(last_check),
+                    settings=FakeSettingsService(auto_check_enabled=False))
+                self._process_events(60)
+                self.assertEqual(service.check_calls, 0)
+                self.assertFalse(self.window._check_schedule.timer.isActive())
+                self.assertIsNone(self.window.next_auto_check_at())
+                self.assertTrue(self.window.start_manual_check())
+                self._wait_for_check(self.window)
+                self.assertFalse(self.window._check_schedule.timer.isActive())
+                self._close_test_window()
+
+    def test_failed_check_does_not_overwrite_the_last_successful_timestamp(self) -> None:
+        checked_at = datetime.now() - timedelta(days=1)
+        cache = self._persistent_check_cache(checked_at)
+        self.window = MainWindow(
+            service=FailingUpdateService(UpdateCheckResult([], datetime.now(), [])),
+            state_cache=cache, settings=FakeSettingsService(auto_check_interval_hours=168))
+        self.assertTrue(self.window.start_manual_check())
+        self._wait_for_check(self.window)
+        self.assertEqual(cache.load_last_successful_check().timestamp(), checked_at.timestamp())
+        self.assertEqual(self.window._state.last_checked_at.timestamp(), checked_at.timestamp())
+
+    def test_due_check_failure_keeps_the_package_list_empty(self) -> None:
         service = FailingUpdateService(
             UpdateCheckResult(packages=[], checked_at=datetime.now(), logs=[])
         )
@@ -908,7 +994,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertEqual(self.window.action_bar.status_label.text(), "")
         self.assertIn("Error: checkupdates failed", self.window.details_panel._details_placeholder.text())
 
-    def test_startup_refresh_waits_until_network_is_online(self) -> None:
+    def test_due_check_waits_until_network_is_online(self) -> None:
         service = FakeUpdateService(
             UpdateCheckResult(packages=[], checked_at=datetime.now(), logs=[], warnings=[])
         )
@@ -936,7 +1022,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 self.window.details_panel._details_placeholder.text(),
-                "The startup scan will begin automatically when the network is online.",
+                "Waiting for network...",
             )
 
             network_information.set_reachability(FakeReachability.Online)

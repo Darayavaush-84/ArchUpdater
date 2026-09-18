@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -12,7 +13,7 @@ from archupdater.domain.enums import UpdateSource
 from archupdater.domain.package_metadata import PlasmaWidgetPackageMetadata
 from archupdater.services.plasma_widgets import PlasmaWidgetsUpdateService
 from archupdater.services.plasma_widgets_store import StoreWidgetSummary
-from archupdater.services.plasma_widgets_store import StoreWidgetDetail
+from archupdater.services.plasma_widgets_store import StoreWidgetDetail, PlasmaWidgetUserVisibleError
 
 
 class _CacheStub:
@@ -59,6 +60,47 @@ class PlasmaWidgetsUpdateServiceTests(unittest.TestCase):
         }
         (package_dir / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
         return package_dir
+
+    def test_one_store_failure_does_not_discard_other_widget_updates(self) -> None:
+        for plugin_id in ("good", "bad"):
+            self._write_widget(
+                ".local/share/plasma/plasmoids", plugin_id=plugin_id,
+                name=plugin_id, version="1.0",
+            )
+        id_map = self.home_dir / "ids.txt"
+        id_map.write_text("100 good\n200 bad\n", encoding="utf-8")
+
+        def fetch(content_id: str) -> StoreWidgetDetail:
+            if content_id == "200":
+                raise PlasmaWidgetUserVisibleError("KDE Store unavailable", "HTTP 404")
+            return StoreWidgetDetail(content_id, "good", "2.0", "", "Plasma/Applet", "", "", [])
+
+        service = PlasmaWidgetsUpdateService(
+            home_dir=self.home_dir, id_map_path=id_map,
+            store_client=SimpleNamespace(fetch_details=fetch),
+        )
+        result = service.check_updates()
+        self.assertEqual([package.name for package in result.packages], ["good"])
+        self.assertEqual(result.warnings, ["200: KDE Store unavailable"])
+
+    def test_invalid_local_metadata_does_not_abort_other_widgets(self) -> None:
+        for plugin_id in ("good", "bad"):
+            self._write_widget(
+                ".local/share/plasma/plasmoids", plugin_id=plugin_id,
+                name=plugin_id, version="1.0",
+            )
+        id_map = self.home_dir / "ids.txt"
+        id_map.write_text("100 good\n200 bad\n", encoding="utf-8")
+        service = PlasmaWidgetsUpdateService(
+            home_dir=self.home_dir, id_map_path=id_map,
+            store_fetcher=lambda: [StoreWidgetSummary("100", "good", "2.0", "", "Plasma/Applet", "", "")],
+        )
+        metadata = self.home_dir / ".local/share/plasma/plasmoids/bad/metadata.json"
+        for payload in (b"[]", b"null", b"123", b"{", b"\xff"):
+            with self.subTest(payload=payload):
+                metadata.write_bytes(payload)
+                result = service.check_updates()
+                self.assertEqual([package.name for package in result.packages], ["good"])
 
     def test_check_updates_uses_registry_match_and_preserves_widget_metadata(self) -> None:
         package_dir = self._write_widget(

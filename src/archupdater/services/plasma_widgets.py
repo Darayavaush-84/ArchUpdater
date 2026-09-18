@@ -61,7 +61,7 @@ class PlasmaWidgetsUpdateService:
         if not content_ids and self.store_fetcher is None:
             return result
         try:
-            store_widgets = self._load_store_widgets(content_ids)
+            store_widgets = self._load_store_widgets(content_ids, result.warnings)
         except (OSError, ET.ParseError, TimeoutError) as exc:
             result.warnings.append(self._user_message(exc))
             return result
@@ -139,7 +139,10 @@ class PlasmaWidgetsUpdateService:
 
         try:
             payload = json.loads(metadata_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return None
+
+        if not isinstance(payload, dict):
             return None
 
         plugin_data = payload.get("KPlugin")
@@ -165,13 +168,20 @@ class PlasmaWidgetsUpdateService:
             icon_name=icon_name,
         )
 
-    def _load_store_widgets(self, content_ids: set[str]) -> list[StoreWidgetSummary]:
+    def _load_store_widgets(
+        self, content_ids: set[str], warnings: list[str]
+    ) -> list[StoreWidgetSummary]:
         if self.store_fetcher is not None:
             return self.store_fetcher()
-        return [
-            self._summary_from_detail(self.store_client.fetch_details(content_id))
-            for content_id in sorted(content_ids)
-        ]
+        widgets: list[StoreWidgetSummary] = []
+        for content_id in sorted(content_ids):
+            try:
+                widgets.append(
+                    self._summary_from_detail(self.store_client.fetch_details(content_id))
+                )
+            except (OSError, ET.ParseError, TimeoutError) as exc:
+                warnings.append(f"{content_id}: {self._user_message(exc)}")
+        return widgets
 
     def _known_content_ids(
         self,

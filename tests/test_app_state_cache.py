@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import json
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -23,6 +23,20 @@ class AppStateCacheTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.settings.clear()
         self.settings.sync()
+
+    def test_last_successful_check_survives_reopening_settings(self) -> None:
+        checked_at = datetime(2026, 9, 13, 9, 32, tzinfo=timezone(timedelta(hours=2)))
+        self.cache.store_last_successful_check(checked_at)
+        reopened = AppStateCache(QSettings(self.settings.fileName(), QSettings.Format.IniFormat))
+        restored = reopened.load_last_successful_check()
+        self.assertEqual(restored, checked_at)
+        self.assertEqual(self.settings.value(AppStateCache.LAST_SUCCESSFUL_CHECK_KEY),
+                         "2026-09-13T07:32:00+00:00")
+
+    def test_missing_or_invalid_last_check_has_no_deadline(self) -> None:
+        self.assertIsNone(self.cache.load_last_successful_check())
+        self.settings.setValue(AppStateCache.LAST_SUCCESSFUL_CHECK_KEY, "invalid date")
+        self.assertIsNone(self.cache.load_last_successful_check())
 
     def test_arch_news_read_ids_round_trip(self) -> None:
         self.cache.save_read_arch_news_ids({"news-2", "news-1"})

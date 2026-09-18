@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import types
 import unittest
@@ -33,7 +34,7 @@ from archupdater.application.update_session.step_backends import (
     FirmwareBackend,
     FlatpakBackend,
     PacmanBackend,
-    _parse_flatpak_version_output,
+    _parse_flatpak_transaction_output,
 )
 
 
@@ -53,6 +54,12 @@ def _aur(name: str) -> UpdatePlanItem:
         package_base=name,
         expected_version="1.0-1",
     )
+
+
+def _flatpak_preview(
+    ref: str, version: str = "2.0", branch: str = "stable", commit: str = "a" * 12
+) -> str:
+    return json.dumps([{"ref": ref, "version": version, "branch": branch, "commit": commit}])
 
 
 def _flatpak(ref: str, scope: str = "system") -> UpdatePlanItem:
@@ -118,27 +125,25 @@ class _StaticAurBackend:
 
 
 class BatchRunnerTests(unittest.TestCase):
-    def test_flatpak_json_versions_are_parsed_without_tty_table_ambiguity(self) -> None:
+    def test_flatpak_transaction_requires_json_and_a_valid_commit(self) -> None:
+        ref = "app/org.example.App/x86_64/stable"
         self.assertEqual(
-            _parse_flatpak_version_output(
-                '[{"ref":"app/org.example.App/x86_64/stable","version":"2.0"}]'
-            ),
-            {"app/org.example.App/x86_64/stable": "2.0"},
+            _parse_flatpak_transaction_output(_flatpak_preview(ref)),
+            {ref: ("2.0", "a" * 12)},
         )
-        self.assertIsNone(
-            _parse_flatpak_version_output(
-                "Ref                                      Version\n"
-                "app/org.example.App/x86_64/stable        2.0\n"
-            )
-        )
+        for output in (
+            f"{ref}\t2.0\tstable\t{'a' * 12}",
+            json.dumps([{"ref": ref, "version": "2.0"}]),
+            _flatpak_preview(ref, commit="invalid"),
+        ):
+            with self.subTest(output=output):
+                self.assertIsNone(_parse_flatpak_transaction_output(output))
 
-    def test_flatpak_runtime_version_falls_back_to_branch(self) -> None:
+    def test_flatpak_runtime_transaction_uses_branch_version(self) -> None:
+        ref = "runtime/org.gnome.Platform/x86_64/49"
         self.assertEqual(
-            _parse_flatpak_version_output(
-                '[{"ref":"runtime/org.gnome.Platform/x86_64/49",'
-                '"version":"","branch":"49"}]'
-            ),
-            {"runtime/org.gnome.Platform/x86_64/49": "49"},
+            _parse_flatpak_transaction_output(_flatpak_preview(ref, version="", branch="49")),
+            {ref: ("49", "a" * 12)},
         )
 
     def _runner(self, plan: UpdatePlan | None = None) -> BatchRunner:
@@ -174,6 +179,26 @@ class BatchRunnerTests(unittest.TestCase):
             },
         )
         return runner
+
+    def test_pacman_step_preserves_verified_changes_on_success_and_failure(self) -> None:
+        for success, changed in ((True, False), (True, True), (False, False), (False, True)):
+            with self.subTest(success=success, changed=changed):
+                runner = self._runner(_plan(_system("linux")))
+                events = []
+                runner._events = types.SimpleNamespace(
+                    emit=lambda kind, **payload: events.append((kind, payload))
+                )
+                runner._print_line = lambda _line: None
+                runner._privileged_helper.run = lambda *_args, **_kwargs: CommandRunResult(
+                    success, payload={"changed": changed},
+                )
+                result = runner._run_backend_step(PacmanBackend())
+                self.assertEqual(result.success, success)
+                self.assertEqual(result.changed, changed)
+                self.assertEqual(result.incomplete, changed and not success)
+                completed = [payload for kind, payload in events if kind == "step_completed"]
+                self.assertEqual(len(completed), 1)
+                self.assertEqual(completed[0]["changed"], changed)
 
     def _run_static_aur_backend(
         self,
@@ -463,16 +488,14 @@ class BatchRunnerTests(unittest.TestCase):
         )
         runner._events = types.SimpleNamespace(emit=lambda _event_type, **_payload: None)
         runner._print_line = lambda _line: None  # type: ignore[method-assign]
-        remote_queries = 0
 
         def run_command(command, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             commands.append(command)
             output = ""
             if "remote-ls" in command:
-                remote_queries += 1
-                if remote_queries == 1:
-                    output = "app/org.kde.Krita/x86_64/stable\t2.0\n"
+                output = _flatpak_preview("app/org.kde.Krita/x86_64/stable")
+            elif "info" in command:
+                output = "a" * 64
             return CommandRunResult(True, "ok", payload={"output": output})
 
         runner._run_command = run_command  # type: ignore[method-assign]
@@ -505,7 +528,7 @@ class BatchRunnerTests(unittest.TestCase):
             commands,
         )
 
-    def test_user_flatpak_step_fails_if_selected_ref_remains_available(self) -> None:
+    def test_user_flatpak_step_fails_if_old_commit_is_still_installed(self) -> None:
         runner = self._runner(
             _plan(_flatpak("app/org.kde.Krita/x86_64/stable", "user"))
         )
@@ -514,9 +537,9 @@ class BatchRunnerTests(unittest.TestCase):
         runner._run_command = lambda command, **_kwargs: CommandRunResult(  # type: ignore[method-assign]
             True,
             "ok",
-            payload={"output": "app/org.kde.Krita/x86_64/stable\t2.0\n"}
+            payload={"output": _flatpak_preview("app/org.kde.Krita/x86_64/stable")}
             if "remote-ls" in command
-            else {"output": ""},
+            else {"output": "b" * 64 if "info" in command else "Nothing to update."},
         )
 
         result = runner._run_backend_step(FlatpakBackend())
@@ -525,25 +548,71 @@ class BatchRunnerTests(unittest.TestCase):
         self.assertTrue(result.incomplete)
         self.assertIn("without installing", result.message)
 
+    def test_flatpak_deployed_commit_succeeds_even_when_a_newer_update_is_available(self) -> None:
+        ref = "app/org.kde.Krita/x86_64/stable"
+        runner = self._runner(_plan(_flatpak(ref, "user")))
+        runner._events = types.SimpleNamespace(emit=lambda _event_type, **_payload: None)
+        runner._print_line = lambda _line: None
+        commands: list[list[str]] = []
+        deployed = False
+
+        def run_command(command, **_kwargs):
+            nonlocal deployed
+            commands.append(command)
+            if command[1] == "remote-ls":
+                output = _flatpak_preview(ref, commit=("b" if deployed else "a") * 12)
+            elif command[1] == "info":
+                output = "a" * 64
+            else:
+                deployed = True
+                output = ""
+            return CommandRunResult(True, payload={"output": output})
+
+        runner._run_command = run_command
+        result = runner._run_backend_step(FlatpakBackend())
+        self.assertTrue(result.success)
+        self.assertTrue(result.changed)
+        self.assertFalse(result.incomplete)
+        self.assertEqual(sum(command[1] == "remote-ls" for command in commands), 1)
+
+    def test_flatpak_partial_deployment_reports_only_verified_changes(self) -> None:
+        refs = ["app/org.example.One/x86_64/stable", "app/org.example.Two/x86_64/stable"]
+        runner = self._runner(_plan(*(_flatpak(ref, "user") for ref in refs)))
+        runner._events = types.SimpleNamespace(emit=lambda _event_type, **_payload: None)
+        runner._print_line = lambda _line: None
+        preview = json.dumps([json.loads(_flatpak_preview(ref))[0] for ref in refs])
+
+        def run_command(command, **_kwargs):
+            if command[1] == "remote-ls":
+                return CommandRunResult(True, payload={"output": preview})
+            if command[1] == "info":
+                return CommandRunResult(True, payload={
+                    "output": ("a" if command[-1] == refs[0] else "b") * 64
+                })
+            return CommandRunResult(False, "Failed to deploy second ref")
+
+        runner._run_command = run_command
+        result = runner._run_backend_step(FlatpakBackend())
+        self.assertFalse(result.success)
+        self.assertTrue(result.changed)
+        self.assertTrue(result.incomplete)
+        self.assertEqual(result.message, "Failed to deploy second ref")
+
     def test_flatpak_step_accepts_deployed_refs_after_follow_up_error(self) -> None:
         runner = self._runner(
             _plan(_flatpak("app/org.kde.Krita/x86_64/stable", "system"))
         )
         printed: list[str] = []
-        remote_queries = 0
         runner._events = types.SimpleNamespace(emit=lambda _event_type, **_payload: None)
         runner._print_line = printed.append  # type: ignore[method-assign]
 
         def run_command(command, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             if "remote-ls" in command:
-                remote_queries += 1
-                output = (
-                    '[{"ref":"app/org.kde.Krita/x86_64/stable","version":"2.0"}]'
-                    if remote_queries == 1
-                    else "[]"
-                )
-                return CommandRunResult(True, payload={"output": output})
+                return CommandRunResult(True, payload={
+                    "output": _flatpak_preview("app/org.kde.Krita/x86_64/stable")
+                })
+            if "info" in command:
+                return CommandRunResult(True, payload={"output": "a" * 64})
             return CommandRunResult(False, "Error deploying: Directory not empty")
 
         runner._run_command = run_command  # type: ignore[method-assign]
@@ -570,23 +639,18 @@ class BatchRunnerTests(unittest.TestCase):
         )
         commands: list[list[str]] = []
         questions: list[dict[str, object]] = []
-        remote_queries = 0
         runner._events = types.SimpleNamespace(emit=lambda _event_type, **_payload: None)
         runner._print_line = lambda _line: None  # type: ignore[method-assign]
         runner._request_question = lambda question: questions.append(question) or False  # type: ignore[method-assign]
 
         def run_command(command, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             commands.append(command)
             if "remote-ls" in command:
-                remote_queries += 1
-                output = (
-                    '[{"ref":"runtime/org.gnome.Platform/x86_64/49",'
-                    '"version":"","branch":"49"}]'
-                    if remote_queries == 1
-                    else "[]"
-                )
-                return CommandRunResult(True, payload={"output": output})
+                return CommandRunResult(True, payload={
+                    "output": _flatpak_preview(runtime_ref, version="", branch="49")
+                })
+            if "info" in command:
+                return CommandRunResult(True, payload={"output": "a" * 64})
             return CommandRunResult(True, "ok", payload={"output": ""})
 
         runner._run_command = run_command  # type: ignore[method-assign]
@@ -912,7 +976,6 @@ class BatchRunnerTests(unittest.TestCase):
     def test_flatpak_system_update_and_cleanup_use_flatpak_polkit_flow(self) -> None:
         requests: list[HelperRequest] = []
         commands: list[list[str]] = []
-        remote_queries = 0
         runner = self._runner(
             _plan(
                 _flatpak("app/org.kde.Krita/x86_64/stable", "system"),
@@ -926,13 +989,12 @@ class BatchRunnerTests(unittest.TestCase):
         )
 
         def run_command(command, **_kwargs):  # noqa: ANN001, ANN202
-            nonlocal remote_queries
             commands.append(command)
             output = ""
             if "remote-ls" in command:
-                remote_queries += 1
-                if remote_queries == 1:
-                    output = "app/org.kde.Krita/x86_64/stable\t2.0\n"
+                output = _flatpak_preview("app/org.kde.Krita/x86_64/stable")
+            elif "info" in command:
+                output = "a" * 64
             return CommandRunResult(True, "ok", payload={"output": output})
 
         runner._run_command = run_command  # type: ignore[method-assign]

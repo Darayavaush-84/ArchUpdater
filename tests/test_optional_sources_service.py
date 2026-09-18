@@ -93,6 +93,7 @@ class OptionalSourcesServiceTests(unittest.TestCase):
             ),
         )
 
+        service.refresh()
         snapshot = service.snapshot()
 
         firmware = snapshot.status_for(UpdateSource.FIRMWARE)
@@ -118,6 +119,7 @@ class OptionalSourcesServiceTests(unittest.TestCase):
             ),
         )
 
+        service.refresh()
         snapshot = service.snapshot()
 
         firmware = snapshot.status_for(UpdateSource.FIRMWARE)
@@ -137,6 +139,7 @@ class OptionalSourcesServiceTests(unittest.TestCase):
             firmware_probe=failing_probe,
         )
 
+        service.refresh()
         snapshot = service.snapshot()
 
         firmware = snapshot.status_for(UpdateSource.FIRMWARE)
@@ -145,6 +148,34 @@ class OptionalSourcesServiceTests(unittest.TestCase):
         self.assertTrue(firmware.active)
         self.assertEqual(firmware.status_text, "Installed, device support unavailable")
         self.assertEqual(firmware.removable_packages, ["fwupd"])
+
+    def test_snapshot_reads_last_probe_without_running_commands(self) -> None:
+        calls: list[list[str]] = []
+        responses = iter([(0, '{"Devices": []}', ""), (1, "", "failed")])
+
+        def probe(command: list[str], _timeout: float) -> tuple[int, str, str]:
+            calls.append(command)
+            return next(responses)
+
+        service = OptionalSourcesService(
+            which=lambda name: "/usr/bin/fwupdmgr" if name == "fwupdmgr" else None,
+            firmware_probe=probe,
+        )
+        self.assertTrue(service.snapshot().status_for(UpdateSource.FIRMWARE).installed)
+        self.assertEqual(calls, [])
+        service.refresh()
+        for _ in range(3):
+            self.assertEqual(
+                service.snapshot().status_for(UpdateSource.FIRMWARE).status_text,
+                "Installed, no compatible firmware devices detected",
+            )
+        self.assertEqual(len(calls), 1)
+        service.refresh()
+        self.assertEqual(
+            service.snapshot().status_for(UpdateSource.FIRMWARE).status_text,
+            "Installed, device support unavailable",
+        )
+        self.assertEqual(len(calls), 2)
 
     def test_reports_plasma_widgets_installed_but_inactive_outside_plasma(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -28,11 +28,19 @@ class OptionalSourcesService:
     aur_enabled_provider: AurEnabledProvider = lambda: False
     aur_enabled_setter: AurEnabledSetter | None = None
 
+    _firmware_support: bool | None = field(default=None, init=False)
+
     _AUR_HELPERS = ("paru", "yay", "pikaur")
     _MANAGED_PACKAGE_MAP = {
         UpdateSource.FLATPAK: ["flatpak"],
         UpdateSource.FIRMWARE: ["fwupd"],
     }
+
+    def refresh(self) -> None:
+        # Called by the update check worker; UI snapshots never query fwupd.
+        self._firmware_support = (
+            self._probe_firmware_device_support() if self.which("fwupdmgr") else None
+        )
 
     def snapshot(self) -> OptionalSourcesSnapshot:
         statuses = {
@@ -92,7 +100,7 @@ class OptionalSourcesService:
                 removable_packages=[],
             )
 
-        support_available = self._probe_firmware_device_support()
+        support_available = self._firmware_support
         if support_available is True:
             status_text = self._translate("Installed, ready to check device firmware")
         elif support_available is False:

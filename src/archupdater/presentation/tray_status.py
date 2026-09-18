@@ -12,7 +12,8 @@ from archupdater.application.update_sources.descriptors import (
     SOURCE_ORDER,
     source_descriptors,
 )
-from archupdater.domain.check_results import UpdateCheckResult
+from archupdater.domain.check_results import ArchNewsCheckState, CheckState, UpdateCheckResult
+from PySide6.QtCore import QCoreApplication
 from archupdater.domain.enums import UpdateSource
 from archupdater.domain.packages import UpdateCounters
 
@@ -28,6 +29,7 @@ class TrayStatusModel:
     ignored_updates_count: int = 0
     has_successful_check_result: bool = False
     check_failure_message: str | None = None
+    check_warnings: tuple[str, ...] = ()
     busy_message: str | None = None
     refresh_pending: bool = False
 
@@ -43,7 +45,15 @@ class TrayStatusModel:
         self.available_updates_count = result.actionable_count
         self.counters = result.counters
         self.ignored_updates_count = result.ignored_count
-        self.has_successful_check_result = True
+        warnings = list(result.warnings)
+        descriptors = source_descriptors(self.translate)
+        for report in result.source_reports:
+            if report.state is not CheckState.SUCCESS:
+                warnings.extend(report.warnings or (descriptors[report.source].counter_title,))
+        if result.arch_news_state is ArchNewsCheckState.FAILED and not warnings:
+            warnings.append(self.translate("Unknown error."))
+        self.check_warnings = tuple(dict.fromkeys(warnings))
+        self.has_successful_check_result = not self.check_warnings
         self.check_failure_message = None
         self.busy_message = None
         self.refresh_pending = False
@@ -53,6 +63,7 @@ class TrayStatusModel:
         self.counters = UpdateCounters()
         self.ignored_updates_count = 0
         self.has_successful_check_result = False
+        self.check_warnings = ()
         self.check_failure_message = message.strip() or self.translate("Unknown error.")
         self.busy_message = None
         self.refresh_pending = False
@@ -120,6 +131,7 @@ class TrayStatusModel:
             )
         if self.check_failure_message:
             lines.append(self.check_failure_message)
+        lines.extend(self.check_warnings)
         if next_check_at is not None and not self.shows_busy_status:
             lines.append(
                 self.translate("Next check: {time}").format(
@@ -135,6 +147,10 @@ class TrayStatusModel:
             return self.translate("ArchUpdater: {status}").format(status=self.busy_message)
         if self.check_failure_message is not None:
             return self.translate("ArchUpdater: Last check failed")
+        if self.available_updates_count <= 0 and self.check_warnings:
+            return self.translate("ArchUpdater: {status}").format(
+                status=QCoreApplication.translate("MainWindowLogic", "Checked with Warnings")
+            )
         if self.available_updates_count <= 0 and self.has_successful_check_result:
             return self.translate("ArchUpdater: Up to date")
         if self.available_updates_count <= 0:

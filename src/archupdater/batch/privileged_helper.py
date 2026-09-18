@@ -183,10 +183,12 @@ class BatchPrivilegedHelperInvoker:
             if event_type == HelperEventType.QUESTION.value:
                 question_id = payload.get("question_id")
                 message = payload.get("message")
+                details = payload.get("details", "")
                 if (
                     not isinstance(question_id, str) or not question_id or len(question_id) > 128
                     or payload.get("question_type") != "pacman_confirmation"
                     or not isinstance(message, str) or not message.strip() or len(message) > 16384
+                    or not isinstance(details, str) or len(details) > 128 * 1024
                 ):
                     self._abort_process(process)
                     return CommandRunResult(False, self.translate("Invalid Pacman question."))
@@ -197,6 +199,7 @@ class BatchPrivilegedHelperInvoker:
                             "question_id": question_id,
                             "question_type": "pacman_confirmation",
                             "message": message,
+                            **({"details": details} if details else {}),
                         }) is True
                 finally:
                     assert process.stdin is not None

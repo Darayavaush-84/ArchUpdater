@@ -43,7 +43,7 @@ def confirm_preflight_issues(
         QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok,
         QMessageBox.StandardButton.Ok,
     )
-    return answer is QMessageBox.StandardButton.Ok
+    return answer == QMessageBox.StandardButton.Ok
 
 
 def preflight_message(heading: str, issues: list[PreflightIssue]) -> str:
@@ -92,7 +92,7 @@ def ask_flatpak_cleanup_scopes(
     box.setStandardButtons(QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes)
     box.setDefaultButton(QMessageBox.StandardButton.No)
     answer = box.exec()
-    cleanup_requested = answer is QMessageBox.StandardButton.Yes
+    cleanup_requested = answer == QMessageBox.StandardButton.Yes
     if remember_checkbox.isChecked() and save_cleanup_preference is not None:
         save_cleanup_preference(cleanup_requested)
     return scopes if cleanup_requested else []

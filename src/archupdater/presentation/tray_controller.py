@@ -66,21 +66,21 @@ class TrayController(QObject):
         return QSystemTrayIcon.isSystemTrayAvailable()
 
     def is_active(self) -> bool:
-        return self._enabled and self.is_available()
+        return self._enabled and self.is_available() and self._tray.isVisible()
 
     def apply_settings(self, *, enabled: bool, notifications_enabled: bool) -> None:
         self._enabled = enabled
         self._notifications_enabled = notifications_enabled
         self.retranslate()
+        # Qt registers visible icons automatically if the tray appears later.
+        self._tray.setVisible(enabled)
         if self.is_active():
-            self._tray.show()
             self._sync_tray_icon()
             return
         self._animation_timer.stop()
-        self._tray.hide()
 
     def show_if_enabled(self) -> None:
-        if self.is_active():
+        if self._enabled:
             self._tray.show()
 
     def retranslate(self) -> None:
@@ -316,6 +316,7 @@ class TrayController(QObject):
 
     def _set_auto_check_schedule(self, interval_hours: int | None) -> None:
         self._window.set_auto_check_schedule(interval_hours)
+        self._sync_tooltip()
 
     @Slot()
     def _request_manual_check(self) -> None:
@@ -370,7 +371,7 @@ class TrayController(QObject):
         ):
             self._tray.setIcon(self._busy_icon(self._animation_angle))
             return
-        if self._tray_status.has_check_failure:
+        if self._tray_status.has_check_failure or self._tray_status.check_warnings:
             self._tray.setIcon(self._warning_marked_icon(self._base_icon))
             return
         if self._tray_status.available_updates_count > 0:

@@ -82,10 +82,12 @@ class PacmanBackend:
             ),
             failure_message=context.translate("System update failed."),
         )
+        changed = _privileged_transaction_changed(command_result)
         return BackendRunResult(
             command_result.success,
             command_result.message,
-            changed=_privileged_transaction_changed(command_result),
+            changed=changed,
+            incomplete=not command_result.success and changed,
         )
 
 
@@ -415,7 +417,7 @@ class FlatpakBackend:
                     f"--{scope}",
                     "--updates",
                     "--json",
-                    "--columns=ref,version,branch",
+                    "--columns=ref,version,branch,commit",
                 ],
                 failure_message=context.translate("Could not prepare the Flatpak transaction."),
             )
@@ -426,10 +428,10 @@ class FlatpakBackend:
                     changed=changed,
                     incomplete=changed,
                 )
-            available_versions = _parse_flatpak_version_output(
+            available_updates = _parse_flatpak_transaction_output(
                 str((preview_result.payload or {}).get("output") or "")
             )
-            if available_versions is None:
+            if available_updates is None:
                 return BackendRunResult(
                     False,
                     context.translate(
@@ -439,9 +441,9 @@ class FlatpakBackend:
                     incomplete=changed,
                 )
             actual_versions = {
-                ref: available_versions[ref]
+                ref: available_updates[ref][0]
                 for ref in refs
-                if available_versions.get(ref)
+                if ref in available_updates
             }
             approved_refs = refs
             if actual_versions != expected_versions:
@@ -473,42 +475,25 @@ class FlatpakBackend:
                     ],
                     failure_message=context.translate("Flatpak update failed."),
                 )
-                verify_result = context.run_command(
-                    [
-                        "flatpak",
-                        "remote-ls",
-                        f"--{scope}",
-                        "--updates",
-                        "--json",
-                        "--columns=ref,version,branch",
-                    ],
-                    failure_message=context.translate(
-                        "Could not verify the Flatpak transaction."
-                    ),
-                )
-                if not verify_result.success:
-                    return BackendRunResult(
-                        False,
-                        command_result.message
-                        if not command_result.success
-                        else verify_result.message,
-                        changed=changed,
-                        incomplete=changed,
-                    )
-                verified_versions = _parse_flatpak_version_output(
-                    str((verify_result.payload or {}).get("output") or "")
-                )
-                if verified_versions is None:
-                    return BackendRunResult(
-                        False,
-                        context.translate(
-                            "Flatpak returned an invalid verification result."
+                completed_refs: set[str] = set()
+                for ref in approved_refs:
+                    verify_result = context.run_command(
+                        ["flatpak", "info", f"--{scope}", "--show-commit", "--", ref],
+                        failure_message=context.translate(
+                            "Could not verify the Flatpak transaction."
                         ),
-                        changed=changed,
-                        incomplete=True,
                     )
-                remaining_refs = set(approved_refs).intersection(verified_versions)
-                completed_refs = set(approved_refs).difference(remaining_refs)
+                    installed_commit = str(
+                        (verify_result.payload or {}).get("output") or ""
+                    ).strip()
+                    # remote-ls reports a 12-character commit; info reports all 64.
+                    if (
+                        verify_result.success
+                        and re.fullmatch(r"[0-9a-f]{64}", installed_commit)
+                        and installed_commit.startswith(available_updates[ref][1])
+                    ):
+                        completed_refs.add(ref)
+                remaining_refs = set(approved_refs).difference(completed_refs)
                 if completed_refs:
                     changed = True
                 if not command_result.success:
@@ -691,40 +676,31 @@ def _expected_versions(items: list[UpdatePlanItem]) -> dict[str, str]:
     return {item.target_id: (item.expected_version or "").strip() for item in items}
 
 
-def _parse_flatpak_version_output(output: str) -> dict[str, str] | None:
-    stripped = output.strip()
-    if not stripped:
+def _parse_flatpak_transaction_output(output: str) -> dict[str, tuple[str, str]] | None:
+    if not output.strip():
         return {}
     try:
-        payload = json.loads(stripped)
+        payload = json.loads(output)
     except json.JSONDecodeError:
-        payload = None
-    if isinstance(payload, list):
-        versions: dict[str, str] = {}
-        for entry in payload:
-            if not isinstance(entry, dict):
-                return None
-            ref = entry.get("ref")
-            version = entry.get("version")
-            branch = entry.get("branch", "")
-            if not isinstance(ref, str) or not ref:
-                return None
-            if not isinstance(version, str) or not isinstance(branch, str):
-                return None
-            versions[ref] = version.strip() or branch.strip()
-        return versions
-
-    versions: dict[str, str] = {}
-    for raw_line in output.splitlines():
-        columns = raw_line.split("\t")
-        if len(columns) < 2:
-            continue
-        ref = columns[0].strip()
-        version = columns[1].strip()
-        branch = columns[2].strip() if len(columns) >= 3 else ""
-        if ref:
-            versions[ref] = version or branch
-    return versions or None
+        return None
+    if not isinstance(payload, list):
+        return None
+    updates: dict[str, tuple[str, str]] = {}
+    for entry in payload:
+        if not isinstance(entry, dict):
+            return None
+        ref = entry.get("ref")
+        version = entry.get("version")
+        branch = entry.get("branch", "")
+        commit = entry.get("commit")
+        if not isinstance(ref, str) or not ref:
+            return None
+        if not isinstance(version, str) or not isinstance(branch, str):
+            return None
+        if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{12,64}", commit):
+            return None
+        updates[ref] = (version.strip() or branch.strip(), commit)
+    return updates
 
 
 _CHECKUPDATES_LINE_RE = re.compile(
@@ -762,6 +738,8 @@ def _confirm_plan_change(
 
 def _privileged_transaction_changed(result: CommandRunResult) -> bool:
     payload = result.payload or {}
+    if isinstance(payload.get("changed"), bool):
+        return payload["changed"]
     if result.success:
         return payload.get("changed") is not False
     return payload.get("reason") not in {"plan_changed", "preparation_failed"}

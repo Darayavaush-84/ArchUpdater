@@ -32,7 +32,6 @@ class MainWindowCheckPresenter:
 
     def show_post_update_refreshing_state(self) -> None:
         self._state.packages = []
-        self._state.last_checked_at = None
         self._state.check_failure_message = ""
         self._state.check_warnings = []
         self._window.package_updates_widget.clear_packages()
@@ -45,7 +44,6 @@ class MainWindowCheckPresenter:
 
     def reset_for_fresh_check(self) -> None:
         self._state.packages = []
-        self._state.last_checked_at = None
         self._state.check_failure_message = ""
         self._state.check_warnings = []
         self._window.package_updates_widget.clear_packages()
@@ -105,6 +103,8 @@ class MainWindowCheckPresenter:
 
     def persist_successful_check_result(self) -> None:
         window = self._window
+        if self._state.last_checked_at is not None:
+            window._state_cache.store_last_successful_check(self._state.last_checked_at)
         if self._state.arch_news:
             window._state_cache.store_arch_news_items(self._state.arch_news)
         window._state_cache.clear_update_session()
@@ -118,7 +118,6 @@ class MainWindowCheckPresenter:
         self._state.post_update_refresh_pending = False
         window._apply_optional_sources_snapshot(window._load_optional_sources_snapshot())
         self._state.packages = []
-        self._state.last_checked_at = None
         self._state.check_failure_message = message.strip()
         self._state.check_warnings = []
         window.package_updates_widget.clear_packages()

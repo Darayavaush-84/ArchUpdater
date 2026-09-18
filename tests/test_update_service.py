@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -88,6 +89,10 @@ class UpdateServiceTests(unittest.TestCase):
 
     def test_cancellation_before_first_backend_does_not_start_a_check(self) -> None:
         container = self._container()
+        probe = Mock()
+        container.optional_sources = OptionalSourcesService(
+            which=lambda _name: "/usr/bin/fwupdmgr", firmware_probe=probe,
+        )
         service = container.updates()
         pacman = _CleanPacman()
         container.pacman_updates = pacman
@@ -96,6 +101,7 @@ class UpdateServiceTests(unittest.TestCase):
             service.check_updates(cancel_requested=lambda: True)
 
         self.assertEqual(pacman.use_local_db_calls, [])
+        probe.assert_not_called()
 
     def test_skips_optional_backends_that_are_not_active(self) -> None:
         container = self._container()

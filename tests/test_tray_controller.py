@@ -5,10 +5,12 @@ import types
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QWidget
 
 from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.domain.check_results import UpdateCheckResult
@@ -261,6 +263,7 @@ class TrayControllerTests(unittest.TestCase):
         controller = TrayController.__new__(TrayController)
         selected_values: list[int | None] = []
         controller._window = types.SimpleNamespace(set_auto_check_schedule=selected_values.append)
+        controller._sync_tooltip = Mock()
 
         controller._set_auto_check_schedule(72)
 
@@ -274,6 +277,50 @@ class TrayControllerTests(unittest.TestCase):
         self.assertEqual(controller._auto_check_interval_label(72), "tr:Every 3 days")
         self.assertEqual(controller._auto_check_interval_label(168), "tr:Every week")
         self.assertEqual(controller._auto_check_interval_label(5), "tr:Every 5 hours")
+
+    def test_late_tray_keeps_icon_registered_and_close_has_a_visible_destination(self) -> None:
+        from archupdater.presentation.main_window import MainWindow
+        window = QWidget()
+        window.next_auto_check_at = lambda: None
+        window.quit_application_from_tray = lambda: None
+        source = Mock()
+        source.is_busy.return_value = False
+        with patch.object(TrayController, 'is_available', return_value=False) as available:
+            controller = TrayController(app=self._app, window=window, update_controller=source,
+                                        enabled=True, notifications_enabled=False)
+            self.addCleanup(controller._tray.hide)
+            self.addCleanup(window.hide)
+            self.assertTrue(controller._tray.isVisible())
+            self.assertFalse(controller.is_active())
+            available.return_value = True
+            self.assertTrue(controller.is_active())
+            window._tray_controller = controller
+            window._allow_close = False
+            window.show()
+            event = QCloseEvent()
+            MainWindow.closeEvent(window, event)
+            self.assertFalse(window.isVisible())
+            self.assertFalse(event.isAccepted())
+            self.assertTrue(controller._tray.isVisible())
+            controller.apply_settings(enabled=False, notifications_enabled=False)
+            self.assertFalse(controller._tray.isVisible())
+            self.assertFalse(controller.is_active())
+
+    def test_partial_check_uses_warning_icon_instead_of_green_marker(self) -> None:
+        controller = TrayController.__new__(TrayController)
+        icons = []
+        controller._tray = types.SimpleNamespace(setIcon=icons.append)
+        controller._base_icon = object()
+        controller._tray_status = TrayStatusModel(lambda text: text)
+        controller._tray_status.apply_check_result(UpdateCheckResult(
+            [], datetime.now(), [], warnings=['Flatpak network timeout']))
+        controller.is_active = lambda: True
+        controller._update_controller = types.SimpleNamespace(is_busy=lambda: False)
+        warning_icon = object()
+        controller._warning_marked_icon = lambda icon: warning_icon
+        controller._ok_marked_icon = Mock(side_effect=AssertionError('green icon after failed source'))
+        controller._sync_tray_icon()
+        self.assertEqual(icons, [warning_icon])
 
 
 if __name__ == "__main__":

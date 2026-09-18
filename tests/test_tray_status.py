@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from archupdater.domain.check_results import UpdateCheckResult
+from archupdater.domain.check_results import CheckState, SourceCheckReport, UpdateCheckResult
 from archupdater.domain.enums import UpdateSource
 from archupdater.domain.package_metadata import AurPackageMetadata, SystemPackageMetadata
 from archupdater.domain.packages import PackageUpdate
@@ -111,6 +111,33 @@ class TrayStatusModelTests(unittest.TestCase):
             model.tooltip(),
             "ArchUpdater: Installing system updates...",
         )
+
+    def test_source_failure_never_claims_up_to_date_and_retains_detected_updates(self) -> None:
+        for packages in ([], [_package('linux', UpdateSource.SYSTEM)]):
+            with self.subTest(packages=packages):
+                model = TrayStatusModel(lambda text: text)
+                model.apply_check_result(UpdateCheckResult(
+                    packages, datetime.now(), [], warnings=['Flatpak network timeout'],
+                    source_reports=[SourceCheckReport(UpdateSource.FLATPAK, CheckState.FAILED,
+                                                      ('Flatpak network timeout',))],
+                ))
+                self.assertNotIn('Up to date', model.tooltip())
+                self.assertFalse(model.has_successful_check_result)
+                self.assertEqual(model.available_updates_count, len(packages))
+                self.assertEqual(model.check_warnings, ('Flatpak network timeout',))
+                self.assertIn('Flatpak network timeout', model.tooltip())
+                model.apply_check_result(UpdateCheckResult([], datetime.now(), []))
+                self.assertEqual(model.tooltip(), 'ArchUpdater: Up to date')
+                self.assertFalse(model.check_warnings)
+
+    def test_failed_source_without_warning_text_still_marks_check_incomplete(self) -> None:
+        model = TrayStatusModel(lambda text: text)
+        model.apply_check_result(UpdateCheckResult(
+            [], datetime.now(), [], source_reports=[SourceCheckReport(UpdateSource.AUR, CheckState.FAILED)],
+        ))
+        self.assertFalse(model.has_successful_check_result)
+        self.assertTrue(model.check_warnings)
+        self.assertNotIn('Up to date', model.tooltip())
 
 
 if __name__ == "__main__":

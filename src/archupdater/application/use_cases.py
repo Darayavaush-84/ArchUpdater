@@ -51,6 +51,8 @@ class AurHelperDetector(Protocol):
 
 
 class OptionalSourcesReader(Protocol):
+    def refresh(self) -> None: ...
+
     def snapshot(self) -> OptionalSourcesSnapshot: ...
 
     def set_aur_enabled(self, enabled: bool) -> None: ...
@@ -143,6 +145,9 @@ class RunPreflightChecks:
 @dataclass(slots=True)
 class ReadOptionalSources:
     optional_sources_service: OptionalSourcesReader
+
+    def refresh(self) -> None:
+        self.optional_sources_service.refresh()
 
     def snapshot(self) -> OptionalSourcesSnapshot:
         return self.optional_sources_service.snapshot()

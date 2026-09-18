@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
@@ -39,7 +40,7 @@ def run_flatpak_system_update(
             "remote-ls",
             "--system",
             "--updates",
-            "--columns=ref,version,branch",
+            "--columns=ref,version,branch,commit",
         ],
         emit_log=emit_log,
     )
@@ -57,7 +58,14 @@ def run_flatpak_system_update(
         return 3
     available_versions = _parse_tab_versions(preview_output)
     actual_versions = {ref: available_versions[ref] for ref in refs if available_versions.get(ref)}
-    if actual_versions != expected_versions:
+    target_commits = {
+        columns[0]: columns[3]
+        for line in preview_output
+        if len(columns := line.split("\t")) == 4
+        and re.fullmatch(r"[0-9a-f]{12,64}", columns[3])
+        and columns[0] in refs
+    }
+    if actual_versions != expected_versions or set(target_commits) != set(refs):
         message = QCoreApplication.translate(
             "PrivilegedHelper",
             "The Flatpak transaction changed after it was reviewed.",
@@ -95,18 +103,20 @@ def run_flatpak_system_update(
         emit_event(HelperEventType.COMPLETED, success=False, message=message)
         return 3
 
-    verify_code, verify_output = update_commands.stream_command(
-        [
-            str(FLATPAK_PATH),
-            "remote-ls",
-            "--system",
-            "--updates",
-            "--columns=ref,version,branch",
-        ],
-        emit_log=emit_log,
-    )
-    remaining_refs = set(refs).intersection(_parse_tab_versions(verify_output))
-    if verify_code != 0 or remaining_refs:
+    completed_refs: set[str] = set()
+    for ref in refs:
+        verify_code, verify_output = update_commands.stream_command(
+            [str(FLATPAK_PATH), "info", "--system", "--show-commit", "--", ref],
+            emit_log=emit_log,
+        )
+        installed_commit = "\n".join(verify_output).strip()
+        if (
+            verify_code == 0
+            and re.fullmatch(r"[0-9a-f]{64}", installed_commit)
+            and installed_commit.startswith(target_commits[ref])
+        ):
+            completed_refs.add(ref)
+    if completed_refs != set(refs):
         message = QCoreApplication.translate(
             "PrivilegedHelper",
             "Flatpak finished without installing all selected updates.",

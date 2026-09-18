@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
             aur_enabled_setter=self._set_aur_updates_enabled,
         ).updates()
         self._state_cache = state_cache or AppStateCache()
-        self._state = MainWindowState()
+        self._state = MainWindowState(last_checked_at=self._state_cache.load_last_successful_check())
         self._translation_manager = translation_manager or TranslationManager(
             QApplication.instance()
         )
@@ -121,7 +121,6 @@ class MainWindow(QMainWindow):
         self._check_schedule = CheckScheduleController(
             is_busy=self._update_controller.is_busy,
             start_check=lambda: self._flow_coordinator.start_check_updates(),
-            defer_next_check=self._defer_next_auto_check,
             show_waiting_for_network=self._show_waiting_for_network_state,
             parent=self,
         )
@@ -129,7 +128,7 @@ class MainWindow(QMainWindow):
         self._background_behavior = BackgroundBehaviorController(
             settings=self._settings,
             autostart_service=self._autostart_service,
-            auto_check_timer=self._check_schedule.timer,
+            check_schedule=self._check_schedule,
         )
         self._plasma_restart_coordinator = PlasmaRestartCoordinator(
             service=self._service,
@@ -192,7 +191,6 @@ class MainWindow(QMainWindow):
         app_settings = self._background_behavior.load_app_settings()
         self._apply_background_behavior_settings(app_settings)
         self._release_checker.check()
-        self._check_schedule.start()
 
     def _build_ui(self) -> None:
         ui = build_main_window_ui(self)
@@ -544,7 +542,7 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
-        return answer is QMessageBox.StandardButton.Yes
+        return answer == QMessageBox.StandardButton.Yes
 
     def _warn_plasma_restart_failed(self) -> None:
         QMessageBox.warning(
@@ -569,10 +567,13 @@ class MainWindow(QMainWindow):
         )
 
     def set_auto_check_schedule(self, interval_hours: int | None) -> None:
-        message = self._background_behavior.set_auto_check_schedule(interval_hours)
+        message = self._background_behavior.set_auto_check_schedule(
+            interval_hours, last_checked_at=self._state.last_checked_at,
+        )
         if message is None:
             return
         self.action_bar.show_transient_message(message, 3000)
+        self._update_next_check_label()
 
     def show_from_tray(self) -> None:
         if self.isMinimized():
@@ -655,13 +656,13 @@ class MainWindow(QMainWindow):
         self.action_bar.clear_status_text()
         self.details_panel.show_placeholder(
             title=self.tr("Waiting for network..."),
-            text=self.tr("The startup scan will begin automatically when the network is online."),
+            text=self.tr("Waiting for network..."),
             icon=QStyle.StandardPixmap.SP_BrowserReload,
         )
         self.side_panel.hide()
         self.package_updates_widget.show_status_placeholder(
             self.tr("Waiting for network..."),
-            self.tr("The startup scan will begin automatically when the network is online."),
+            self.tr("Waiting for network..."),
         )
 
     def _load_arch_news_history(self) -> None:
