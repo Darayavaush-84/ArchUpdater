@@ -70,8 +70,9 @@ class InstallScriptHardeningTests(unittest.TestCase):
     def test_user_data_purge_is_explicit_and_scoped_to_sudo_user(self) -> None:
         self.assertIn("--purge-user-data", self.uninstaller)
         self.assertIn('local target_user="${SUDO_USER:-}"', self.uninstaller)
-        self.assertIn('"${user_home}/.cache/archupdater"', self.uninstaller)
-        self.assertIn('"${user_home}/.config/ArchUpdater"', self.uninstaller)
+        self.assertIn('"${user_cache_home}/archupdater"', self.uninstaller)
+        self.assertIn('"${user_config_home}/ArchUpdater"', self.uninstaller)
+        self.assertIn('"${user_state_home}/archupdater"', self.uninstaller)
 
 
 if __name__ == "__main__":

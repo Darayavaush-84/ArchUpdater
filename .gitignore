@@ -15,3 +15,5 @@ venv/
 .mypy_cache/
 .coverage
 htmlcov/
+
+docs/reviews/

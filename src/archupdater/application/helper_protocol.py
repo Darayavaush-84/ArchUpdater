@@ -81,6 +81,7 @@ class HelperRequest:
                         "sha256": reviewed_file.sha256,
                         "size": reviewed_file.size,
                         "content": reviewed_file.content,
+                        "executable": reviewed_file.executable,
                     }
                     for reviewed_file in self.aur_review.files
                 ],

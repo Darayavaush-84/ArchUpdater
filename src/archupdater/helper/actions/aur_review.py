@@ -81,6 +81,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             "sha256",
             "size",
             "content",
+            "executable",
         }:
             raise validation.PrivilegedUpdateValidationError(
                 QCoreApplication.translate(
@@ -92,6 +93,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
         sha256 = raw_file["sha256"]
         size = raw_file["size"]
         content = raw_file["content"]
+        executable = raw_file["executable"]
         if (
             not isinstance(path, str)
             or not path
@@ -106,6 +108,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             or not isinstance(size, int)
             or size < 0
             or not isinstance(content, str)
+            or not isinstance(executable, bool)
             or any(
                 (unicodedata.category(character) == "Cc" and character not in {"\n", "\r", "\t"})
                 or unicodedata.category(character) in {"Cf", "Cs"}
@@ -132,13 +135,17 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
                 )
             )
         paths.append(path)
-        files.append(AurReviewFile(path=path, sha256=sha256.lower(), size=size, content=content))
+        files.append(AurReviewFile(
+            path=path, sha256=sha256.lower(), size=size,
+            content=content, executable=executable,
+        ))
         tree_digest.update(path.encode("utf-8"))
         tree_digest.update(b"\0")
         tree_digest.update(str(size).encode("ascii"))
         tree_digest.update(b"\0")
         tree_digest.update(sha256.lower().encode("ascii"))
         tree_digest.update(b"\0")
+        tree_digest.update(b"1\0" if executable else b"0\0")
 
     if paths != sorted(paths) or tree_digest.hexdigest() != digest.lower():
         raise validation.PrivilegedUpdateValidationError(

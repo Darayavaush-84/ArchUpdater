@@ -20,7 +20,7 @@ class UpdateInteractionDialogsTests(unittest.TestCase):
         content = "pkgbase=foo"
         file_digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
         tree_digest = hashlib.sha256()
-        for value in ("PKGBUILD", str(len(content)), file_digest):
+        for value in ("PKGBUILD", str(len(content)), file_digest, "0"):
             tree_digest.update(value.encode("utf-8"))
             tree_digest.update(b"\0")
 
@@ -44,6 +44,7 @@ class UpdateInteractionDialogsTests(unittest.TestCase):
                             "sha256": file_digest,
                             "size": 11,
                             "content": content,
+                            "executable": False,
                         },
                     ],
                 },

@@ -10,6 +10,7 @@ class AurReviewFile:
     sha256: str
     size: int
     content: str
+    executable: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +43,8 @@ class AurPkgbuildReview:
             metadata.append(
                 f"- {json.dumps(reviewed_file.path, ensure_ascii=True)}  "
                 f"{reviewed_file.sha256}  "
-                f"{reviewed_file.size} bytes  UTF-8 text"
+                f"{reviewed_file.size} bytes  UTF-8 text  "
+                f"mode={'0700' if reviewed_file.executable else '0600'}"
             )
         if self.vcs_sources:
             metadata.extend(("", "Approved VCS source commits:"))

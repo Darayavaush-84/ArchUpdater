@@ -144,12 +144,14 @@ def _review_from_payload(data: dict[object, object]) -> AurPkgbuildReview | None
             "sha256",
             "size",
             "content",
+            "executable",
         }:
             return None
         path = raw_file["path"]
         sha256 = raw_file["sha256"]
         size = raw_file["size"]
         content = raw_file["content"]
+        executable = raw_file["executable"]
         if (
             not isinstance(path, str)
             or not path
@@ -163,6 +165,7 @@ def _review_from_payload(data: dict[object, object]) -> AurPkgbuildReview | None
             or not isinstance(size, int)
             or size < 0
             or not isinstance(content, str)
+            or not isinstance(executable, bool)
         ):
             return None
         raw_content = content.encode("utf-8")
@@ -174,7 +177,10 @@ def _review_from_payload(data: dict[object, object]) -> AurPkgbuildReview | None
 
         seen_paths.add(path)
         reviewed_files.append(
-            AurReviewFile(path=path, sha256=sha256.lower(), size=size, content=content)
+            AurReviewFile(
+                path=path, sha256=sha256.lower(), size=size,
+                content=content, executable=executable,
+            )
         )
         tree_digest.update(path.encode("utf-8"))
         tree_digest.update(b"\0")
@@ -182,6 +188,7 @@ def _review_from_payload(data: dict[object, object]) -> AurPkgbuildReview | None
         tree_digest.update(b"\0")
         tree_digest.update(sha256.lower().encode("ascii"))
         tree_digest.update(b"\0")
+        tree_digest.update(b"1\0" if executable else b"0\0")
 
     if [reviewed_file.path for reviewed_file in reviewed_files] != sorted(seen_paths):
         return None

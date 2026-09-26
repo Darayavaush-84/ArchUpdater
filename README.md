@@ -2,7 +2,7 @@
 
 **A simple, direct way to keep your Arch desktop up to date.**
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.3-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
 [![CI](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
@@ -143,11 +143,20 @@ Keep your per-user settings and logs:
 sudo archupdater-uninstall
 ```
 
-Or remove the invoking user's ArchUpdater settings, logs, caches and autostart configuration too:
+Or remove the invoking user's ArchUpdater settings, logs, caches, AUR development state and autostart configuration too:
 
 ```bash
 sudo archupdater-uninstall --purge-user-data
 ```
+
+If you use custom XDG directories, preserve their values through sudo:
+
+```bash
+sudo --preserve-env=XDG_CONFIG_HOME,XDG_CACHE_HOME,XDG_STATE_HOME archupdater-uninstall --purge-user-data
+```
+
+The purge removes only ArchUpdater's entries, using the invoking user's permissions.
+
 
 ## Decisions stay visible
 

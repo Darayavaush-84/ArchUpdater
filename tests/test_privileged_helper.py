@@ -60,6 +60,7 @@ def _review(
         tree_digest.update(b"\0")
         tree_digest.update(digest.encode("ascii"))
         tree_digest.update(b"\0")
+        tree_digest.update(b"0\0")
     return AurPkgbuildReview(
         package_name=package_name,
         package_base=package_base,
@@ -81,6 +82,7 @@ def _review_payload(review: AurPkgbuildReview) -> dict[str, object]:
                 "sha256": item.sha256,
                 "size": item.size,
                 "content": item.content,
+                "executable": item.executable,
             }
             for item in review.files
         ],
@@ -760,6 +762,8 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
+                patch.object(update_commands, "installed_package_versions",
+                             side_effect=[{"example": "0.9-1"}, {"example": "1.0-1"}]),
                 patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
                 patch.object(update_commands, "_require_executable", return_value=True),
                 patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
@@ -871,6 +875,8 @@ class PrivilegedHelperTests(unittest.TestCase):
                 return 0, []
 
             with (
+                patch.object(update_commands, "installed_package_versions",
+                             side_effect=[{}, {"example-cli": "1.0-1", "example-gui": "1.0-1"}]),
                 patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
                 patch.object(update_commands, "_require_executable", return_value=True),
                 patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),

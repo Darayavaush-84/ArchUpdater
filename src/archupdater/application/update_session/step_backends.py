@@ -122,7 +122,7 @@ class AurBackend:
                 context.translate("Packages: {packages}").format(packages=reviewed)
             )
 
-        installed: list[str] = []
+        changed = False
         skipped: list[str] = []
         for group in self._group_by_package_base(aur_items):
             item = group[0]
@@ -143,8 +143,8 @@ class AurBackend:
                     context.translate(
                         "The AUR update plan has no expected version for {package}."
                     ).format(package=package_name),
-                    changed=bool(installed),
-                    incomplete=bool(installed),
+                    changed=changed,
+                    incomplete=changed,
                 )
             try:
                 if any(target.dynamic_version for target in targets):
@@ -159,7 +159,7 @@ class AurBackend:
                         item.package_base,
                     )
             except Exception as exc:
-                return self._failure(context, package_name, exc, changed=bool(installed))
+                return self._failure(context, package_name, exc, changed=changed)
 
             try:
                 try:
@@ -167,7 +167,7 @@ class AurBackend:
                 except BatchCancelled as exc:
                     raise BatchCancelled(
                         str(exc),
-                        changed=bool(installed) or exc.changed,
+                        changed=changed or exc.changed,
                     ) from exc
                 if not review_confirmed:
                     skipped.extend(target.package_name for target in targets)
@@ -189,7 +189,7 @@ class AurBackend:
                         context.service.aur_missing_build_dependencies(review)
                     )
                 except Exception as exc:
-                    return self._failure(context, package_name, exc, changed=bool(installed))
+                    return self._failure(context, package_name, exc, changed=changed)
                 if missing_dependencies:
                     missing = context.summarize_items(missing_dependencies)
                     return BackendRunResult(
@@ -198,8 +198,8 @@ class AurBackend:
                             "Missing build dependencies for {package}: {dependencies}. "
                             "Install them explicitly before retrying."
                         ).format(package=package_name, dependencies=missing),
-                        changed=bool(installed),
-                        incomplete=bool(installed),
+                        changed=changed,
+                        incomplete=changed,
                     )
 
                 install_result = context.run_privileged(
@@ -217,12 +217,14 @@ class AurBackend:
                         "Could not build and install the reviewed AUR package."
                     ),
                 )
+                payload = install_result.payload or {}
+                changed = changed or payload.get("changed", install_result.success) is True
                 if not install_result.success:
                     return BackendRunResult(
                         False,
                         install_result.message,
-                        changed=bool(installed),
-                        incomplete=bool(installed),
+                        changed=changed,
+                        incomplete=changed or payload.get("reason") == "postcondition_failed",
                     )
                 if any(target.dynamic_version for target in targets):
                     actual_versions = (install_result.payload or {}).get("actual_versions")
@@ -232,8 +234,8 @@ class AurBackend:
                             context.translate(
                                 "The AUR helper did not report the installed development version."
                             ),
-                            changed=bool(installed),
-                            incomplete=bool(installed),
+                            changed=changed,
+                            incomplete=changed,
                         )
                     for target in targets:
                         if not target.dynamic_version:
@@ -245,8 +247,8 @@ class AurBackend:
                                 context.translate(
                                     "The AUR helper reported an invalid development version."
                                 ),
-                                changed=bool(installed),
-                                incomplete=bool(installed),
+                                changed=changed,
+                                incomplete=changed,
                             )
                         try:
                             context.service.record_aur_vcs_install(
@@ -263,7 +265,6 @@ class AurBackend:
                                     error=str(exc).strip() or context.translate("unknown error"),
                                 )
                             )
-                installed.extend(target.package_name for target in targets)
             finally:
                 context.service.discard_aur_pkgbuild_review(review)
 
@@ -273,7 +274,7 @@ class AurBackend:
                     packages=context.summarize_items(skipped)
                 )
             )
-        if not installed and skipped:
+        if not changed and skipped:
             return BackendRunResult(
                 True,
                 context.translate("AUR updates were skipped after PKGBUILD review."),
@@ -289,8 +290,11 @@ class AurBackend:
             )
         return BackendRunResult(
             True,
-            context.translate("AUR update completed successfully."),
-            changed=bool(installed),
+            (
+                context.translate("AUR update completed successfully.")
+                if changed else context.translate("No selected updates were installed.")
+            ),
+            changed=changed,
         )
 
     def _confirm_pkgbuild_review(
@@ -322,6 +326,7 @@ class AurBackend:
                         "sha256": reviewed_file.sha256,
                         "size": reviewed_file.size,
                         "content": reviewed_file.content,
+                        "executable": reviewed_file.executable,
                     }
                     for reviewed_file in review.files
                 ],

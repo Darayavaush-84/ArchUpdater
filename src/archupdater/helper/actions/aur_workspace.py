@@ -81,7 +81,7 @@ def _create_user_aur_build_checkout(
             shutil.copyfileobj(source_handle, destination_handle, length=COPY_CHUNK_BYTES)
             destination_handle.flush()
             os.fsync(destination_handle.fileno())
-        destination.chmod(0o600)
+        destination.chmod(0o700 if reviewed_file.executable else 0o600)
         os.chown(destination, build_user.uid, build_user.gid)
     for directory in sorted(directories, key=lambda path: len(path.parts), reverse=True):
         directory.chmod(0o700)

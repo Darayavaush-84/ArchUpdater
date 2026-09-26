@@ -144,7 +144,7 @@ def install_reviewed_aur_group(
                 "PrivilegedHelper",
                 "makepkg exited with code {code}.",
             ).format(code=return_code)
-            emit_event(HelperEventType.COMPLETED, success=False, message=message)
+            emit_event(HelperEventType.COMPLETED, success=False, message=message, changed=False)
             return 3
 
         if any(target.dynamic_version for target in targets):
@@ -175,35 +175,12 @@ def install_reviewed_aur_group(
             for target in targets
         ]
         artifacts = [artifact for artifact, _version in verified_artifacts]
-        actual_versions = {
-            target.package_name: actual_version
-            for target, (_artifact, actual_version) in zip(targets, verified_artifacts, strict=True)
+        expected_versions = {
+            target.package_name: version
+            for target, (_artifact, version) in zip(targets, verified_artifacts, strict=True)
         }
-        return update_commands._run_helper_command(
-            update_commands._critical_command(
-                [
-                    str(update_commands.PACMAN_PATH),
-                    "-U",
-                    "--confirm",
-                    "--needed",
-                    "--color",
-                    "never",
-                    "--",
-                    *[str(artifact) for artifact in artifacts],
-                ]
-            ),
-            success_message=QCoreApplication.translate(
-                "PrivilegedHelper",
-                "Reviewed AUR package installed successfully.",
-            ),
-            failure_message=QCoreApplication.translate(
-                "PrivilegedHelper",
-                "pacman exited with code {code}.",
-            ),
-            emit_event=emit_event,
-            emit_log=emit_log,
-            survive_parent_exit=True,
-            success_payload={"actual_versions": actual_versions},
+        return _install_verified_artifacts(
+            artifacts, expected_versions, emit_event=emit_event, emit_log=emit_log,
         )
     except (OSError, subprocess.SubprocessError, validation.PrivilegedUpdateValidationError) as exc:
         message = str(exc) or QCoreApplication.translate(
@@ -211,8 +188,70 @@ def install_reviewed_aur_group(
             "Could not build or verify the reviewed AUR package.",
         )
         emit_log(message)
-        emit_event(HelperEventType.COMPLETED, success=False, message=message)
+        emit_event(HelperEventType.COMPLETED, success=False, message=message, changed=False)
         return 4
     finally:
         if action_root is not None:
             shutil.rmtree(action_root, ignore_errors=True)
+
+
+def _install_verified_artifacts(
+    artifacts: list[Path],
+    expected_versions: dict[str, str],
+    *,
+    emit_event: EmitEvent,
+    emit_log: EmitLog,
+) -> int:
+    # Query after the potentially long build, immediately around pacman -U.
+    before = update_commands.installed_package_versions()
+    failure_message = QCoreApplication.translate(
+        "PrivilegedHelper", "Could not build or verify the reviewed AUR package.",
+    )
+    if before is None:
+        emit_log("Could not read installed package versions before the AUR transaction.")
+        emit_event(
+            HelperEventType.COMPLETED, success=False, message=failure_message,
+            reason="preparation_failed", changed=False,
+        )
+        return 3
+
+    verification_failed = False
+
+    def report_result(event: HelperEventType, **payload: object) -> None:
+        nonlocal verification_failed
+        if event is HelperEventType.COMPLETED:
+            after = update_commands.installed_package_versions()
+            payload["changed"] = None if after is None else before != after
+            payload["actual_versions"] = (
+                {name: after[name] for name in expected_versions if name in after}
+                if after is not None else {}
+            )
+            if after is None or (
+                payload.get("success") is True
+                and payload["actual_versions"] != expected_versions
+            ):
+                verification_failed = True
+                emit_log("Could not verify all installed AUR package versions after the transaction.")
+                payload.update(
+                    success=False, message=failure_message, reason="postcondition_failed",
+                )
+            elif payload.get("success") is True and payload["changed"] is False:
+                payload["message"] = QCoreApplication.translate(
+                    "BatchUpdateRunner", "No selected updates were installed.",
+                )
+        emit_event(event, **payload)
+
+    code = update_commands._run_helper_command(
+        update_commands._critical_command([
+            str(update_commands.PACMAN_PATH), "-U", "--confirm", "--needed",
+            "--color", "never", "--", *map(str, artifacts),
+        ]),
+        success_message=QCoreApplication.translate(
+            "PrivilegedHelper", "Reviewed AUR package installed successfully.",
+        ),
+        failure_message=QCoreApplication.translate(
+            "PrivilegedHelper", "pacman exited with code {code}.",
+        ),
+        emit_event=report_result, emit_log=emit_log, survive_parent_exit=True,
+    )
+    return 3 if verification_failed else code

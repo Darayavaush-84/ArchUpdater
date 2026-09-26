@@ -93,6 +93,9 @@ purge_invoking_user_data() {
     local target_user="${SUDO_USER:-}"
     local passwd_entry
     local user_home
+    local user_cache_home
+    local user_config_home
+    local user_state_home
 
     if [[ -z "${target_user}" || "${target_user}" == "root" ]]; then
         echo "Error: --purge-user-data requires invocation through sudo by a non-root user."
@@ -109,10 +112,27 @@ purge_invoking_user_data() {
         exit 1
     }
 
-    rm -rf -- \
-        "${user_home}/.cache/archupdater" \
-        "${user_home}/.config/ArchUpdater"
-    rm -f -- "${user_home}/.config/autostart/io.github.archupdater.desktop"
+    # Use the invoking user's absolute XDG paths when explicitly preserved
+    # through sudo. Relative XDG values are invalid and use the home defaults.
+    user_cache_home="${XDG_CACHE_HOME:-${user_home}/.cache}"
+    user_config_home="${XDG_CONFIG_HOME:-${user_home}/.config}"
+    user_state_home="${XDG_STATE_HOME:-${user_home}/.local/state}"
+    [[ "${user_cache_home}" = /* ]] || user_cache_home="${user_home}/.cache"
+    [[ "${user_config_home}" = /* ]] || user_config_home="${user_home}/.config"
+    [[ "${user_state_home}" = /* ]] || user_state_home="${user_home}/.local/state"
+    command -v runuser >/dev/null 2>&1 || {
+        echo "Error: runuser(1) is required to purge user data."
+        exit 1
+    }
+    [[ "${1:-}" != "--validate-only" ]] || return 0
+
+    # User-controlled paths must be removed with that user's permissions.
+    runuser -u "${target_user}" -- /usr/bin/rm -rf -- \
+        "${user_cache_home}/archupdater" \
+        "${user_config_home}/ArchUpdater" \
+        "${user_state_home}/archupdater"
+    runuser -u "${target_user}" -- /usr/bin/rm -f -- \
+        "${user_config_home}/autostart/io.github.archupdater.desktop"
     echo "Removed ArchUpdater data for ${target_user}."
 }
 
@@ -156,6 +176,9 @@ if [[ -d "${INSTALL_ROOT}" ]]; then
         echo "Error: an ArchUpdater installation or recovery is running."
         exit 1
     }
+fi
+if [[ "${PURGE_USER_DATA}" == true ]]; then
+    purge_invoking_user_data --validate-only
 fi
 stop_running_archupdater
 

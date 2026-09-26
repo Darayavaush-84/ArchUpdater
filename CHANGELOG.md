@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3] - 2026-09-27
+
+### Fixed
+
+- Preserve executable permissions for reviewed AUR build scripts so valid packages build correctly.
+- Correctly report AUR updates that make no changes, partially fail, or cannot be verified.
+- Remove saved AUR development state when uninstalling with `--purge-user-data`, including custom XDG directories.
+
 ## [1.0.2] - 2026-09-18
 
 ### Fixed
@@ -38,6 +46,7 @@
 
 Initial public stable release, with a unified desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons; Arch News; system tray integration; and five interface languages.
 
+[1.0.3]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.3
 [1.0.2]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.2
 [1.0.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.0

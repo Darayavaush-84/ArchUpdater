@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 from PySide6.QtCore import QCoreApplication
 
 from archupdater.application.helper_protocol import HelperEventType
@@ -11,7 +9,7 @@ from archupdater.helper.actions.common import (
     EmitLog,
 )
 
-from archupdater.services.command_runner import CommandRunner, CommandRunnerError
+from archupdater.helper.actions.update_commands import installed_package_versions as _installed_package_versions
 
 
 def run_system_update(
@@ -79,23 +77,3 @@ def run_system_update(
         expected_versions=expected_versions,
     )
     return 3 if verification_failed else return_code
-
-
-def _installed_package_versions() -> dict[str, str] | None:
-    """Read local package state, without refreshing any repository database."""
-    try:
-        result = CommandRunner(default_env={"LC_ALL": "C", "LANG": "C"}).run(
-            [str(update_commands.PACMAN_PATH), "-Q", "--color", "never"],
-            timeout_seconds=30,
-        )
-    except CommandRunnerError:
-        return None
-    if result.exit_code != 0:
-        return None
-    versions: dict[str, str] = {}
-    for line in result.stdout.splitlines():
-        match = re.fullmatch(r"([A-Za-z0-9@._+-]+) ([^\s]+)", line)
-        if match is None or match[1] in versions:
-            return None
-        versions[match[1]] = match[2]
-    return versions

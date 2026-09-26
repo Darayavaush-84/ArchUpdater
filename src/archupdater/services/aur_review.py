@@ -257,6 +257,7 @@ class AurReviewManager:
                 sha256=file_digest,
                 size=len(raw_content),
                 content=content,
+                executable=bool(file_stat.st_mode & stat.S_IXUSR),
             )
             files.append(reviewed_file)
             tree_digest.update(relative_path.as_posix().encode("utf-8"))
@@ -265,6 +266,7 @@ class AurReviewManager:
             tree_digest.update(b"\0")
             tree_digest.update(file_digest.encode("ascii"))
             tree_digest.update(b"\0")
+            tree_digest.update(b"1\0" if reviewed_file.executable else b"0\0")
         return tuple(files), tree_digest.hexdigest()
 
     @staticmethod
