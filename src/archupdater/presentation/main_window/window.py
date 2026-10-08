@@ -4,7 +4,7 @@ from dataclasses import replace
 from collections.abc import Callable
 from datetime import datetime
 
-from PySide6.QtCore import QUrl, Slot
+from PySide6.QtCore import QEvent, QUrl, Slot
 from PySide6.QtGui import QCloseEvent, QDesktopServices, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -53,6 +53,7 @@ from archupdater.presentation.main_window.ui import build_main_window_ui
 from archupdater.container import ApplicationContainer
 from archupdater.application.updates import UpdateApplication
 from archupdater.infrastructure.app_state_cache import AppStateCache
+from archupdater.infrastructure.last_update import LastUpdateStore
 from archupdater.infrastructure.autostart import AutostartService
 from archupdater.infrastructure.settings import AppSettings, SettingsService
 
@@ -64,6 +65,7 @@ class MainWindow(QMainWindow):
         settings: SettingsService | None = None,
         state_cache: AppStateCache | None = None,
         translation_manager: TranslationManager | None = None,
+        last_update_store: LastUpdateStore | None = None,
     ) -> None:
         super().__init__()
         self.restart_application: Callable[[], bool] | None = None
@@ -79,7 +81,10 @@ class MainWindow(QMainWindow):
         )
         self._autostart_service = AutostartService()
         self._update_controller = UpdateController(self._service, self)
-        self._progress_presenter = UpdateProgressPresenter(self, self._update_controller)
+        self._progress_presenter = UpdateProgressPresenter(
+            self, self._update_controller, settings=self._settings,
+            last_update_store=last_update_store,
+        )
         self._flow_coordinator = MainWindowUpdateFlowCoordinator(
             view=self,
             update_controller=self._update_controller,
@@ -145,6 +150,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(960, 680)
 
         self._build_ui()
+        self.action_bar.last_update_button.setEnabled(self._progress_presenter.has_last_update())
         self._release_checker = AppReleaseChecker(self)
         self._release_checker.release_checked.connect(self.action_bar.set_github_release)
         self._details_presenter = PackageDetailsPresenter(
@@ -277,6 +283,7 @@ class MainWindow(QMainWindow):
     @Slot(object)
     def _handle_update_progress(self, snapshot: UpdateProgressSnapshot) -> None:
         self._progress_presenter.apply_progress(snapshot)
+        self.action_bar.last_update_button.setEnabled(self._progress_presenter.has_last_update())
 
     @Slot(object)
     def _handle_question_request(self, payload: object) -> None:
@@ -601,6 +608,11 @@ class MainWindow(QMainWindow):
             ),
         )
 
+    def request_initial_check(self) -> None:
+        # Reuse the scheduled-check timer and network wait, even if periodic
+        # checks are disabled or the last successful check is still recent.
+        self._check_schedule.schedule(0)
+
     def start_manual_check(self) -> bool:
         started = self._flow_coordinator.start_check_updates()
         if started:
@@ -675,6 +687,12 @@ class MainWindow(QMainWindow):
     def _clear_startup_notice(self) -> None:
         self._state.startup_notice_pending_visibility = False
         self.action_bar.clear_notice_text()
+
+    def event(self, event: QEvent) -> bool:
+        result = super().event(event)
+        if event.type() == QEvent.Type.LayoutRequest and hasattr(self, "action_bar"):
+            self.setMinimumWidth(max(960, self.minimumSizeHint().width()))
+        return result
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if (

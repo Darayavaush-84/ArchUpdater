@@ -22,6 +22,7 @@ class AppSettings:
     plasma_restart_mode: str = "ask"
     cleanup_unused_flatpak_runtimes: bool = False
     aur_updates_enabled: bool = False
+    auto_close_after_success: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +43,7 @@ class SettingsService:
     PLASMA_RESTART_MODE_KEY = "ui/plasma_restart_mode"
     CLEANUP_UNUSED_FLATPAK_RUNTIMES_KEY = "updates/cleanup_unused_flatpak_runtimes"
     AUR_UPDATES_ENABLED_KEY = "updates/aur_updates_enabled"
+    AUTO_CLOSE_AFTER_SUCCESS_KEY = "ui/auto_close_after_success"
 
     def __init__(self) -> None:
         self._settings = QSettings()
@@ -113,6 +115,12 @@ class SettingsService:
             SettingSpec(
                 "aur_updates_enabled",
                 self.AUR_UPDATES_ENABLED_KEY,
+                False,
+                self._coerce_bool,
+            ),
+            SettingSpec(
+                "auto_close_after_success",
+                self.AUTO_CLOSE_AFTER_SUCCESS_KEY,
                 False,
                 self._coerce_bool,
             ),

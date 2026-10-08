@@ -244,7 +244,7 @@ class TrayController(QObject):
                 return
             self._show_message(
                 message=(
-                    self.tr("Some selected updates were skipped. Refreshing update status...")
+                    self.tr("Selected updates completed with incomplete or failed steps.")
                     if outcome == BatchOutcome.PARTIAL_SUCCESS.value
                     else self._tray_status.update_completed_message()
                 ),

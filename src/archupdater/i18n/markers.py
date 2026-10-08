@@ -259,9 +259,9 @@ TRANSLATION_MARKERS = (
     # presentation/update_completion_coordinator.py
     QT_TRANSLATE_NOOP("MainWindow", "Updates installed"),
     # presentation/update_completion_coordinator.py
-    QT_TRANSLATE_NOOP("MainWindow", "Some selected updates were skipped."),
+    QT_TRANSLATE_NOOP("MainWindow", "Selected updates completed with incomplete or failed steps."),
     # presentation/update_completion_coordinator.py
-    QT_TRANSLATE_NOOP("MainWindow", "Updates installed with skipped items"),
+    QT_TRANSLATE_NOOP("MainWindow", "Update completed with issues"),
     # presentation/update_completion_coordinator.py
     QT_TRANSLATE_NOOP("MainWindow", "No selected updates were installed."),
     # presentation/update_completion_coordinator.py
@@ -287,29 +287,44 @@ TRANSLATION_MARKERS = (
     QT_TRANSLATE_NOOP("MainWindow", "System update completed successfully."),
     # presentation/update_completion_coordinator.py, presentation/update_completion_coordinator.py
     QT_TRANSLATE_NOOP("MainWindow", "System update failed."),
-    # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Session Summary"),
+    # UpdateProgressModel and UpdateSessionMessages use UpdateController.tr.
+    QT_TRANSLATE_NOOP("UpdateController", "KDE Store Add-ons"),
+    QT_TRANSLATE_NOOP("UpdateController", "Device Firmware"),
+    QT_TRANSLATE_NOOP("UpdateController", "Session Summary"),
+    QT_TRANSLATE_NOOP(
+        "UpdateController", "ArchUpdater will refresh package status automatically.",
+    ),
+    QT_TRANSLATE_NOOP("UpdateController", "No package status refresh is required."),
+    QT_TRANSLATE_NOOP(
+        "UpdateController", "Skipped AUR updates remain available and can be retried later.",
+    ),
+    QT_TRANSLATE_NOOP(
+        "UpdateController", "Review the live activity log, then run the remaining updates again.",
+    ),
+    QT_TRANSLATE_NOOP(
+        "UpdateController", "Review the live activity log, then try the update again.",
+    ),
     # presentation/update_progress_model.py
     QT_TRANSLATE_NOOP(
-        "MainWindow",
+        "UpdateController",
         "{count} selected. Some add-ons may need a plasmashell restart after installation.",
     ),
     # presentation/update_progress_model.py, presentation/update_progress_model.py, presentation/update_progress_model.py, presentation/update_progress_model.py, presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Installing Updates"),
+    QT_TRANSLATE_NOOP("UpdateController", "Installing Updates"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Running the full Pacman system upgrade"),
+    QT_TRANSLATE_NOOP("UpdateController", "Running the full Pacman system upgrade"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Installing selected AUR packages"),
+    QT_TRANSLATE_NOOP("UpdateController", "Installing selected AUR packages"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Applying selected Flatpak updates"),
+    QT_TRANSLATE_NOOP("UpdateController", "Applying selected Flatpak updates"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Installing selected firmware updates"),
+    QT_TRANSLATE_NOOP("UpdateController", "Installing selected firmware updates"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Updating selected KDE Store add-ons"),
+    QT_TRANSLATE_NOOP("UpdateController", "Updating selected KDE Store add-ons"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "Downloading {package}"),
+    QT_TRANSLATE_NOOP("UpdateController", "Downloading {package}"),
     # presentation/update_progress_model.py
-    QT_TRANSLATE_NOOP("MainWindow", "{action} {package} — {current} of {total}"),
+    QT_TRANSLATE_NOOP("UpdateController", "{action} {package} — {current} of {total}"),
     # services/optional_sources.py
     QT_TRANSLATE_NOOP("OptionalSourcesService", "Installed, ready to check device firmware"),
     # services/optional_sources.py, services/optional_sources.py, services/optional_sources.py

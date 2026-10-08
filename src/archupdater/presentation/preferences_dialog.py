@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from PySide6.QtCore import Signal, QT_TRANSLATE_NOOP
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -304,7 +306,8 @@ class PreferencesDialog(QDialog):
         return str(self.plasma_restart_combo.currentData())
 
     def selected_app_settings(self) -> AppSettings:
-        return AppSettings(
+        return replace(
+            self._app_settings,
             language_preference=self.selected_language_preference(),
             start_on_login=self.selected_start_on_login_enabled(),
             systray_enabled=self.selected_systray_enabled(),

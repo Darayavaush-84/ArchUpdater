@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from archupdater.domain.enums import UpdateSource
+from archupdater.domain.enums import UpdateResult, UpdateSource
 from archupdater.domain.optional_sources import OptionalSourcesSnapshot
 from archupdater.domain.progress import UpdateProgressSnapshot
 from archupdater.domain.update_plan import UpdatePlan, UpdatePlanAction, UpdatePlanItem
@@ -159,7 +159,9 @@ class UpdateControllerTests(unittest.TestCase):
             BatchOutcome.PARTIAL_SUCCESS.value,
         )
 
-        self.assertEqual(snapshots[-1].title, "Updates completed with skipped items")
+        self.assertEqual(snapshots[-1].title, "Update completed with issues")
+        self.assertEqual(snapshots[-1].result, UpdateResult.PARTIAL_SUCCESS)
+        self.assertEqual(snapshots[-1].percent, 50)
         self.assertEqual(snapshots[-1].subtitle, "One AUR package was skipped.")
         self.assertTrue(snapshots[-1].success)
         self.assertEqual(snapshots[-1].summary_completed, ["Pacman"])
@@ -215,10 +217,15 @@ class UpdateControllerTests(unittest.TestCase):
 
         snapshot = snapshots[-1]
         self.assertEqual(snapshot.title, "Update cancelled")
+        self.assertEqual(snapshot.result, UpdateResult.CANCELLED)
         self.assertEqual(snapshot.subtitle, "The update batch was interrupted.")
         self.assertFalse(snapshot.success)
         self.assertEqual(snapshot.summary_failed, [])
         self.assertEqual(snapshot.summary_not_executed, ["AUR"])
+        controller._initialize_progress(self._plan(UpdatePlanItem(UpdateSource.AUR, "spotify")))
+        self.assertFalse(controller._progress_model.last_snapshot(
+            default_title="Installing", default_subtitle="",
+        ).cancelled)
 
     def test_records_when_successful_system_step_changed_the_system(self) -> None:
         controller = UpdateController(_ServiceStub())  # type: ignore[arg-type]

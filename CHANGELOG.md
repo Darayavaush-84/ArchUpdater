@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.5] - 2026-10-08
+
+### Added
+
+- **Last Update**: reopen the latest update result with its completion date, summary and exportable log, even after restarting the application or the computer. Manually reopened results stay open until closed.
+
+### Changed
+
+- Automatically check for updates when opening a new foreground instance. Reopening the window from the system tray does not trigger another scan, and hidden startup at login continues to respect the periodic check settings.
+- Remember the **Close automatically if all updates succeed** preference across application and system restarts.
+
+### Fixed
+
+- Keep action buttons fully readable by adapting the main window's minimum width to their labels, including translated text and update counts.
+- Report partial update results consistently in the progress window and exported logs, and distinguish cancelled sessions from failures.
+- Validate update results before replacing the saved session, preserving the previous result if new data is invalid.
+- Restore translated progress summaries and follow-up instructions.
+
 ## [1.0.3] - 2026-09-27
 
 ### Fixed
@@ -46,6 +64,7 @@
 
 Initial public stable release, with a unified desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons; Arch News; system tray integration; and five interface languages.
 
+[1.0.5]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.5
 [1.0.3]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.3
 [1.0.2]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.2
 [1.0.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.1

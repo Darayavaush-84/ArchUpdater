@@ -11,16 +11,21 @@ from zipfile import ZipFile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtTest import QTest
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication, QPlainTextEdit, QWidget
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateSource
+from archupdater.domain.enums import (
+    UpdateProgressPhase, UpdateProgressStepState, UpdateResult, UpdateSource,
+)
 from archupdater.domain.update_plan import UpdatePlan, UpdatePlanItem
 from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.presentation.update_controller import UpdateController
 from archupdater.domain.progress import UpdateProgressSnapshot, UpdateProgressStep
 from archupdater import __version__
+from archupdater.infrastructure.settings import AppSettings, SettingsService
 from archupdater.presentation.update_progress_dialog import UpdateProgressDialog
 from archupdater.presentation.update_progress_presenter import UpdateProgressPresenter
+from archupdater.presentation.update_log_export import export_summary_text
 
 
 class UpdateProgressDialogTests(unittest.TestCase):
@@ -36,6 +41,45 @@ class UpdateProgressDialogTests(unittest.TestCase):
             self.dialog.close()
             self.dialog.deleteLater()
         self._process_events()
+
+    def test_auto_close_preference_survives_new_presenter_and_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            settings_path = str(Path(directory) / "settings.ini")
+
+            def reopen_settings() -> SettingsService:
+                settings = SettingsService()
+                settings._settings = QSettings(settings_path, QSettings.Format.IniFormat)
+                return settings
+
+            parent = QWidget()
+            self.addCleanup(parent.deleteLater)
+            snapshot = UpdateProgressSnapshot(
+                title="Installing Updates", subtitle="", steps=[], percent=0,
+                present_dialog=True,
+            )
+            settings = reopen_settings()
+            settings.save_app_settings(AppSettings(aur_updates_enabled=True))
+            presenter = UpdateProgressPresenter(parent, Mock(), settings=settings)
+            presenter.apply_progress(snapshot)
+            self.assertFalse(presenter.dialog.auto_close_checkbox.isChecked())
+            presenter.dialog.auto_close_checkbox.setChecked(True)
+            self.assertTrue(reopen_settings().load_app_settings().auto_close_after_success)
+            self.assertTrue(reopen_settings().load_app_settings().aur_updates_enabled)
+            presenter.close_dialog()
+
+            presenter = UpdateProgressPresenter(parent, Mock(), settings=reopen_settings())
+            presenter.apply_progress(snapshot)
+            self.assertTrue(presenter.dialog.auto_close_checkbox.isChecked())
+            presenter.apply_progress(replace(snapshot, final_state=True, success=True))
+            self.assertTrue(presenter.dialog._success_close_timer.isActive())
+            presenter.dialog.auto_close_checkbox.setChecked(False)
+            self.assertFalse(presenter.dialog._success_close_timer.isActive())
+            presenter.close_dialog()
+
+            presenter = UpdateProgressPresenter(parent, Mock(), settings=reopen_settings())
+            presenter.apply_progress(snapshot)
+            self.assertFalse(presenter.dialog.auto_close_checkbox.isChecked())
+            presenter.close_dialog()
 
     def test_notice_and_live_logs_are_shown_for_widget_updates(self) -> None:
         self.dialog = UpdateProgressDialog()
@@ -114,6 +158,12 @@ class UpdateProgressDialogTests(unittest.TestCase):
         controller._handle_update_completed(True, "", BatchOutcome.PARTIAL_SUCCESS.value)
         self.assertEqual(self.dialog._latest_snapshot.summary_failed, ["AUR"])
         self.assertEqual(self.dialog._latest_snapshot.summary_incomplete, [])
+        self.assertEqual(self.dialog._latest_snapshot.result, UpdateResult.PARTIAL_SUCCESS)
+        self.assertEqual(self.dialog._latest_snapshot.percent, 50)
+        self.assertTrue(self.dialog.progress_bar.isHidden())
+        self.assertTrue(self.dialog.progress_percent.isHidden())
+        self.assertIn("Review the live activity log", self.dialog.summary_next_text.text())
+        self.assertIn("Result: partial_success", export_summary_text(self.dialog._latest_snapshot))
         self.dialog.show()
         QTest.qWait(self.dialog._success_close_timer.interval() + 100)
         self.assertTrue(self.dialog.isVisible())

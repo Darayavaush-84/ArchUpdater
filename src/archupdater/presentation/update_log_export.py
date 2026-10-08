@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from archupdater import __version__
+from archupdater.domain.enums import UpdateResult
 from archupdater.domain.progress import UpdateProgressSnapshot
 
 
@@ -60,6 +61,7 @@ def write_update_log_export(
     folder: Path,
     snapshot: UpdateProgressSnapshot,
     runtime: RuntimeExportInfo,
+    completed_at: datetime | None = None,
 ) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
@@ -74,9 +76,14 @@ def write_update_log_export(
         ) as archive:
             archive.writestr(
                 "manifest.json",
-                json.dumps(export_manifest(snapshot, runtime=runtime), indent=2, ensure_ascii=False),
+                json.dumps(
+                    export_manifest(snapshot, runtime=runtime, completed_at=completed_at),
+                    indent=2, ensure_ascii=False,
+                ),
             )
-            archive.writestr("update-session.log", export_log_text(snapshot))
+            archive.writestr(
+                "update-session.log", export_log_text(snapshot, completed_at=completed_at),
+            )
     except Exception:
         if created:
             archive_path.unlink(missing_ok=True)
@@ -88,6 +95,7 @@ def export_manifest(
     snapshot: UpdateProgressSnapshot,
     *,
     runtime: RuntimeExportInfo,
+    completed_at: datetime | None = None,
 ) -> dict[str, object]:
     return {
         "application": "ArchUpdater",
@@ -97,10 +105,14 @@ def export_manifest(
         "qt_version": runtime.qt_version,
         "platform": runtime.platform_name,
         "session": {
+            "completed_at": completed_at.isoformat() if completed_at is not None else None,
             "title": snapshot.title,
             "subtitle": snapshot.subtitle,
             "percent": snapshot.percent,
-            "success": snapshot.success,
+            "result": snapshot.result.value,
+            "success": (
+                snapshot.result is UpdateResult.SUCCESS if snapshot.final_state else None
+            ),
             "final_state": snapshot.final_state,
             "current_phase": (
                 snapshot.current_phase.value if snapshot.current_phase is not None else None
@@ -128,11 +140,13 @@ def export_manifest(
     }
 
 
-def export_log_text(snapshot: UpdateProgressSnapshot) -> str:
+def export_log_text(
+    snapshot: UpdateProgressSnapshot, *, completed_at: datetime | None = None,
+) -> str:
     cleaned_console = "\n".join(clean_console_lines(snapshot.console_lines)).strip()
     return "\n".join(
         (
-            export_summary_text(snapshot).rstrip(),
+            export_summary_text(snapshot, completed_at=completed_at).rstrip(),
             "",
             "Update log",
             "----------",
@@ -142,15 +156,18 @@ def export_log_text(snapshot: UpdateProgressSnapshot) -> str:
     )
 
 
-def export_summary_text(snapshot: UpdateProgressSnapshot) -> str:
+def export_summary_text(
+    snapshot: UpdateProgressSnapshot, *, completed_at: datetime | None = None,
+) -> str:
     lines = [
         "ArchUpdater Update Log Export",
         f"ArchUpdater version: {__version__}",
         f"Exported at: {datetime.now().astimezone().isoformat(timespec='seconds')}",
+        *([f"Completed at: {completed_at.isoformat()}"] if completed_at is not None else []),
         "",
         f"Title: {snapshot.title}",
         f"Subtitle: {snapshot.subtitle}",
-        f"Result: {'success' if snapshot.success else 'failed'}",
+        f"Result: {snapshot.result.value}",
         "",
         "Summary",
     ]

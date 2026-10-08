@@ -4,7 +4,9 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateSource
+from archupdater.domain.enums import (
+    UpdateProgressPhase, UpdateProgressStepState, UpdateResult, UpdateSource,
+)
 from archupdater.domain.progress import (
     UpdateProgressSnapshot,
     UpdateProgressStep,
@@ -65,6 +67,7 @@ class UpdateProgressModel:
         self._last_subtitle = ""
         self._last_final_state = False
         self._last_success: bool | None = None
+        self._cancelled = False
         self._summary_title: str | None = None
         self._summary_completed: list[str] = []
         self._summary_incomplete: list[str] = []
@@ -141,17 +144,11 @@ class UpdateProgressModel:
             UpdateProgressStep(step.phase, step.label, step.state, list(step.log_lines))
             for step in self._steps
         ]
-        percent = self._calculate_percent(
-            visual_steps,
-            final_state=final_state,
-            success=success,
-        )
-
-        return UpdateProgressSnapshot(
+        snapshot = UpdateProgressSnapshot(
             title=title,
             subtitle=subtitle,
             steps=visual_steps,
-            percent=max(0, min(100, percent)),
+            percent=0,
             console_lines=list(self._console_lines),
             current_phase=self._current_running_phase,
             notice_title=self._notice_title,
@@ -167,7 +164,10 @@ class UpdateProgressModel:
             summary_next_step=self._summary_next_step,
             activity_text=self._activity_text,
             activity_percent=self._activity_percent,
+            cancelled=self._cancelled,
         )
+        snapshot.percent = max(0, min(100, self._calculate_percent(visual_steps, snapshot.result)))
+        return snapshot
 
     def last_snapshot(self, *, default_title: str, default_subtitle: str) -> UpdateProgressSnapshot:
         return self.snapshot(
@@ -235,6 +235,7 @@ class UpdateProgressModel:
         self._build_summary(success=False, refresh_expected=False)
 
     def complete_cancelled(self) -> None:
+        self._cancelled = True
         if self._current_running_phase is not None:
             self._set_phase_state(
                 self._current_running_phase,
@@ -398,18 +399,18 @@ class UpdateProgressModel:
     def _calculate_percent(
         self,
         steps: list[UpdateProgressStep],
-        *,
-        final_state: bool,
-        success: bool | None,
+        result: UpdateResult,
     ) -> int:
-        if final_state and success:
+        if result is UpdateResult.SUCCESS:
             return 100
+        if result is not UpdateResult.IN_PROGRESS:
+            return self._step_based_percent(steps, include_running=False)
 
         unit_percent = self._unit_based_percent()
         if unit_percent is not None:
             return unit_percent
 
-        return self._step_based_percent(steps, final_state=final_state, success=success)
+        return self._step_based_percent(steps, include_running=True)
 
     def _unit_based_percent(self) -> int | None:
         total_units = sum(self._phase_unit_counts.values())
@@ -426,8 +427,7 @@ class UpdateProgressModel:
         self,
         steps: list[UpdateProgressStep],
         *,
-        final_state: bool,
-        success: bool | None,
+        include_running: bool,
     ) -> int:
         total_steps = len(
             [step for step in steps if step.phase is not UpdateProgressPhase.COMPLETED]
@@ -440,10 +440,10 @@ class UpdateProgressModel:
                 and step.state is UpdateProgressStepState.COMPLETED
             ]
         )
-        percent = 100 if final_state and success else 0
-        if total_steps > 0 and not (final_state and success):
+        percent = 0
+        if total_steps > 0:
             percent = round((completed_steps / total_steps) * 100)
-            if self._current_running_phase is not None:
+            if include_running and self._current_running_phase is not None:
                 percent = max(percent, round(((completed_steps + 0.5) / total_steps) * 100))
         return percent
 
@@ -476,21 +476,22 @@ class UpdateProgressModel:
         ]
 
         self._summary_title = self._t("Session Summary")
+        if self._summary_failed:
+            self._summary_next_step = self._messages.failed_next_step(
+                has_not_executed_steps=bool(self._summary_not_executed)
+            )
+            return
         if success:
             if self._summary_incomplete:
                 self._summary_next_step = self._messages.incomplete_next_step()
+            elif self._summary_not_executed:
+                self._summary_next_step = self._messages.failed_next_step(has_not_executed_steps=True)
             elif refresh_expected:
                 self._summary_next_step = self._messages.successful_next_step()
             else:
                 self._summary_next_step = (
                     self._messages.no_package_status_refresh_required()
                 )
-            return
-
-        if self._summary_failed:
-            self._summary_next_step = self._messages.failed_next_step(
-                has_not_executed_steps=bool(self._summary_not_executed)
-            )
             return
 
         self._summary_next_step = self._messages.failed_next_step(has_not_executed_steps=False)

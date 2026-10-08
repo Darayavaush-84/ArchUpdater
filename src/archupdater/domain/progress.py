@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState
+from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateResult
 
 
 @dataclass(slots=True)
@@ -34,3 +34,25 @@ class UpdateProgressSnapshot:
     summary_next_step: str | None = None
     activity_text: str | None = None
     activity_percent: int | None = None
+    cancelled: bool = False
+
+    @property
+    def result(self) -> UpdateResult:
+        if not self.final_state:
+            return UpdateResult.IN_PROGRESS
+        if self.cancelled:
+            return UpdateResult.CANCELLED
+        steps = [step for step in self.steps if step.phase is not UpdateProgressPhase.COMPLETED]
+        has_unfinished_steps = bool(
+            self.summary_incomplete or self.summary_failed or self.summary_not_executed
+            or any(step.state is not UpdateProgressStepState.COMPLETED for step in steps)
+        )
+        if self.success is True and not has_unfinished_steps:
+            return UpdateResult.SUCCESS
+        if (
+            self.success is True
+            or self.summary_completed
+            or any(step.state is UpdateProgressStepState.COMPLETED for step in steps)
+        ):
+            return UpdateResult.PARTIAL_SUCCESS
+        return UpdateResult.FAILED

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import tempfile
 import unittest
 from datetime import datetime
@@ -24,6 +25,29 @@ class _FixedDatetime(datetime):
 
 
 class UpdateLogExportTests(unittest.TestCase):
+    def test_text_and_manifest_agree_on_partial_cancelled_and_running_results(self) -> None:
+        runtime = RuntimeExportInfo("3.12", "6.11", "test")
+        for flags, expected, success in (
+            ({"final_state": True, "success": True}, "success", True),
+            ({"final_state": True, "success": True, "summary_failed": ["AUR"],
+              "summary_completed": ["System"]}, "partial_success", False),
+            ({"final_state": True, "success": False}, "failed", False),
+            ({"final_state": True, "success": False, "cancelled": True}, "cancelled", False),
+            ({"final_state": False}, "in_progress", None),
+        ):
+            with self.subTest(result=expected), tempfile.TemporaryDirectory() as directory:
+                snapshot = UpdateProgressSnapshot("Session", "", [], 0, **flags)
+                path = write_update_log_export(
+                    folder=Path(directory), snapshot=snapshot, runtime=runtime,
+                )
+                with zipfile.ZipFile(path) as archive:
+                    manifest = json.loads(archive.read("manifest.json"))
+                    self.assertEqual(manifest["session"]["result"], expected)
+                    self.assertIs(manifest["session"]["success"], success)
+                    self.assertIn(
+                        f"Result: {expected}\n", archive.read("update-session.log").decode(),
+                    )
+
     def test_export_refuses_to_overwrite_an_existing_archive(self) -> None:
         snapshot = UpdateProgressSnapshot("Done", "Completed", [], 100, success=True)
         runtime = RuntimeExportInfo("3.12", "6.8", "test")

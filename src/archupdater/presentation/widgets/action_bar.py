@@ -20,6 +20,7 @@ class ActionBarWidget(QFrame):
     check_requested = Signal()
     update_requested = Signal()
     arch_news_requested = Signal()
+    last_update_requested = Signal()
     preferences_requested = Signal()
     github_requested = Signal()
 
@@ -57,6 +58,12 @@ class ActionBarWidget(QFrame):
         self.arch_news_button.setProperty("newsState", "read")
         self.arch_news_button.clicked.connect(self.arch_news_requested)
 
+        self.last_update_button = QPushButton(self.tr("Last Update"))
+        self.last_update_button.setObjectName("utilityButton")
+        self.last_update_button.setIcon(QIcon.fromTheme("document-open-recent"))
+        self.last_update_button.setEnabled(False)
+        self.last_update_button.clicked.connect(self.last_update_requested)
+
         self.preferences_button = QPushButton(self.tr("Preferences"))
         self.preferences_button.setObjectName("preferencesButton")
         self.preferences_button.setIcon(QIcon.fromTheme("configure"))
@@ -80,6 +87,7 @@ class ActionBarWidget(QFrame):
 
         layout.addWidget(self.preferences_button)
         layout.addWidget(self.arch_news_button)
+        layout.addWidget(self.last_update_button)
         self.set_github_release("")
         layout.addWidget(self.github_button)
         layout.addStretch(1)

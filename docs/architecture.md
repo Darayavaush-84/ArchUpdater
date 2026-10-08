@@ -76,9 +76,22 @@ artifact validation and installation remain in the privileged process.
 `CheckScheduleController` owns one automatic check timer and the network subscription used
 when a due check is offline. `BackgroundBehaviorController` calculates the remaining interval
 from the last successful check, persisted by `AppStateCache` and restored at launch. There is
-no separate startup scan; disabled automatic checks also stay disabled at login. Manual checks
+no separate startup timer: a fresh foreground launch requests an immediate check through the
+same controller. Hidden startup at login respects the periodic-check preference. Manual checks
 use the normal check flow and reset the same deadline on success. Closing the window for real
 stops the timer and disconnects the network subscription; hiding to the tray retains them.
+
+`LastUpdateStore` atomically persists the latest finished update snapshot and completion time
+under `$XDG_STATE_HOME/archupdater/last-update.json` (defaulting to `~/.local/state`).
+The complete snapshot is validated before any existing saved session is replaced.
+`UpdateProgressPresenter` saves final results and opens a separate historical progress dialog.
+That dialog uses the existing summary and export UI, has no automatic closing, and is unaffected
+by live progress or package scans. Missing or invalid saved results leave the history button disabled.
+
+`UpdateProgressSnapshot.result` provides the shared outcome classification for progress,
+automatic closing and exports. It combines completion status with step and summary results;
+cancellation is explicitly preserved in saved sessions. The backend success flag alone is not
+enough to report full success when some steps failed, were skipped or remain incomplete.
 
 `presentation/theme.py` assembles the stylesheet from `presentation/styles/`. `palette.py`
 derives colors once, and the section builders retain the original cascade order. Keep this

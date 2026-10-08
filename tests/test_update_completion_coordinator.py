@@ -129,7 +129,7 @@ class UpdateCompletionCoordinatorTests(unittest.TestCase):
                 outcome=BatchOutcome.PARTIAL_SUCCESS.value,
             )
 
-        self.assertIn(("header", "Updates installed with skipped items"), calls)
+        self.assertIn(("header", "Update completed with issues"), calls)
         self.assertIn("pending", calls)
         self.assertIn("plasma", calls)
         self.assertIn("reboot", calls)

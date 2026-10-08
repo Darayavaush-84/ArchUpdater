@@ -341,8 +341,8 @@ class UpdateController(QObject):
         elif outcome == BatchOutcome.PARTIAL_SUCCESS.value:
             self._progress_model.complete_success()
             self._emit_progress_snapshot(
-                self.tr("Updates completed with skipped items"),
-                message or self.tr("Some selected updates were skipped."),
+                self.tr("Update completed with issues"),
+                message or self.tr("Selected updates completed with incomplete or failed steps."),
                 final_state=True,
                 success=True,
             )

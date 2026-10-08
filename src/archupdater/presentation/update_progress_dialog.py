@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime
 
 from PySide6.QtCore import Qt, QTimer, qVersion
 from PySide6.QtGui import QCloseEvent, QFontDatabase
@@ -22,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState
+from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateResult
 from archupdater.domain.progress import UpdateProgressSnapshot, UpdateProgressStep
 from archupdater.presentation.update_log_export import (
     RuntimeExportInfo,
@@ -72,10 +73,15 @@ class UpdateStepRow(QFrame):
 
 
 class UpdateProgressDialog(QDialog):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, completed_at: datetime | None = None,
+    ) -> None:
         super().__init__(parent)
+        self._completed_at = completed_at
         self.setObjectName("updateProgressDialog")
-        self.setWindowTitle(self.tr("Installing Updates"))
+        self.setWindowTitle(
+            self.tr("Last Update") if completed_at is not None else self.tr("Installing Updates")
+        )
         self.setWindowModality(Qt.WindowModality.NonModal)
         self.setModal(False)
         self.resize(1080, 740)
@@ -105,6 +111,14 @@ class UpdateProgressDialog(QDialog):
         self.hero_subtitle.setMaximumHeight(70)
         hero_layout.addWidget(self.hero_title)
         hero_layout.addWidget(self.hero_subtitle)
+        self.session_date_label = QLabel()
+        self.session_date_label.setObjectName("mutedText")
+        self.session_date_label.setVisible(completed_at is not None)
+        if completed_at is not None:
+            self.session_date_label.setText(self.tr("Completed: {date}").format(
+                date=completed_at.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
+            ))
+        hero_layout.addWidget(self.session_date_label)
         progress_row = QHBoxLayout()
         self.progress_bar = QProgressBar()
         self.progress_bar.setObjectName("updateProgressBar")
@@ -182,7 +196,9 @@ class UpdateProgressDialog(QDialog):
         log_layout.setContentsMargins(12, 8, 12, 12)
         log_layout.setSpacing(8)
         self.log_toggle = QToolButton()
-        self.log_toggle.setText(self.tr("Live Activity"))
+        self.log_toggle.setText(
+            self.tr("Update Log") if completed_at is not None else self.tr("Live Activity")
+        )
         self.log_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.log_toggle.setCheckable(True)
         self.log_toggle.setChecked(True)
@@ -205,6 +221,7 @@ class UpdateProgressDialog(QDialog):
             self.tr("Close automatically if all updates succeed")
         )
         self.auto_close_checkbox.setChecked(False)
+        self.auto_close_checkbox.setVisible(completed_at is None)
         self.auto_close_checkbox.toggled.connect(self._sync_success_close_timer)
         actions.addWidget(self.auto_close_checkbox)
         actions.addStretch(1)
@@ -238,7 +255,10 @@ class UpdateProgressDialog(QDialog):
                 badge_text=self._badge_text(index, step.state),
             )
 
-        if snapshot.final_state and snapshot.success is False and not self._final_state:
+        if (
+            snapshot.result in (UpdateResult.FAILED, UpdateResult.PARTIAL_SUCCESS)
+            and not self._final_state
+        ):
             self.log_toggle.setChecked(True)
         self._final_state = snapshot.final_state
         self.close_button.setEnabled(snapshot.final_state)
@@ -255,7 +275,7 @@ class UpdateProgressDialog(QDialog):
         elif snapshot.final_state:
             subtitle = self._failure_detail(snapshot) or snapshot.subtitle
             self.progress_bar.setRange(0, 100)
-            complete = bool(snapshot.success and not snapshot.summary_incomplete)
+            complete = snapshot.result is UpdateResult.SUCCESS
             self.progress_bar.setValue(100 if complete else 0)
             self.progress_bar.setVisible(complete)
             self.progress_percent.setVisible(complete)
@@ -273,7 +293,7 @@ class UpdateProgressDialog(QDialog):
         self.hero_subtitle.setToolTip(subtitle)
 
     def _failure_detail(self, snapshot: UpdateProgressSnapshot) -> str:
-        if snapshot.success is not False:
+        if snapshot.result not in (UpdateResult.FAILED, UpdateResult.PARTIAL_SUCCESS):
             return ""
         failed_logs = [
             line for step in snapshot.steps
@@ -305,11 +325,8 @@ class UpdateProgressDialog(QDialog):
         snapshot = self._latest_snapshot
         if (
             snapshot is not None
-            and snapshot.final_state
-            and snapshot.success
-            and not snapshot.summary_incomplete
-            and not snapshot.summary_failed
-            and not snapshot.summary_not_executed
+            and self._completed_at is None
+            and snapshot.result is UpdateResult.SUCCESS
             and self.auto_close_checkbox.isChecked()
         ):
             self._success_close_timer.start()
@@ -485,6 +502,7 @@ class UpdateProgressDialog(QDialog):
             folder=folder,
             snapshot=self._latest_snapshot,
             runtime=RuntimeExportInfo.current(qt_version=qVersion()),
+            completed_at=self._completed_at,
         )
 
     def reject(self) -> None:

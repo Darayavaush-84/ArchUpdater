@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import QEventLoop, QSettings, QTimer, Qt
+from PySide6.QtCore import QEventLoop, QSettings, QTimer, Qt, QTranslator
 from support.network import FakeReachability, FakeNetworkInformation, FakeNetworkInformationApi
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QToolButton
@@ -33,6 +33,8 @@ from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.services.pacman import PacmanServiceError
 from archupdater.infrastructure.settings import AppSettings
 from archupdater.infrastructure.app_state_cache import AppStateCache
+from archupdater.infrastructure.last_update import LastUpdateStore
+from archupdater.presentation.theme import build_application_stylesheet
 
 
 class FakeSettingsService:
@@ -396,6 +398,77 @@ class MainWindowIntegrationTests(unittest.TestCase):
 
         self.assertTrue(self.window.has_post_update_refresh_pending())
         self.assertFalse(self.window.action_bar.update_button.isEnabled())
+
+    def test_minimum_width_keeps_translated_action_buttons_on_one_row(self) -> None:
+        previous_style = self._app.styleSheet()
+        self.addCleanup(self._app.setStyleSheet, previous_style)
+        self._app.setStyleSheet(build_application_stylesheet(self._app.palette()))
+        for language in ("en", "it", "de", "fr", "es"):
+            with self.subTest(language=language):
+                translator = QTranslator()
+                resource = (
+                    Path(__file__).resolve().parents[1]
+                    / f"src/archupdater/i18n/resources/archupdater_{language}.qm"
+                )
+                self.assertTrue(translator.load(str(resource)))
+                self._app.installTranslator(translator)
+                try:
+                    self.window = MainWindow(
+                        service=FakeUpdateService(UpdateCheckResult([], datetime.now(), [])),
+                        settings=FakeSettingsService(auto_check_enabled=False),
+                        state_cache=FakeStateCache(),
+                    )
+                    self.window.show()
+                    bar = self.window.action_bar
+                    for count in (0, 125, 0):
+                        bar.set_update_selection(count)
+                        bar.set_arch_news_count(count)
+                        bar.set_github_release("v9.0.0" if count else "")
+                        self._process_events(30)
+                        self.window.resize(200, 680)
+                        self._process_events(30)
+                        self.assertGreaterEqual(self.window.width(), 960)
+                        self.assertGreaterEqual(
+                            self.window.width(), self.window.minimumSizeHint().width(),
+                        )
+                        buttons = [
+                            bar.preferences_button, bar.arch_news_button, bar.last_update_button,
+                            bar.github_button, bar.check_button, bar.update_button,
+                        ]
+                        centers = [button.geometry().center().y() for button in buttons]
+                        self.assertLessEqual(max(centers) - min(centers), 1)
+                        for button in buttons:
+                            if button.text():
+                                self.assertGreaterEqual(
+                                    button.width(), button.minimumSizeHint().width(), button.text(),
+                                )
+                finally:
+                    self._close_test_window()
+                    self._app.removeTranslator(translator)
+
+    def test_last_update_button_restores_saved_result_after_reopening(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "last-update.json"
+            for reopening in (False, True):
+                self.window = MainWindow(
+                    service=FakeUpdateService(UpdateCheckResult([], datetime.now(), [])),
+                    settings=FakeSettingsService(auto_check_enabled=False),
+                    state_cache=FakeStateCache(), last_update_store=LastUpdateStore(path),
+                )
+                button = self.window.action_bar.last_update_button
+                self.assertEqual(button.isEnabled(), reopening)
+                if not reopening:
+                    self.window._handle_update_progress(UpdateProgressSnapshot(
+                        "Updates completed", "Selected updates completed", [], 100,
+                        console_lines=["Updated linux"], final_state=True, success=True,
+                    ))
+                self.assertTrue(button.isEnabled())
+                button.click()
+                dialog = self.window._progress_presenter._history_dialog
+                self.assertTrue(dialog.isVisible())
+                self.assertIn("Updated linux", dialog.console_log.toPlainText())
+                dialog.close()
+                self._close_test_window()
 
     def test_update_start_failure_closes_unfinished_progress_dialog(self) -> None:
         self.window = self._create_window(packages=[])
@@ -858,6 +931,48 @@ class MainWindowIntegrationTests(unittest.TestCase):
 
         self.assertFalse(self.window.action_bar.notice_label.isHidden())
         self.assertIn("did not finish cleanly", self.window.action_bar.notice_label.text())
+
+    def test_initial_check_ignores_periodic_deadline_and_tray_reopen_does_not_scan(self) -> None:
+        for enabled, last_check in (
+            (False, datetime.now()), (True, datetime.now()), (True, None),
+        ):
+            with self.subTest(enabled=enabled, last_check=last_check):
+                service = FakeUpdateService(UpdateCheckResult([], datetime.now(), []))
+                self.window = MainWindow(
+                    service=service,
+                    settings=FakeSettingsService(auto_check_enabled=enabled),
+                    state_cache=self._persistent_check_cache(last_check),
+                )
+                self.window.request_initial_check()
+                self._wait_for_check(self.window)
+                self._process_events(60)
+                self.assertEqual(service.check_calls, 1)
+                self.assertEqual(self.window._check_schedule.timer.isActive(), enabled)
+                self.window.hide()
+                self.window.show_from_tray()
+                self._process_events(60)
+                self.assertEqual(service.check_calls, 1)
+                self._close_test_window()
+
+    def test_initial_check_waits_for_network_with_periodic_checks_disabled(self) -> None:
+        service = FakeUpdateService(UpdateCheckResult([], datetime.now(), []))
+        network = FakeNetworkInformation(FakeReachability.Disconnected)
+        with patch(
+            "archupdater.presentation.check_schedule.QNetworkInformation",
+            FakeNetworkInformationApi(network),
+        ):
+            self.window = MainWindow(
+                service=service, settings=FakeSettingsService(auto_check_enabled=False),
+                state_cache=FakeStateCache(),
+            )
+            self.window.request_initial_check()
+            self._process_events(60)
+            self.assertEqual(service.check_calls, 0)
+            self.assertTrue(self.window._check_schedule.is_waiting_for_network())
+            network.set_reachability(FakeReachability.Online)
+            self._wait_for_check(self.window)
+            self.assertEqual(service.check_calls, 1)
+            self.assertFalse(self.window._check_schedule.timer.isActive())
 
     def test_first_enabled_check_starts_without_saved_history(self) -> None:
         service = FakeUpdateService(

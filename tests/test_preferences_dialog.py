@@ -69,6 +69,15 @@ class PreferencesDialogTests(unittest.TestCase):
             self.dialog.deleteLater()
             self._process_events()
 
+    def test_saving_preferences_preserves_progress_auto_close(self) -> None:
+        self.dialog = PreferencesDialog(
+            AppSettings(auto_close_after_success=True), TranslationManager(self._app),
+        )
+        self.dialog.auto_check_checkbox.setChecked(True)
+        selected = self.dialog.selected_app_settings()
+        self.assertTrue(selected.auto_close_after_success)
+        self.assertTrue(selected.auto_check_enabled)
+
     def test_preferences_exposes_manage_update_sources_action(self) -> None:
         snapshot = OptionalSourcesSnapshot(
             statuses={

@@ -89,11 +89,13 @@ class UpdateCompletionCoordinator:
 
     def _apply_partial_success(self, message: str) -> None:
         self._state_cache.clear_update_session()
-        final_message = message or self._t("Some selected updates were skipped.")
+        final_message = message or self._t(
+            "Selected updates completed with incomplete or failed steps."
+        )
         use_local_system_db = self._use_local_system_db_for_post_update_refresh()
         self._mark_post_update_refresh_pending()
         self._set_operation_state(OperationState.COMPLETED, final_message)
-        self._set_header_status(self._t("Updates installed with skipped items"))
+        self._set_header_status(self._t("Update completed with issues"))
         self._append_log(final_message)
         self._maybe_prompt_plasma_restart()
         self._maybe_show_reboot_advisory()

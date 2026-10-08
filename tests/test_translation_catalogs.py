@@ -21,6 +21,10 @@ from archupdater.presentation.main_window.check_presenter import MainWindowCheck
 from archupdater.presentation.main_window.state import MainWindowState
 from archupdater.presentation.preflight_dialogs import confirm_preflight_issues
 from archupdater.presentation.widgets.action_bar import ActionBarWidget
+from archupdater.presentation.update_controller import UpdateController
+from archupdater.application.update_session.protocol import BatchOutcome
+from archupdater.domain.enums import UpdateSource
+from archupdater.domain.update_plan import UpdatePlan, UpdatePlanItem
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,6 +126,39 @@ class TranslationCatalogTests(unittest.TestCase):
                 finally:
                     self.app.removeTranslator(translator)
 
+    def test_partial_result_summary_uses_the_runtime_language(self) -> None:
+        for language in ("it", "de", "fr", "es"):
+            with self.subTest(language=language):
+                translator = QTranslator()
+                self.assertTrue(translator.load(
+                    str(ROOT / f"src/archupdater/i18n/resources/archupdater_{language}.qm")
+                ))
+                self.app.installTranslator(translator)
+                try:
+                    controller = UpdateController(Mock())
+                    snapshots = []
+                    controller.update_progress_changed.connect(snapshots.append)
+                    controller._initialize_progress(UpdatePlan([
+                        UpdatePlanItem(UpdateSource.SYSTEM, "linux"),
+                        UpdatePlanItem(UpdateSource.AUR, "audit-git"),
+                    ]))
+                    for step, success in (("system", True), ("aur", False)):
+                        controller._handle_runner_progress({
+                            "type": "step_completed", "step": step, "success": success,
+                        })
+                    controller._handle_update_completed(True, "", BatchOutcome.PARTIAL_SUCCESS.value)
+                    snapshot = snapshots[-1]
+                    for value, source in (
+                        (snapshot.summary_title, "Session Summary"),
+                        (snapshot.summary_next_step,
+                         "Review the live activity log, then try the update again."),
+                    ):
+                        self.assertEqual(value, translator.translate("UpdateController", source))
+                        self.assertTrue(value)
+                        self.assertNotEqual(value, source)
+                finally:
+                    self.app.removeTranslator(translator)
+
     def test_callback_messages_are_present_in_their_runtime_contexts(self) -> None:
         catalog = ET.parse(ROOT / "i18n/ts/archupdater_en.ts").getroot()
         entries = {
@@ -139,6 +176,7 @@ class TranslationCatalogTests(unittest.TestCase):
             "application/preflight.py": "UpdatePreflightService",
             "services/batch_process.py": "BatchUpdateRunner",
             "services/update_diagnostics.py": "BatchUpdateRunner",
+            "presentation/update_progress_model.py": "UpdateController",
         }
         source_root = ROOT / "src/archupdater"
         for path in source_root.rglob("*.py"):
@@ -171,7 +209,7 @@ class TranslationCatalogTests(unittest.TestCase):
                         else "UpdateService"
                     )
                 elif relative.startswith(("presentation/", "domain/")):
-                    context = "MainWindow"
+                    context = context or "MainWindow"
                 with self.subTest(file=relative, line=call.lineno):
                     self.assertIsNotNone(
                         context, "Register the callback's runtime translation context"

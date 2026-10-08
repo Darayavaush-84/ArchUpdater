@@ -84,4 +84,7 @@ def main() -> int:
     else:
         window.show()
 
+    if not start_hidden:
+        window.request_initial_check()
+
     return app.exec()

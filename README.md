@@ -2,7 +2,7 @@
 
 **A simple, direct way to keep your Arch desktop up to date.**
 
-[![Version](https://img.shields.io/badge/version-1.0.3-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.5-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
 [![CI](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
@@ -29,17 +29,17 @@ without turning everyday maintenance into a tour through a full software catalog
   and active. AUR support requires an explicit opt-in.
 - **Details when you need them.** Package information, Arch Linux news, prompts and live
   logs are accessible from the update workflow.
-- **A clear finish.** Results remain visible after an update; automatic closing is off by default.
+- **A clear finish.** Results remain visible after an update; automatic closing is off by default. The **Close automatically if all updates succeed** choice is saved for future sessions, including after a reboot.
 
 The goal is simplicity and immediacy, with the underlying package tools still doing their jobs.
 
 ## The everyday workflow
 
-1. **Check for Updates.** Automatic checks follow the selected interval since the last successful scan, including across restarts. If a check became due while the PC was off, it runs at the next launch when the network is available. Manual checks remain available at any time.
+1. **Check for Updates.** Opening ArchUpdater starts a fresh scan automatically, unless it is already running in the system tray. Hidden startup at login and periodic checks follow the selected interval since the last successful scan, including across restarts. If a check became due while the PC was off, it runs at the next launch when the network is available. Manual checks remain available at any time.
 2. **Review the list.** Filter by source, inspect versions and open package details or Arch News.
 3. **Choose optional updates.** System packages always use a full Pacman transaction.
 4. **Update.** Follow progress and answer any required prompts in the app.
-5. **Review the result.** See what completed, what needs attention and whether a restart is advised.
+5. **Review the result.** See what completed, what needs attention and whether a restart is advised. **Last Update**, beside **Arch News**, reopens the latest saved result with its date and exportable log, even after restarting ArchUpdater or the computer. This view stays open until you close it. The button becomes available after the first update session finishes with this feature installed.
 
 ![Update dialog with per-source steps, package activity and live log](docs/screenshots/progress.png)
 

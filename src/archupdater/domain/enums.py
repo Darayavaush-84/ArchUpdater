@@ -56,3 +56,11 @@ class UpdateProgressStepState(str, Enum):
     INCOMPLETE = "incomplete"
     FAILED = "failed"
     NOT_EXECUTED = "not_executed"
+
+
+class UpdateResult(str, Enum):
+    IN_PROGRESS = "in_progress"
+    SUCCESS = "success"
+    PARTIAL_SUCCESS = "partial_success"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
