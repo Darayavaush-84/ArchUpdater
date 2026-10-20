@@ -73,6 +73,9 @@ jobs:
         run: scripts/check_pacman_preview_isolation.sh
 
       - name: Install and uninstall in the Arch container
+        # The container has no running systemd; AUR builds are not exercised here.
+        env:
+          ARCHUPDATER_SKIP_SYSTEMD_CHECK: "1"
         run: |
           ./install.sh
           /opt/archupdater/current/venv/bin/python -c 'import archupdater; print(archupdater.__version__)'

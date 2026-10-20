@@ -26,6 +26,7 @@ from archupdater.presentation.arch_news_coordinator import ArchNewsCoordinator
 from archupdater.presentation.arch_news_dialog import ArchNewsDialogResult, show_arch_news_dialog
 from archupdater.presentation.background_behavior import BackgroundBehaviorController
 from archupdater.presentation.check_schedule import CheckScheduleController
+from archupdater.presentation.pacman_timeout_dialog import PacmanTimeoutDialogCoordinator
 from archupdater.presentation.main_window.bindings import connect_main_window_signals
 from archupdater.presentation.main_window.check_coordinator import MainWindowCheckCoordinator
 from archupdater.presentation.main_window.check_presenter import MainWindowCheckPresenter
@@ -81,6 +82,9 @@ class MainWindow(QMainWindow):
         )
         self._autostart_service = AutostartService()
         self._update_controller = UpdateController(self._service, self)
+        self._pacman_timeout_dialog = PacmanTimeoutDialogCoordinator(
+            self, self._update_controller.resume_check_after_configuration,
+        )
         self._progress_presenter = UpdateProgressPresenter(
             self, self._update_controller, settings=self._settings,
             last_update_store=last_update_store,
@@ -711,6 +715,7 @@ class MainWindow(QMainWindow):
             return
 
         self._check_schedule.stop()
+        self._pacman_timeout_dialog.shutdown()
         self._update_controller.shutdown()
         super().closeEvent(event)
 

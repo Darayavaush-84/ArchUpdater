@@ -107,9 +107,16 @@ class AurReleaseIntegrationTests(unittest.TestCase):
         }
         for directory in directories.values():
             directory.mkdir()
+        environment = {
+            "PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(self.user.home),
+            "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+            "BUILDDIR": str(directories["build"]), "LOGDEST": str(directories["logs"]),
+            "PKGDEST": str(directories["packages"]), "SRCDEST": str(directories["sources"]),
+            "SRCPKGDEST": str(directories["source-packages"]), "TMPDIR": str(directories["tmp"]),
+        }
         result = subprocess.run(
             ["/usr/bin/makepkg", "--dir", str(checkout), "--force", "--noconfirm", "--noprogressbar"],
-            env=aur_workspace._aur_build_environment(self.user, directories),
+            env=environment,
             capture_output=True, text=True, timeout=60,
         )
         return result, directories["packages"]
@@ -118,17 +125,34 @@ class AurReleaseIntegrationTests(unittest.TestCase):
         original, _manager, review = self.fixture()
         baseline, _ = self.build(original, "baseline")
         self.assertEqual(baseline.returncode, 0, baseline.stdout + baseline.stderr)
-        sealed_root = self.root / "sealed"
-        sealed_root.mkdir()
-        sealed = aur_workspace._seal_aur_build_checkout(review, build_root=sealed_root)
-        workspace = self.root / "workspace"
-        workspace.mkdir()
-        copied = aur_workspace._create_user_aur_build_checkout(
-            sealed, review, build_root=workspace, build_user=self.user
+        input_directory = self.root / "input"
+        with (
+            patch.object(aur_workspace, "_user_makepkg_overrides", return_value=("-j2", "")),
+            patch.object(aur_workspace, "_export_user_pgp_keys", return_value=b""),
+        ):
+            aur_workspace.prepare_build_input(
+                review, input_directory, build_user=self.user, emit_log=lambda _line: None,
+            )
+        self.addCleanup(self._make_writable, input_directory)
+        state = self.root / "unit-state"
+        state.mkdir()
+        # The real unit script with the real makepkg, as this user and without systemd.
+        result = subprocess.run(
+            ["/usr/bin/bash", "-c", aur_workspace.BUILD_UNIT_SCRIPT],
+            env={"PATH": "/usr/local/bin:/usr/bin:/bin", "LANG": "C.UTF-8",
+                 "STATE_DIRECTORY": str(state), "ARCHUPDATER_INPUT": str(input_directory),
+                 "ARCHUPDATER_PHASE": "full"},
+            capture_output=True, text=True, timeout=120,
         )
-        result, _ = self.build(copied, "reviewed")
-        self.assertEqual((copied / "helper.sh").stat().st_mode & 0o777, 0o700)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("HARMLESS_LOCAL_HELPER_OK", result.stdout + result.stderr)
+        self.assertEqual((state / "checkout" / "helper.sh").stat().st_mode & 0o777, 0o755)
+        self.assertEqual(len(list((state / "packages").glob("*.pkg.tar*"))), 1)
+
+    @staticmethod
+    def _make_writable(root: Path) -> None:
+        for path, _directories, _files in os.walk(root):
+            os.chmod(path, 0o700)
 
     def test_f2_aur_noop_does_not_claim_changes(self):
         original, manager, review = self.fixture()
@@ -158,10 +182,21 @@ class AurReleaseIntegrationTests(unittest.TestCase):
         before = installed()
         events, logs = [], []
 
-        def supplied_build(_command, **kwargs):
+        unit_state = self.root / "unit-state"
+        unit_links = self.root / "unit-links"
+        unit_links.mkdir()
+
+        def supplied_build(command, **_kwargs):
             # Reuse the package just built above; the installation and package
             # identity inspection below still execute real pacman.
-            shutil.copy2(artifact, Path(kwargs["env"]["PKGDEST"]) / artifact.name)
+            token = next(
+                argument.rsplit("/", 1)[1]
+                for argument in command
+                if argument.startswith("--property=StateDirectory=")
+            )
+            packages = unit_state / token / "packages"
+            packages.mkdir(parents=True)
+            shutil.copy2(artifact, packages / artifact.name)
             return 0, []
 
         def isolated_command(command):
@@ -178,6 +213,12 @@ class AurReleaseIntegrationTests(unittest.TestCase):
                 patch.object(update_commands, "stream_subprocess", supplied_build),
                 patch.object(update_commands, "_critical_command", isolated_command),
                 patch.object(update_commands, "CommandRunner", IsolatedStateRunner),
+                patch.object(aur_workspace, "AUR_STATE_ROOT", unit_state),
+                patch.object(aur_workspace, "AUR_STATE_LINK_ROOT", unit_links),
+                patch.object(aur_workspace, "_user_makepkg_overrides", return_value=("", "")),
+                patch.object(aur_workspace, "_export_user_pgp_keys", return_value=b""),
+                patch.object(aur_workspace, "remove_stale_build_states"),
+                patch.object(aur_workspace, "stop_build_unit"),
             ):
                 code = aur_updates.install_reviewed_aur(
                     review, request.expected_version, expected_package_base=NAME,

@@ -20,6 +20,9 @@ def connect_main_window_signals(window: Any) -> None:
     window._update_controller.check_succeeded.connect(
         window._flow_coordinator.handle_check_success
     )
+    window._update_controller.download_timeout_confirmation_requested.connect(
+        window._pacman_timeout_dialog.confirm
+    )
     window._update_controller.check_failed.connect(
         window._flow_coordinator.handle_check_failure
     )

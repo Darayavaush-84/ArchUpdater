@@ -4,7 +4,6 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
-import pwd
 import shutil
 import subprocess
 import sys
@@ -16,9 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from support.aur import LocalGitAurReviewManager
 from archupdater.application.helper_protocol import HelperAction, HelperRequest
 from archupdater.helper.actions.aur_review import validate_aur_build_review
-from archupdater.helper.actions.aur_workspace import (
-    AurBuildUser, _create_user_aur_build_checkout, _seal_aur_build_checkout,
-)
+from archupdater.helper.actions.aur_workspace import _seal_aur_build_checkout
 from archupdater.helper.actions.validation import PrivilegedUpdateValidationError
 from archupdater.presentation.update_interaction_dialogs import _review_from_payload
 from archupdater.services.aur_errors import AurBuildError
@@ -62,16 +59,17 @@ class AurManifestPermissionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             sealed = _seal_aur_build_checkout(parsed, build_root=root)
-            workspace = root / "workspace"
-            workspace.mkdir()
-            user = AurBuildUser(pwd.getpwuid(os.getuid()).pw_name, os.getuid(), os.getgid(), root)
-            checkout = _create_user_aur_build_checkout(
-                sealed, parsed, build_root=workspace, build_user=user,
-            )
-            self.assertEqual((checkout / "helper.sh").stat().st_mode & 0o7777, 0o700)
-            self.assertEqual((checkout / "PKGBUILD").stat().st_mode & 0o7777, 0o600)
-            result = subprocess.run([str(checkout / "helper.sh")], capture_output=True, text=True, check=True)
-            self.assertEqual(result.stdout, "review OK\n")
+            try:
+                # The build unit copies this read-only tree, keeping executable bits.
+                self.assertEqual((sealed / "helper.sh").stat().st_mode & 0o7777, 0o555)
+                self.assertEqual((sealed / "PKGBUILD").stat().st_mode & 0o7777, 0o444)
+                result = subprocess.run(
+                    [str(sealed / "helper.sh")], capture_output=True, text=True, check=True,
+                )
+                self.assertEqual(result.stdout, "review OK\n")
+            finally:
+                for path, _directories, _files in os.walk(root):
+                    os.chmod(path, 0o700)
 
     def test_changed_executable_bit_invalidates_manifest_for_both_consumers(self):
         payload = deepcopy(self.payload)

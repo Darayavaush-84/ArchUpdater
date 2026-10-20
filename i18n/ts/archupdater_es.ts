@@ -147,7 +147,7 @@
     </message>
     <message>
         <location filename="../../src/archupdater/batch/translations.py" line="12"/>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="239"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="266"/>
         <source>No selected updates were installed.</source>
         <translation>No se instaló ninguna de las actualizaciones seleccionadas.</translation>
     </message>
@@ -304,433 +304,438 @@
     </message>
     <message>
         <location filename="../../src/archupdater/batch/translations.py" line="53"/>
+        <source>The request for the privileged helper is too large.</source>
+        <translation>La solicitud para el asistente con privilegios es demasiado grande.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/batch/translations.py" line="54"/>
         <source>ArchUpdater privileged helper is not installed.</source>
         <translation>El componente privilegiado de ArchUpdater no está instalado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="54"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="55"/>
         <source>Requesting administrator authorization for privileged update session.</source>
         <translation>Solicitando autorización de administrador para la sesión de actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="58"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="59"/>
         <source>Privileged helper action: {action}</source>
         <translation>Acción del componente privilegiado: {action}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="59"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="60"/>
         <source>Privileged helper status: {status}</source>
         <translation>Estado del componente privilegiado: {status}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="60"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="61"/>
         <source>Failed to start privileged helper: {error}</source>
         <translation>No se pudo iniciar el componente privilegiado: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="61"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="62"/>
         <source>Authorization failed or no authentication agent was available.</source>
         <translation>La autorización falló o no había ningún agente de autenticación disponible.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="65"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="66"/>
         <source>Privileged helper exited unexpectedly with code {code}.</source>
         <translation>El asistente con privilegios salió inesperadamente con el código {code}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="70"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="71"/>
         <source>You may be asked to authorize privileged update steps.</source>
         <translation>Es posible que se solicite autorización para los pasos de actualización con privilegios de administrador.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="118"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="119"/>
         <source>Selected updates completed with incomplete or failed steps.</source>
         <translation>Actualizaciones seleccionadas terminadas con pasos incompletos o fallidos.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="121"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="122"/>
         <source>No selected updates were installed because the selected steps failed.</source>
         <translation>No se instaló ninguna actualización seleccionada porque los pasos seleccionados fallaron.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="124"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="125"/>
         <source>AUR update completed successfully.</source>
         <translation>Actualización de AUR completada correctamente.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="125"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="126"/>
         <source>unknown error</source>
         <translation>error desconocido</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="126"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="127"/>
         <location filename="../../src/archupdater/helper/actions/pacman_prompts.py" line="63"/>
         <source>The available transaction changed after the original review. Review the new versions before continuing.</source>
         <translation>La transacción disponible ha cambiado desde la revisión inicial. Revise las nuevas versiones antes de continuar.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="130"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="131"/>
         <source>makepkg is not available.</source>
         <translation>makepkg no está disponible.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="131"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="132"/>
         <source>AUR updates were skipped after PKGBUILD review.</source>
         <translation>Se omitieron las actualizaciones de AUR tras la revisión de los PKGBUILD.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="132"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="133"/>
         <source>AUR update completed with skipped packages.</source>
         <translation>Actualización de AUR completada con paquetes omitidos.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="133"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="134"/>
         <source>Review AUR PKGBUILD</source>
         <translation>Revisar el PKGBUILD de AUR</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="134"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="135"/>
         <source>AUR preparation failed for {package}: {error}</source>
         <translation>Error al preparar el paquete AUR {package}: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="135"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="136"/>
         <source>Selected Flatpak updates were installed, but Flatpak reported a follow-up error.</source>
         <translation>Se instalaron las actualizaciones de Flatpak seleccionadas, pero Flatpak notificó un error posterior.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="139"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="140"/>
         <source>Could not safely refresh the pacman transaction preview.</source>
         <translation>No se pudo actualizar de forma segura la vista previa de la transacción de pacman.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="142"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="143"/>
         <source>No reviewed system updates remain available.</source>
         <translation>Ya no hay actualizaciones del sistema revisadas disponibles.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="143"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="144"/>
         <location filename="../../src/archupdater/helper/actions/update_commands.py" line="98"/>
         <source>The changed system transaction was not approved.</source>
         <translation>La transacción del sistema modificada no fue aprobada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="144"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="145"/>
         <source>Could not prepare the Flatpak transaction.</source>
         <translation>No se pudo preparar la transacción de Flatpak.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="145"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="146"/>
         <source>Flatpak returned an invalid transaction preview.</source>
         <translation>Flatpak devolvió una vista previa de la transacción no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="146"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="147"/>
         <source>Flatpak cleanup failed.</source>
         <translation>Error en la limpieza de Flatpak.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="147"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="148"/>
         <source>System Update Changed</source>
         <translation>Actualización del sistema modificada</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="148"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="149"/>
         <source>Could not build and install the reviewed AUR package.</source>
         <translation>No se pudo compilar e instalar el paquete AUR revisado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="149"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="150"/>
         <source>Skipped AUR updates: {packages}.</source>
         <translation>Actualizaciones de AUR omitidas: {packages}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="150"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="151"/>
         <source>{scope} refs: {refs}</source>
         <translation>Referencias ({scope}): {refs}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="151"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="152"/>
         <source>Could not verify the Flatpak transaction.</source>
         <translation>No se pudo verificar la transacción de Flatpak.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="152"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="153"/>
         <source>Flatpak returned an invalid verification result.</source>
         <translation>Flatpak devolvió un resultado de verificación no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="153"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="154"/>
         <source>All selected Flatpak refs were deployed, but Flatpak reported a follow-up error.</source>
         <translation>Se instalaron todas las referencias de Flatpak seleccionadas, pero Flatpak notificó un error posterior.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="157"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="158"/>
         <source>Flatpak finished without installing all selected updates.</source>
         <translation>Flatpak terminó sin instalar todas las actualizaciones seleccionadas.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="160"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="161"/>
         <source>The AUR update plan has no expected version for {package}.</source>
         <translation>El plan de actualización de AUR no contiene una versión esperada para {package}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="163"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="164"/>
         <source>The AUR helper did not report the installed development version.</source>
         <translation>El componente de AUR no indicó la versión de desarrollo instalada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="166"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="167"/>
         <source>Flatpak Update Changed</source>
         <translation>Actualización de Flatpak modificada</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="167"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="168"/>
         <source>The changed Flatpak transaction was not approved.</source>
         <translation>La transacción de Flatpak modificada no fue aprobada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="168"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="169"/>
         <source>PKGBUILD review was cancelled.</source>
         <translation>Revisión del PKGBUILD cancelada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="169"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="170"/>
         <source>Skipped {package}: PKGBUILD review was cancelled.</source>
         <translation>Se omitió {package}: revisión del PKGBUILD cancelada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="170"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="171"/>
         <source>Missing build dependencies for {package}: {dependencies}. Install them explicitly before retrying.</source>
         <translation>Faltan dependencias de compilación para {package}: {dependencies}. Instálelas explícitamente antes de volver a intentarlo.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="174"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="175"/>
         <source>The AUR helper reported an invalid development version.</source>
         <translation>El componente de AUR indicó una versión de desarrollo no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="177"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="178"/>
         <source>Could not record AUR development state for {package}: {error}</source>
         <translation>No se pudo guardar el estado de desarrollo de AUR para {package}: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="180"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="181"/>
         <source>Privileged helper output exceeded the safety limit.</source>
         <translation>La salida del componente privilegiado superó el límite de seguridad.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="181"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="182"/>
         <source>Could not initialize the privileged update session.</source>
         <translation>No se pudo inicializar la sesión de actualización privilegiada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="182"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="183"/>
         <source>Invalid Pacman question.</source>
         <translation>Solicitud de confirmación de Pacman no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="183"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="184"/>
         <source>The privileged helper returned an invalid result.</source>
         <translation>El componente privilegiado devolvió un resultado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="184"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="185"/>
         <source>The update step was interrupted before it completed.</source>
         <translation>El paso de actualización se interrumpió antes de completarse.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="185"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="186"/>
         <source>Further command output was suppressed after the safety limit.</source>
         <translation>Se omitió el resto de la salida del comando tras alcanzar el límite de seguridad.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="188"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="189"/>
         <source>Update command timed out.</source>
         <translation>El comando de actualización agotó el tiempo de espera.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="189"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="190"/>
         <source>{message} (signal {signal})</source>
         <translation>{message} (señal {signal})</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="190"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="191"/>
         <source>{message} (exit code {code})</source>
         <translation>{message} (código de salida {code})</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="191"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="192"/>
         <source>Pacman package databases are not valid. Refresh package databases, then try again.</source>
         <translation>Las bases de datos de paquetes de Pacman no son válidas. Actualícelas y vuelva a intentarlo.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="68"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="69"/>
         <source>ArchUpdater update session</source>
         <translation>Sesión de actualización de ArchUpdater</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="69"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="70"/>
         <source>The following updates will be installed:</source>
         <translation>Se instalarán las siguientes actualizaciones:</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="74"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="75"/>
         <source>Success</source>
         <translation>Éxito</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="75"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="76"/>
         <source>Failed</source>
         <translation>Falló</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="76"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="77"/>
         <source>ArchUpdater will refresh package status automatically.</source>
         <translation>ArchUpdater actualizará automáticamente el estado de los paquetes.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="79"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="80"/>
         <source>No package status refresh is required.</source>
         <translation>No es necesario actualizar el estado de los paquetes.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="80"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="81"/>
         <source>Review the update log above before closing this window.</source>
         <translation>Revisa el registro de actualización anterior antes de cerrar esta ventana.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="83"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="84"/>
         <source>Update summary</source>
         <translation>Resumen de la actualización</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="84"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="85"/>
         <source>Completed</source>
         <translation>Completado</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="85"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="86"/>
         <source>Incomplete</source>
         <translation>Incompleto</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="86"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="87"/>
         <source>Not executed</source>
         <translation>No ejecutado</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="87"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="88"/>
         <source>Next step</source>
         <translation>Siguiente paso</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="88"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="89"/>
         <source>No further action is required.</source>
         <translation>No se requiere ninguna otra acción.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="89"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="90"/>
         <source>Skipped AUR updates remain available and can be retried later.</source>
         <translation>Las actualizaciones de AUR omitidas siguen disponibles y se pueden volver a intentar más adelante.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="93"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="94"/>
         <source>Review the live activity log, then run the remaining updates again.</source>
         <translation>Revisa el registro de actividad en vivo y vuelve a ejecutar las actualizaciones restantes.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="97"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="98"/>
         <source>Review the live activity log, then try the update again.</source>
         <translation>Revisa el registro de actividad en vivo y vuelve a intentar la actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="100"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="101"/>
         <source>Command: {command}</source>
         <translation>Comando: {command}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="101"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="102"/>
         <source>Continuing with system package updates.</source>
         <translation>Continuando con las actualizaciones de los paquetes del sistema.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="102"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="103"/>
         <source>Continuing with AUR package updates.</source>
         <translation>Continuando con las actualizaciones de AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="103"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="104"/>
         <source>Continuing with Flatpak updates.</source>
         <translation>Continuando con las actualizaciones de Flatpak.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="104"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="105"/>
         <source>Continuing with firmware updates.</source>
         <translation>Continuando con las actualizaciones de firmware.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="105"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="106"/>
         <source>Continuing with KDE Store add-on updates.</source>
         <translation>Continuando con las actualizaciones de complementos de KDE Store.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="106"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="107"/>
         <source>Continuing with the next update step.</source>
         <translation>Continuando con el siguiente paso de actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="107"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="108"/>
         <source>1 package</source>
         <translation>1 paquete</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="108"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="109"/>
         <source>{count} packages</source>
         <translation>{count} paquetes</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="109"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="110"/>
         <source>Flatpak (system)</source>
         <translation>Flatpak (sistema)</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="110"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="111"/>
         <source>1 update</source>
         <translation>1 actualización</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="111"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="112"/>
         <source>{count} updates</source>
         <translation>{count} actualizaciones</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="112"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="113"/>
         <source>Flatpak (user)</source>
         <translation>Flatpak (usuario)</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="113"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="114"/>
         <source>1 device</source>
         <translation>1 dispositivo</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="114"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="115"/>
         <source>{count} devices</source>
         <translation>{count} dispositivos</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="115"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="116"/>
         <source>1 add-on</source>
         <translation>1 complemento</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="116"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="117"/>
         <source>{count} add-ons</source>
         <translation>{count} complementos</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/batch/translations.py" line="117"/>
+        <location filename="../../src/archupdater/batch/translations.py" line="118"/>
         <source>{visible} (+{remaining} more)</source>
         <translation>{visible} (+{remaining} más)</translation>
     </message>
@@ -865,27 +870,27 @@
         <translation>Actualizaciones seleccionadas terminadas con pasos incompletos o fallidos.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="182"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="186"/>
         <source>Ready to check for updates.</source>
         <translation>Listo para buscar actualizaciones.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="187"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="191"/>
         <source>Ready to scan</source>
         <translation>Listo para analizar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="193"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="197"/>
         <source>The previous update session did not finish cleanly. A fresh scan is recommended.</source>
         <translation>La sesión de actualización anterior no terminó correctamente. Se recomienda realizar un nuevo análisis.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="235"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="239"/>
         <source>No Updates Selected</source>
         <translation>No hay actualizaciones seleccionadas</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="236"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="240"/>
         <source>There are no selected updates to install.</source>
         <translation>No hay actualizaciones seleccionadas para instalar.</translation>
     </message>
@@ -1088,7 +1093,7 @@
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="216"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="408"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="412"/>
         <source>Checking for updates...</source>
         <translation>Buscando actualizaciones...</translation>
     </message>
@@ -1287,67 +1292,67 @@ Revise el registro de actividad antes de volver a intentarlo.</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="79"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="255"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="259"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="247"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="251"/>
         <source>Starting integrated updater...</source>
         <translation>Iniciando actualizador integrado...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="249"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="253"/>
         <source>Starting updater</source>
         <translation>Iniciando actualizador</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="298"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="302"/>
         <source>PKGBUILD review was cancelled.</source>
         <translation>Revisión del PKGBUILD cancelada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="322"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="326"/>
         <source>Skipped AUR update: {package}</source>
         <translation>Actualización de AUR omitida: {package}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="365"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="369"/>
         <source>Last checked: Never</source>
         <translation>Última comprobación: nunca</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="370"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="374"/>
         <source>Last checked: {timestamp}</source>
         <translation>Última comprobación: {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="385"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="389"/>
         <source>Next check: {timestamp}</source>
         <translation>Próxima comprobación: {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="403"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="407"/>
         <source>Update check failed</source>
         <translation>Error al buscar actualizaciones</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="417"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="421"/>
         <source>Checked with Warnings</source>
         <translation>Comprobado con advertencias</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="431"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="435"/>
         <source>Pacman packages are selected and installed together as one full system upgrade.</source>
         <translation>Los paquetes de Pacman se seleccionan e instalan juntos en una única actualización completa del sistema.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="525"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="529"/>
         <source>Shutdown Required</source>
         <translation>Es necesario apagar el equipo</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="527"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="531"/>
         <source>The updated firmware requires a full shutdown. Save your work and power the computer off completely before using it again.
 
 Devices: {devices}</source>
@@ -1356,12 +1361,12 @@ Devices: {devices}</source>
 Dispositivos: {devices}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="536"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="540"/>
         <source>Restart Recommended</source>
         <translation>Reinicio recomendado</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="538"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="542"/>
         <source>Some updated system components are already running. Restart when convenient to fully apply them.
 
 Packages: {packages}</source>
@@ -1370,53 +1375,53 @@ Packages: {packages}</source>
 Paquetes: {packages}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="545"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="549"/>
         <source>Restart Plasma Shell</source>
         <translation>Reiniciar Plasma Shell</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="547"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="551"/>
         <source>KDE Store add-ons were updated. Restart plasmashell now to fully apply the changes?</source>
         <translation>Los complementos de KDE Store se actualizaron. ¿Reiniciar plasmashell ahora para aplicar completamente los cambios?</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="557"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="561"/>
         <source>Restart Failed</source>
         <translation>Reinicio fallido</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="195"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="558"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="562"/>
         <source>Plasma shell could not be restarted automatically.</source>
         <translation>No se pudo reiniciar Plasma Shell automáticamente.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="604"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="608"/>
         <source>Operation in progress</source>
         <translation>Operación en curso</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="606"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="610"/>
         <source>ArchUpdater cannot quit while an update check or installation is running. Wait for the operation to finish.</source>
         <translation>ArchUpdater no puede cerrarse mientras se buscan o instalan actualizaciones. Espere a que termine la operación.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="665"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="670"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="671"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="676"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="677"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="669"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="674"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="675"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="680"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="681"/>
         <source>Waiting for network...</source>
         <translation>Esperando conexión de red...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="666"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="670"/>
         <source>Last checked: Waiting for network</source>
         <translation>Última comprobación: esperando conexión de red</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="74"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="412"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="416"/>
         <source>Waiting for Authentication</source>
         <translation>Esperando autenticación</translation>
     </message>
@@ -1963,49 +1968,78 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
     </message>
 </context>
 <context>
+    <name>PacmanTimeoutDialogCoordinator</name>
+    <message>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="32"/>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="72"/>
+        <source>Pacman download timeouts</source>
+        <translation>Tiempos de espera de descarga de pacman</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="34"/>
+        <source>Pacman download timeouts are disabled. A mirror that stops sending data can delay or interrupt the update check.</source>
+        <translation>Los tiempos de espera de descarga de pacman están desactivados. Un servidor espejo que deja de enviar datos puede retrasar o interrumpir la búsqueda de actualizaciones.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="37"/>
+        <source>Enable timeouts so pacman can try the next mirror after about 10 seconds without data. ArchUpdater will comment out DisableDownloadTimeout in /etc/pacman.conf. This applies system-wide and requires administrator authentication.</source>
+        <translation>Active los tiempos de espera para que pacman pruebe el siguiente servidor espejo tras unos 10 segundos sin datos. ArchUpdater comentará la directiva DisableDownloadTimeout en /etc/pacman.conf. El cambio se aplica a todo el sistema y requiere autenticación de administrador.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="39"/>
+        <source>Enable timeouts</source>
+        <translation>Activar tiempos de espera</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/pacman_timeout_dialog.py" line="40"/>
+        <source>Not now</source>
+        <translation>Ahora no</translation>
+    </message>
+</context>
+<context>
     <name>PacmanUpdateService</name>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="71"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="80"/>
         <source>Querying updates</source>
         <translation>Consultando actualizaciones</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="99"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="108"/>
         <source>Failed to query updates: {details}</source>
         <translation>No se pudieron consultar las actualizaciones: {details}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="93"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="102"/>
         <source>checkupdates returned a non-zero exit code.</source>
         <translation>checkupdates devolvió un código de salida distinto de cero.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="88"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="97"/>
         <source>pacman returned a non-zero exit code.</source>
         <translation>pacman devolvió un código de salida distinto de cero.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="110"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="119"/>
         <source>Some pacman update lines could not be parsed: {lines}</source>
         <translation>No se pudieron interpretar algunas líneas de actualización de pacman: {lines}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="136"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="145"/>
         <source>A required pacman command is not available: {details}</source>
         <translation>No está disponible un comando de pacman necesario: {details}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="164"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="173"/>
         <source>Update discovery requires `checkupdates` from pacman-contrib.</source>
         <translation>La búsqueda de actualizaciones requiere `checkupdates` del paquete pacman-contrib.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="212"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="221"/>
         <source>Loading metadata</source>
         <translation>Cargando metadatos</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/services/pacman.py" line="351"/>
+        <location filename="../../src/archupdater/services/pacman.py" line="360"/>
         <source>Blocked by pacman.conf</source>
         <translation>Bloqueado por pacman.conf</translation>
     </message>
@@ -2338,129 +2372,129 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
 <context>
     <name>PrivilegedHelper</name>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="115"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="119"/>
         <source>Request must be a JSON object.</source>
         <translation>La solicitud debe ser un objeto JSON.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="121"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="130"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="222"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="125"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="134"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="229"/>
         <source>Unsupported action.</source>
         <translation>Acción no compatible.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="166"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="173"/>
         <source>Flatpak references and expected versions do not match.</source>
         <translation>Las referencias de Flatpak y las versiones esperadas no coinciden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="210"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="217"/>
         <source>Invalid reviewed AUR package group.</source>
         <translation>Grupo de paquetes AUR revisado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="249"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="256"/>
         <source>Unsupported request field: {field}</source>
         <translation>Campo de solicitud no admitido: {field}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="280"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="287"/>
         <source>`aur_targets` must be an array.</source>
         <translation>`aur_targets` debe ser una matriz.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="296"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="330"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="303"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="337"/>
         <source>Invalid AUR install target.</source>
         <translation>Destino de instalación de AUR no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="368"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="375"/>
         <source>Invalid expected version.</source>
         <translation>Versión esperada no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="383"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="390"/>
         <source>Expected versions must be a non-empty object.</source>
         <translation>Las versiones esperadas deben ser un objeto no vacío.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="399"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="406"/>
         <source>Invalid expected-version target.</source>
         <translation>Destino de la versión esperada no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="428"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="438"/>
         <source>Privileged update session initialized.</source>
         <translation>Sesión de actualización privilegiada inicializada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="455"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="465"/>
         <source>Could not build or install the reviewed AUR package.</source>
         <translation>No se pudo compilar o instalar el paquete AUR revisado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="477"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="487"/>
         <source>Could not build or install the reviewed AUR package group.</source>
         <translation>No se pudo compilar o instalar el grupo de paquetes AUR revisado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="541"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="553"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="551"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="563"/>
         <source>Invalid privileged helper authorization scope.</source>
         <translation>Ámbito de autorización del componente privilegiado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="595"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="768"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="605"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="778"/>
         <source>Privileged helper request exceeds the safety limit.</source>
         <translation>La solicitud del componente privilegiado supera el límite de seguridad.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="636"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="646"/>
         <source>The privileged update session was not initialized.</source>
         <translation>La sesión de actualización privilegiada no se ha inicializado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="657"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="667"/>
         <source>The privileged update session is already initialized.</source>
         <translation>La sesión de actualización privilegiada ya está inicializada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="676"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="686"/>
         <source>The reviewed AUR package is not part of the authorized update plan.</source>
         <translation>El paquete AUR revisado no forma parte del plan de actualización autorizado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="706"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="716"/>
         <source>The reviewed AUR package group is not part of the authorized update plan.</source>
         <translation>El grupo de paquetes AUR revisado no forma parte del plan de actualización autorizado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="740"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="750"/>
         <source>The privileged helper must run as root.</source>
         <translation>El asistente con privilegios debe ejecutarse como root.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="754"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="764"/>
         <source>The privileged helper lost its requesting process.</source>
         <translation>El componente privilegiado ha perdido el proceso que lo solicitó.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="615"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="783"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="625"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="793"/>
         <source>Invalid JSON request.</source>
         <translation>Solicitud JSON no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="625"/>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="797"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="635"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="807"/>
         <source>Unexpected helper error: {error}</source>
         <translation>Error inesperado del asistente: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/privileged_helper.py" line="530"/>
+        <location filename="../../src/archupdater/helper/privileged_helper.py" line="540"/>
         <source>No handler available for requested action.</source>
         <translation>No hay un controlador disponible para la acción solicitada.</translation>
     </message>
@@ -2501,27 +2535,27 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
         <translation>Instalando paquetes de soporte: {packages}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="85"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="83"/>
         <source>Building the reviewed AUR package as an unprivileged user.</source>
         <translation>Compilando el paquete AUR revisado como usuario sin privilegios de administrador.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="143"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="146"/>
         <source>makepkg exited with code {code}.</source>
         <translation>makepkg terminó con el código {code}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="153"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="99"/>
         <source>The development AUR update has no approved VCS source commit.</source>
         <translation>La actualización de desarrollo de AUR no contiene un commit aprobado del código fuente VCS.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="249"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="276"/>
         <source>Reviewed AUR package installed successfully.</source>
         <translation>Paquete AUR revisado instalado correctamente.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="252"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="279"/>
         <location filename="../../src/archupdater/helper/actions/support_packages.py" line="82"/>
         <location filename="../../src/archupdater/helper/actions/support_packages.py" line="155"/>
         <location filename="../../src/archupdater/helper/actions/system_updates.py" line="70"/>
@@ -2529,8 +2563,8 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
         <translation>pacman finalizó con el código {code}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="186"/>
-        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="207"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="181"/>
+        <location filename="../../src/archupdater/helper/actions/aur_updates.py" line="234"/>
         <source>Could not build or verify the reviewed AUR package.</source>
         <translation>No se pudo compilar o verificar el paquete AUR revisado.</translation>
     </message>
@@ -2556,6 +2590,7 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
     </message>
     <message>
         <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="62"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="329"/>
         <source>AUR build output is not a valid regular package file.</source>
         <translation>La salida de compilación de AUR no es un archivo de paquete regular válido.</translation>
     </message>
@@ -2592,107 +2627,112 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
         <translation>No se pudieron comparar las versiones de los paquetes AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="174"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="179"/>
         <source>Could not locate an approved AUR VCS source checkout.</source>
         <translation>No se pudo encontrar una copia de trabajo aprobada del código fuente VCS de AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="205"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="217"/>
         <source>Could not verify an AUR VCS source commit.</source>
         <translation>No se pudo verificar un commit del código fuente VCS de AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="212"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="224"/>
         <source>An AUR VCS source changed after the update was approved.</source>
         <translation>Un código fuente VCS de AUR cambió después de aprobar la actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="247"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="259"/>
         <source>The installed AUR development package changed after the update was approved.</source>
         <translation>El paquete de desarrollo de AUR instalado cambió después de aprobar la actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="270"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="282"/>
         <source>Could not inspect an AUR package artifact.</source>
         <translation>No se pudo examinar un artefacto de paquete AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="288"/>
+        <location filename="../../src/archupdater/helper/actions/aur_artifacts.py" line="300"/>
         <source>Invalid AUR package artifact identity.</source>
         <translation>Identidad del artefacto de paquete AUR no válida.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="44"/>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="68"/>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="87"/>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="119"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="45"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="69"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="88"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="120"/>
         <source>Invalid reviewed AUR build manifest.</source>
         <translation>Manifiesto de compilación de AUR revisado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="132"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="133"/>
         <source>Reviewed AUR file content does not match its manifest.</source>
         <translation>El contenido del archivo AUR revisado no coincide con su manifiesto.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="152"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="153"/>
         <source>Reviewed AUR tree digest does not match its manifest.</source>
         <translation>La huella del árbol de AUR revisado no coincide con su manifiesto.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="159"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="160"/>
         <source>The reviewed AUR build manifest is incomplete.</source>
         <translation>El manifiesto de compilación de AUR revisado está incompleto.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="174"/>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="204"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="175"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="205"/>
         <source>Invalid reviewed AUR VCS source lock.</source>
         <translation>Bloqueo de versión del código fuente VCS de AUR revisado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="236"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="237"/>
         <source>The reviewed AUR package base does not match the authorized update plan.</source>
         <translation>La base del paquete AUR revisado no coincide con el plan de actualización autorizado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="264"/>
+        <location filename="../../src/archupdater/helper/actions/aur_review.py" line="265"/>
         <source>The reviewed .SRCINFO does not declare the authorized AUR package.</source>
         <translation>El archivo .SRCINFO revisado no declara el paquete AUR autorizado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="98"/>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="114"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="186"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="202"/>
         <source>Could not identify the unprivileged user for the AUR build.</source>
         <translation>No se pudo identificar al usuario sin privilegios de administrador para compilar el paquete AUR.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="105"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="193"/>
         <source>AUR packages must not be built as root.</source>
         <translation>Los paquetes AUR no deben compilarse como root.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="122"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="210"/>
         <source>The AUR build user has no usable home directory.</source>
         <translation>El usuario de compilación de AUR no dispone de un directorio personal utilizable.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="183"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="406"/>
+        <source>Ignoring MAKEFLAGS from makepkg.conf: only -j and -l are allowed for isolated AUR builds.</source>
+        <translation>Se ignora MAKEFLAGS de makepkg.conf: en las compilaciones AUR aisladas solo se permiten -j y -l.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="501"/>
         <source>AUR artifact is not a regular non-symlink file: {path}</source>
         <translation>El artefacto de AUR no es un archivo regular sin enlace simbólico: {path}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="200"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="518"/>
         <source>AUR artifact changed while it was being opened.</source>
         <translation>El artefacto de AUR cambió durante su apertura.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="211"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="529"/>
         <source>AUR artifact exceeds the allowed size.</source>
         <translation>El artefacto de AUR supera el tamaño permitido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="232"/>
+        <location filename="../../src/archupdater/helper/actions/aur_workspace.py" line="550"/>
         <source>AUR artifact changed while it was being copied.</source>
         <translation>El artefacto de AUR cambió durante su copia.</translation>
     </message>
@@ -2793,64 +2833,74 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
         <source>Invalid `{field_name}` item: {value}</source>
         <translation>Elemento de `{field_name}` no válido: {value}</translation>
     </message>
+    <message>
+        <location filename="../../src/archupdater/helper/actions/pacman_config.py" line="78"/>
+        <source>Could not enable download timeouts. Check /etc/pacman.conf and its included files: {error}</source>
+        <translation>No se pudieron activar los tiempos de espera de descarga. Revise /etc/pacman.conf y los archivos incluidos: {error}</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/helper/actions/pacman_config.py" line="86"/>
+        <source>Download timeouts enabled.</source>
+        <translation>Tiempos de espera de descarga activados.</translation>
+    </message>
 </context>
 <context>
     <name>PrivilegedUpdateClient</name>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="80"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="88"/>
         <source>Privileged update is already running.</source>
         <translation>Ya hay una actualización con privilegios en ejecución.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="90"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="98"/>
         <source>Requesting authorization from the system authentication agent...</source>
         <translation>Solicitando autorización al agente de autenticación del sistema...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="118"/>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="226"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="126"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="234"/>
         <source>Failed to start pkexec.</source>
         <translation>No se pudo iniciar pkexec.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="137"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="145"/>
         <source>helper: {line}</source>
         <translation>asistente: {line}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="140"/>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="167"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="148"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="175"/>
         <source>Unknown helper event: {line}</source>
         <translation>Evento de asistente desconocido: {line}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="160"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="168"/>
         <source>The privileged helper returned an invalid result.</source>
         <translation>El componente privilegiado devolvió un resultado no válido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="177"/>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="196"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="185"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="204"/>
         <source>pkexec: {line}</source>
         <translation>pkexec: {line}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="188"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="196"/>
         <source>Privileged helper output exceeded the safety limit.</source>
         <translation>La salida del componente privilegiado superó el límite de seguridad.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="238"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="246"/>
         <source>Authentication was cancelled. The administrator password is required to continue, so the operation has been interrupted.</source>
         <translation>Autenticación cancelada. Se necesita la contraseña de administrador para continuar, por lo que la operación se ha interrumpido.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="213"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="221"/>
         <source>Authorization failed or no authentication agent was available.</source>
         <translation>La autorización falló o no había ningún agente de autenticación disponible.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/privileged_client.py" line="219"/>
+        <location filename="../../src/archupdater/presentation/privileged_client.py" line="227"/>
         <source>Privileged helper exited unexpectedly with code {code}.</source>
         <translation>El asistente con privilegios salió inesperadamente con el código {code}.</translation>
     </message>
@@ -3167,84 +3217,84 @@ Es posible que otras herramientas ajenas a ArchUpdater los utilicen.</translatio
         <translation>Revisa el registro de actividad en vivo y vuelve a intentar la actualización.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="345"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="368"/>
         <source>Selected updates completed with incomplete or failed steps.</source>
         <translation>Actualizaciones seleccionadas terminadas con pasos incompletos o fallidos.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="156"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="177"/>
         <source>The update controller is shutting down.</source>
         <translation>El controlador de actualizaciones se está cerrando.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="158"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="179"/>
         <source>Another operation is already running.</source>
         <translation>Ya hay otra operación en curso.</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="313"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="167"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="219"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="300"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="311"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="188"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="240"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="323"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="334"/>
         <source>Installing Updates</source>
         <translation>Instalando actualizaciones</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="168"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="312"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="189"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="335"/>
         <source>Starting the integrated update session.</source>
         <translation>Iniciando la sesión de actualización integrada.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="220"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="301"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="241"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="324"/>
         <source>Running selected updates.</source>
         <translation>Ejecutando las actualizaciones seleccionadas.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="334"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="357"/>
         <source>Updates completed</source>
         <translation>Actualizaciones completadas</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="335"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="358"/>
         <source>Selected updates completed successfully.</source>
         <translation>Las actualizaciones seleccionadas se completaron correctamente.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="354"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="377"/>
         <source>No updates installed</source>
         <translation>Ninguna actualización instalada</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="355"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="378"/>
         <source>No selected updates were installed.</source>
         <translation>No se instaló ninguna de las actualizaciones seleccionadas.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="362"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="385"/>
         <source>Update cancelled</source>
         <translation>Actualización cancelada</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="363"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="386"/>
         <source>The update was cancelled.</source>
         <translation>La actualización se ha cancelado.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="344"/>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="370"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="367"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="393"/>
         <source>Update completed with issues</source>
         <translation>Actualización completada con incidencias</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="372"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="395"/>
         <source>Update failed</source>
         <translation>La actualización falló</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/update_controller.py" line="373"/>
+        <location filename="../../src/archupdater/presentation/update_controller.py" line="396"/>
         <source>Selected updates failed.</source>
         <translation>Las actualizaciones seleccionadas fallaron.</translation>
     </message>

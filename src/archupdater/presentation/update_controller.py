@@ -18,6 +18,7 @@ class UpdateCheckWorker(QObject):
     finished = Signal(object)
     failed = Signal(str, object)
     progress_changed = Signal(str, int)
+    download_timeout_confirmation_requested = Signal()
 
     def __init__(
         self,
@@ -31,9 +32,14 @@ class UpdateCheckWorker(QObject):
         self._active_optional_sources = active_optional_sources
         self._use_local_system_db = use_local_system_db
         self._cancel_requested = threading.Event()
+        self._configuration_ready = threading.Event()
 
     def cancel(self) -> None:
         self._cancel_requested.set()
+        self._configuration_ready.set()
+
+    def resume_after_configuration(self) -> None:
+        self._configuration_ready.set()
 
     @Slot()
     def run(self) -> None:
@@ -43,6 +49,13 @@ class UpdateCheckWorker(QObject):
             self.progress_changed.emit(label, percent)
 
         try:
+            if self._cancel_requested.is_set():
+                return
+            if not self._use_local_system_db and self._service.download_timeouts_disabled():
+                self.download_timeout_confirmation_requested.emit()
+                self._configuration_ready.wait()
+            if self._cancel_requested.is_set():
+                return
             result = self._service.check_updates(
                 progress_callback=report_progress,
                 active_optional_sources=self._active_optional_sources,
@@ -66,6 +79,7 @@ class UpdateController(QObject):
     check_succeeded = Signal(object)
     check_failed = Signal(str, object)
     check_progress_changed = Signal(str, int)
+    download_timeout_confirmation_requested = Signal()
     update_status_changed = Signal(str)
     update_progress_changed = Signal(object)
     question_requested = Signal(object)
@@ -142,6 +156,9 @@ class UpdateController(QObject):
         self._worker.moveToThread(self._worker_thread)
         self._worker_thread.started.connect(self._worker.run)
         self._worker.progress_changed.connect(self.check_progress_changed)
+        self._worker.download_timeout_confirmation_requested.connect(
+            self.download_timeout_confirmation_requested
+        )
         self._worker.finished.connect(self._handle_check_success)
         self._worker.failed.connect(self._handle_check_failure)
         self._worker.finished.connect(self._worker_thread.quit)
@@ -150,6 +167,10 @@ class UpdateController(QObject):
         self._worker_thread.start()
         self.busy_changed.emit(True)
         return True
+
+    def resume_check_after_configuration(self) -> None:
+        if self._worker is not None:
+            self._worker.resume_after_configuration()
 
     def start_update(self, plan: UpdatePlan) -> None:
         if self._shutting_down:
@@ -237,6 +258,8 @@ class UpdateController(QObject):
     def _disconnect_worker_signals(self, worker: UpdateCheckWorker) -> None:
         for signal, slot in (
             (worker.progress_changed, self.check_progress_changed),
+            (worker.download_timeout_confirmation_requested,
+             self.download_timeout_confirmation_requested),
             (worker.finished, self._handle_check_success),
             (worker.failed, self._handle_check_failure),
         ):

@@ -17,6 +17,8 @@ UNINSTALL_SRC="${PROJECT_ROOT}/uninstall.sh"
 APP_LAUNCHER="${SYSTEM_BIN_DIR}/archupdater"
 UNINSTALL_LAUNCHER="${SYSTEM_BIN_DIR}/archupdater-uninstall"
 APP_EXECUTABLE_NAME="archupdater"
+SYSTEMD_RUNTIME_DIR="/run/systemd/system"
+SYSTEMD_RUN_PATH="/usr/bin/systemd-run"
 RELEASES_DIR=""
 CURRENT_LINK=""
 UNINSTALL_DEST=""
@@ -127,6 +129,25 @@ require_commands() {
             exit 1
         }
     done
+}
+
+require_systemd() {
+    if [[ "${ARCHUPDATER_SKIP_SYSTEMD_CHECK:-}" == "1" ]]; then
+        echo "Warning: skipping the systemd check (ARCHUPDATER_SKIP_SYSTEMD_CHECK=1)."
+        echo "AUR updates will not work on this system."
+        return 0
+    fi
+    # sd_booted(3): this directory exists only while systemd is the running init.
+    if [[ -d "${SYSTEMD_RUNTIME_DIR}" && -x "${SYSTEMD_RUN_PATH}" ]]; then
+        return 0
+    fi
+    echo "Error: ArchUpdater requires systemd as the running init system."
+    echo "Each AUR package is built in an isolated, temporary systemd service, so the build"
+    echo "cannot read your home directory and other programs running as your user cannot"
+    echo "alter the reviewed build files or replace the package before it is installed."
+    echo "Installing the systemd package would not help: it must be the running init."
+    echo "Nothing was installed or changed."
+    exit 1
 }
 
 require_supported_python() {
@@ -265,6 +286,8 @@ if [[ "${EUID}" -ne 0 ]]; then
 fi
 
 require_commands
+# Before any change, including installing missing dependencies with pacman.
+require_systemd
 validate_install_root "${INSTALL_ROOT}"
 
 for path in \

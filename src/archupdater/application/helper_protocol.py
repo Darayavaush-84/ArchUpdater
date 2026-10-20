@@ -6,8 +6,15 @@ from enum import Enum
 
 from archupdater.domain.aur import AurInstallTarget, AurPkgbuildReview
 
+MAX_AUR_REVIEW_BYTES = 16 * 1024 * 1024
+# JSON escaping at most doubles accepted review content (quotes, backslashes and
+# \n/\r/\t; other control characters are rejected). The margin covers up to 512
+# escaped file paths and the remaining manifest fields.
+MAX_HELPER_REQUEST_CHARACTERS = 2 * MAX_AUR_REVIEW_BYTES + 8 * 1024 * 1024
+
 
 class HelperAction(str, Enum):
+    ENABLE_DOWNLOAD_TIMEOUTS = "enable_download_timeouts"
     INITIALIZE_UPDATE_SESSION = "initialize_update_session"
     INSTALL_REVIEWED_AUR = "install_reviewed_aur"
     INSTALL_REVIEWED_AUR_GROUP = "install_reviewed_aur_group"

@@ -8,7 +8,12 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from archupdater.application.helper_protocol import HelperAction, HelperEventType, HelperRequest
+from archupdater.application.helper_protocol import (
+    MAX_HELPER_REQUEST_CHARACTERS,
+    HelperAction,
+    HelperEventType,
+    HelperRequest,
+)
 from archupdater.application.update_session.backend import CommandRunResult
 from archupdater.application.update_session.errors import BatchAuthenticationCancelled
 from archupdater.domain.aur import AurInstallTarget
@@ -88,8 +93,15 @@ class BatchPrivilegedHelperInvoker:
             )
         )
         assert process.stdin is not None
+        payload = request.to_json_bytes().decode("utf-8")
+        if len(payload) > MAX_HELPER_REQUEST_CHARACTERS:
+            # The helper would reject it; fail clearly without consuming the attempt.
+            return CommandRunResult(
+                False,
+                self.translate("The request for the privileged helper is too large."),
+            )
         try:
-            process.stdin.write(request.to_json_bytes().decode("utf-8"))
+            process.stdin.write(payload)
             process.stdin.flush()
         except (BrokenPipeError, OSError, ValueError):
             return self._unexpected_exit_result(process)

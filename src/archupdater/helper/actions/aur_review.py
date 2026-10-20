@@ -7,6 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
 
+from archupdater.application import helper_protocol
 from archupdater.domain.aur import (
     AurPkgbuildReview,
     AurReviewFile,
@@ -29,7 +30,7 @@ VCS_BRANCH_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 MAX_AUR_REVIEW_FILES = 512
 
 
-MAX_AUR_REVIEW_BYTES = 16 * 1024 * 1024
+MAX_AUR_REVIEW_BYTES = helper_protocol.MAX_AUR_REVIEW_BYTES
 
 
 def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:

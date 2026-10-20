@@ -96,9 +96,8 @@ class BackgroundBehaviorController:
         if not app_settings.auto_check_enabled:
             return None
         reference_time = now or datetime.now()
-        if self._check_schedule.timer.isActive():
-            delay_ms = max(0, self._check_schedule.timer.remainingTime())
-        else:
+        delay_ms = self._check_schedule.remaining_ms()
+        if delay_ms is None:
             delay_ms = self.auto_check_delay_ms(
                 app_settings, last_checked_at=last_checked_at, now=reference_time,
             )

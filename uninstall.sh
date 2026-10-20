@@ -10,6 +10,8 @@ SELF_UPDATE_WRAPPER="${HELPER_DIR}/archupdater-self-update"
 POLICY_DEST="/usr/share/polkit-1/actions/io.github.archupdater.policy"
 DESKTOP_DIR="/usr/share/applications"
 DESKTOP_DEST="${DESKTOP_DIR}/io.github.archupdater.desktop"
+AUR_STATE_DIR="/var/lib/private/archupdater-aur"
+AUR_STATE_LINK_DIR="/var/lib/archupdater-aur"
 PURGE_USER_DATA=false
 
 usage() {
@@ -190,6 +192,16 @@ rm -f -- \
     "${POLICY_DEST}" \
     "${DESKTOP_DEST}"
 rmdir -- "${HELPER_DIR}" 2>/dev/null || true
+
+# Isolated AUR build units normally remove their state; clear anything left behind.
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl stop 'archupdater-aur-*.service' >/dev/null 2>&1 || true
+fi
+for path in "${AUR_STATE_DIR}" "${AUR_STATE_LINK_DIR}"; do
+    if [[ -d "${path}" && ! -L "${path}" ]]; then
+        rm -rf -- "${path}"
+    fi
+done
 
 if [[ "${PURGE_USER_DATA}" == true ]]; then
     purge_invoking_user_data

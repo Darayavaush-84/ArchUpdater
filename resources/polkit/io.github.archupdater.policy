@@ -5,8 +5,16 @@
 <policyconfig>
   <vendor>ArchUpdater</vendor>
   <action id="io.github.archupdater.update.session">
-    <description>Run an ArchUpdater update session</description>
-    <message>Authentication is required to run the selected update session.</message>
+    <description>Install updates with administrator privileges</description>
+    <description xml:lang="it">Installa aggiornamenti con privilegi di amministratore</description>
+    <description xml:lang="de">Aktualisierungen mit Administratorrechten installieren</description>
+    <description xml:lang="fr">Installer des mises à jour avec les droits d'administrateur</description>
+    <description xml:lang="es">Instalar actualizaciones con privilegios de administrador</description>
+    <message>Authentication is required to install the selected updates as administrator, including system packages, reviewed AUR packages, system Flatpaks and firmware.</message>
+    <message xml:lang="it">Autenticazione richiesta per installare come amministratore gli aggiornamenti selezionati, inclusi pacchetti di sistema, pacchetti AUR revisionati, Flatpak di sistema e firmware.</message>
+    <message xml:lang="de">Zum Installieren der ausgewählten Aktualisierungen als Administrator ist eine Authentifizierung erforderlich, einschließlich Systempaketen, geprüfter AUR-Pakete, System-Flatpaks und Firmware.</message>
+    <message xml:lang="fr">Une authentification est nécessaire pour installer les mises à jour sélectionnées en tant qu'administrateur, y compris les paquets système, les paquets AUR vérifiés, les Flatpak système et les micrologiciels.</message>
+    <message xml:lang="es">Se requiere autenticación para instalar como administrador las actualizaciones seleccionadas, incluidos paquetes del sistema, paquetes AUR revisados, Flatpak del sistema y firmware.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -17,7 +25,15 @@
   </action>
   <action id="io.github.archupdater.support-packages">
     <description>Install or remove ArchUpdater optional support packages</description>
+    <description xml:lang="it">Installa o rimuovi i pacchetti di supporto opzionali di ArchUpdater</description>
+    <description xml:lang="de">Optionale Unterstützungspakete von ArchUpdater installieren oder entfernen</description>
+    <description xml:lang="fr">Installer ou supprimer les paquets de prise en charge facultatifs d'ArchUpdater</description>
+    <description xml:lang="es">Instalar o eliminar los paquetes de soporte opcionales de ArchUpdater</description>
     <message>Authentication is required to install or remove optional support packages.</message>
+    <message xml:lang="it">Autenticazione richiesta per installare o rimuovere i pacchetti di supporto opzionali.</message>
+    <message xml:lang="de">Zum Installieren oder Entfernen optionaler Unterstützungspakete ist eine Authentifizierung erforderlich.</message>
+    <message xml:lang="fr">Une authentification est nécessaire pour installer ou supprimer les paquets de prise en charge facultatifs.</message>
+    <message xml:lang="es">Se requiere autenticación para instalar o eliminar los paquetes de soporte opcionales.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -25,6 +41,25 @@
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/archupdater/archupdater-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">--archupdater-auth=support-packages</annotate>
+  </action>
+  <action id="io.github.archupdater.pacman-config">
+    <description>Enable pacman download timeouts</description>
+    <description xml:lang="it">Riattiva i timeout di download di pacman</description>
+    <description xml:lang="de">Download-Zeitlimits für pacman aktivieren</description>
+    <description xml:lang="fr">Activer les délais de téléchargement de pacman</description>
+    <description xml:lang="es">Activar los tiempos de espera de descarga de pacman</description>
+    <message>Authentication is required to enable download timeouts in /etc/pacman.conf.</message>
+    <message xml:lang="it">Autenticazione richiesta per riattivare i timeout di download in /etc/pacman.conf.</message>
+    <message xml:lang="de">Zum Aktivieren der Download-Zeitlimits in /etc/pacman.conf ist eine Authentifizierung erforderlich.</message>
+    <message xml:lang="fr">Une authentification est nécessaire pour activer les délais de téléchargement dans /etc/pacman.conf.</message>
+    <message xml:lang="es">Se requiere autenticación para activar los tiempos de espera de descarga en /etc/pacman.conf.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/archupdater/archupdater-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">--archupdater-auth=pacman-config</annotate>
   </action>
   <action id="io.github.archupdater.self-update">
     <description>Update ArchUpdater</description>

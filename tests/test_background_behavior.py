@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -44,20 +45,20 @@ class BackgroundBehaviorTests(unittest.TestCase):
             action_bar=Mock(), _update_next_check_label=Mock(),
         )
         MainWindow.set_auto_check_schedule(window, 6)
-        self.assertAlmostEqual(self.timer.remainingTime() / 3600000, 4, delta=0.01)
+        self.assertAlmostEqual(self.schedule.remaining_ms() / 3600000, 4, delta=0.01)
         next_check = MainWindow.next_auto_check_at(window)
-        self.assertAlmostEqual((next_check - datetime.now()).total_seconds() / 3600, 4, delta=0.01)
+        self.assertAlmostEqual((next_check.timestamp() - time.time()) / 3600, 4, delta=0.01)
         window._update_next_check_label.assert_called_once_with()
 
     def test_overdue_check_runs_promptly_when_frequency_is_shortened(self) -> None:
         self.background.set_auto_check_schedule(6, last_checked_at=datetime.now() - timedelta(hours=8))
-        self.assertLessEqual(self.timer.remainingTime(), 5)
+        self.assertLessEqual(self.schedule.remaining_ms(), 5)
 
     def test_deferred_check_display_uses_actual_timer_instead_of_past_deadline(self) -> None:
         last_checked = datetime.now() - timedelta(hours=30)
         self.background.apply_auto_check_settings(self.settings, last_checked_at=last_checked, defer_if_due=True)
         next_check = self.background.next_check_at(self.settings, last_checked_at=last_checked)
-        self.assertAlmostEqual((next_check - datetime.now()).total_seconds() / 3600, 24, delta=0.01)
+        self.assertAlmostEqual((next_check.timestamp() - time.time()) / 3600, 24, delta=0.01)
 
     def test_disabled_checks_have_no_timer_or_next_check(self) -> None:
         self.background.set_auto_check_schedule(None)

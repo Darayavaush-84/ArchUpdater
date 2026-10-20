@@ -103,6 +103,7 @@ class ApplicationContainer:
             optional_sources_reader=ReadOptionalSources(self.optional_sources),
             plasma_shell_service=self.plasma_shell,
             plasma_widgets_update_service=self.plasma_widget_installer,
+            download_timeouts_disabled=self.pacman_updates.download_timeouts_disabled,
         )
 
     def optional_sources_snapshot(self) -> OptionalSourcesSnapshot:

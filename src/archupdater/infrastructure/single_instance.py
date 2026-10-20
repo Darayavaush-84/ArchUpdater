@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import stat
+from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -33,9 +35,19 @@ class SingleInstanceGuard(QObject):
         activate: bool = True,
         timeout_ms: int = 500,
     ) -> bool:
-        effective_server_name = server_name or cls.default_server_name()
+        if server_name is not None:
+            return cls._notify(server_name, activate=activate, timeout_ms=timeout_ms)
+        # Instances started by an older release still listen on the legacy name.
+        candidates = dict.fromkeys((cls.default_server_name(), cls.legacy_server_name()))
+        return any(
+            cls._notify(candidate, activate=activate, timeout_ms=timeout_ms)
+            for candidate in candidates
+        )
+
+    @classmethod
+    def _notify(cls, server_name: str, *, activate: bool, timeout_ms: int) -> bool:
         socket = QLocalSocket()
-        socket.connectToServer(effective_server_name)
+        socket.connectToServer(server_name)
         if not socket.waitForConnected(timeout_ms):
             socket.abort()
             return False
@@ -51,6 +63,21 @@ class SingleInstanceGuard(QObject):
 
     @classmethod
     def default_server_name(cls) -> str:
+        # A relative name lives in the shared /tmp, where another local user could
+        # claim it first. The per-user runtime directory is private to this user.
+        runtime_directory = cls._private_runtime_directory()
+        if runtime_directory is not None:
+            path = runtime_directory / f"{cls.SERVER_NAME_PREFIX}.{cls._session_digest()}"
+            if len(os.fsencode(path)) < 100:
+                return str(path)
+        return cls.legacy_server_name()
+
+    @classmethod
+    def legacy_server_name(cls) -> str:
+        return f"{cls.SERVER_NAME_PREFIX}.{os.getuid()}.{cls._session_digest()}"
+
+    @staticmethod
+    def _session_digest() -> str:
         session_identity = next(
             (
                 value
@@ -64,8 +91,25 @@ class SingleInstanceGuard(QObject):
             ),
             "headless",
         )
-        digest = hashlib.sha256(session_identity.encode("utf-8")).hexdigest()[:12]
-        return f"{cls.SERVER_NAME_PREFIX}.{os.getuid()}.{digest}"
+        return hashlib.sha256(session_identity.encode("utf-8")).hexdigest()[:12]
+
+    @staticmethod
+    def _private_runtime_directory() -> Path | None:
+        raw_path = os.environ.get("XDG_RUNTIME_DIR", "")
+        if not raw_path.startswith("/"):
+            return None
+        path = Path(raw_path)
+        try:
+            info = path.lstat()
+        except OSError:
+            return None
+        if (
+            not stat.S_ISDIR(info.st_mode)
+            or info.st_uid != os.getuid()
+            or info.st_mode & 0o077
+        ):
+            return None
+        return path
 
     def acquire(self) -> bool:
         if self._server is not None:

@@ -170,6 +170,20 @@ class ManagedInstall:
             finally:
                 if not committed:
                     shutil.rmtree(stage)
+        self.remove_obsolete_releases(keep={stage, current})
+
+    def remove_obsolete_releases(self, *, keep: set[Path]) -> None:
+        # Mirrors install.sh: retain only the active release and its predecessor.
+        owner = self.root.lstat().st_uid
+        for candidate in self.releases.iterdir():
+            if candidate in keep:
+                continue
+            try:
+                info = candidate.lstat()
+            except OSError:
+                continue
+            if stat.S_ISDIR(info.st_mode) and info.st_uid == owner:
+                shutil.rmtree(candidate, ignore_errors=True)
 
     def run(self, command: list[str]) -> None:
         result = subprocess.run(

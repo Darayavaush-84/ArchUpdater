@@ -276,6 +276,26 @@ class ManagedInstallTests(unittest.TestCase):
         self.assertIn("--no-index", run.call_args.args[0])
         self.assertIn("--no-deps", run.call_args.args[0])
 
+    def test_successful_install_keeps_only_current_and_previous_releases(self):
+        obsolete = self.root / "releases/older"
+        site_packages(obsolete).mkdir(parents=True)
+        unrelated = self.root / "releases/note.txt"
+        unrelated.write_text("not a release")
+        with (
+            patch("archupdater.helper.self_update.verify_artifact"),
+            patch(
+                "archupdater.helper.self_update.venv.EnvBuilder.create", side_effect=self.fake_venv
+            ),
+            patch.object(self.installation, "run"),
+            patch.object(self.installation, "smoke_test"),
+        ):
+            self.perform_install()
+        new_release = self.installation.link_target("current")
+        self.assertEqual(
+            set(self.installation.releases.iterdir()), {new_release, self.current, unrelated},
+        )
+        self.assertEqual(self.installation.link_target("previous"), self.current)
+
     def test_preparation_and_smoke_failures_remove_stage_and_preserve_current(self):
         for method in ("run", "smoke_test"):
             with (

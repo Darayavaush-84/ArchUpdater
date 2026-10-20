@@ -57,6 +57,15 @@ class PacmanUpdateService:
         }
     )
 
+    def download_timeouts_disabled(self) -> bool:
+        try:
+            result = self.runner.run(
+                ["pacman-conf", "DisableDownloadTimeout"], timeout_seconds=5,
+            )
+        except CommandRunnerError:
+            return False
+        return result.exit_code == 0 and "DisableDownloadTimeout" in result.stdout.splitlines()
+
     def check_updates(
         self,
         progress_callback: Callable[[str, int], None] | None = None,

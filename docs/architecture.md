@@ -70,8 +70,29 @@ When adding a feature, prefer extending these tests if a new boundary becomes im
 re-exports. Backend actions live in `system_updates.py`, `flatpak_updates.py`,
 `firmware_updates.py`, and `aur_updates.py`. AUR review validation, workspace ownership,
 and artifact verification are separate modules. `update_commands.py` owns shared command
-execution and shutdown inhibition. The build still runs as the unprivileged build user;
-artifact validation and installation remain in the privileged process.
+execution and shutdown inhibition. Artifact validation and installation remain in the
+privileged process.
+
+AUR builds run in a transient `systemd-run` service with `DynamicUser=yes`, not as the
+desktop user, so other processes of that user cannot alter the reviewed sources during the
+build or replace the package before it is verified. The helper bind-mounts a read-only input
+tree: the sealed reviewed checkout, a generated `makepkg.conf`, and the public keys named by
+`validpgpkeys` in the reviewed `.SRCINFO`, exported from the user's keyring. The generated
+configuration sources the system `makepkg.conf` files and adds only the user's `MAKEFLAGS`
+(restricted to `-j`/`-l`, since other make options can run code) and a printable `PACKAGER`.
+The build state lives under the root-only `/var/lib/private/archupdater-aur`; the unit has
+no access to `/home`. The helper always stops the unit with `systemctl stop` before reading
+its output, because `systemd-run --wait` leaves the unit running when it is interrupted,
+then removes the state. State left by a killed helper is removed before the next build.
+
+Development packages are built in two units that share the same state. The `fetch` unit runs
+`makepkg --verifysource`, which only downloads sources (Git sources as mirrors in `SRCDEST`)
+and checks their integrity; no `prepare()`, `pkgver()` or `build()` runs. With that unit
+stopped, the helper verifies that each approved branch, or `HEAD`, in the mirrors points to the
+commit approved during review. Only then does the `build` unit run `makepkg --holdver`, which
+creates the working copy from those mirrors without fetching before any upstream code runs.
+Checking only after the build would be unreliable: code built from a changed remote could
+rewrite its own Git metadata.
 
 `CheckScheduleController` owns one automatic check timer and the network subscription used
 when a due check is offline. `BackgroundBehaviorController` calculates the remaining interval
@@ -80,6 +101,19 @@ no separate startup timer: a fresh foreground launch requests an immediate check
 same controller. Hidden startup at login respects the periodic-check preference. Manual checks
 use the normal check flow and reset the same deadline on success. Closing the window for real
 stops the timer and disconnects the network subscription; hiding to the tray retains them.
+Long delays wake up in slices of at most five minutes and compare against the wall clock,
+because `QTimer` follows the monotonic clock, which stops during suspend.
+
+Before a remote package check, `UpdateCheckWorker` queries pacman's effective download
+timeout setting off the GUI thread. If timeouts are disabled, a foreground window offers
+to enable them once per application session. The worker waits for the choice and any
+authentication to finish; background checks continue without prompting. The dedicated
+`pacman-config` Polkit scope only permits commenting out `DisableDownloadTimeout` in
+`/etc/pacman.conf`, with an atomic replacement and verification of the effective setting.
+It creates no backup and accepts no file paths from the frontend. The edited candidate is
+checked with `pacman-conf --config` before it replaces the original, so an `Include` that
+still disables timeouts leaves `/etc/pacman.conf` unchanged. Declining or cancelling
+authentication resumes the check with the existing configuration and its 60-second limit.
 
 `LastUpdateStore` atomically persists the latest finished update snapshot and completion time
 under `$XDG_STATE_HOME/archupdater/last-update.json` (defaulting to `~/.local/state`).

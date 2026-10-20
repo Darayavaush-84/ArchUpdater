@@ -36,6 +36,7 @@ class _UpdateClientStub:
 class _WorkerStub:
     def __init__(self) -> None:
         self.progress_changed = _SignalStub()
+        self.download_timeout_confirmation_requested = _SignalStub()
         self.finished = _SignalStub()
         self.failed = _SignalStub()
 

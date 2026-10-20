@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
 import time
 import unittest
 import uuid
@@ -89,6 +91,42 @@ class SingleInstanceGuardTests(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertNotEqual(first, third)
         self.assertIn(".1000.", first)
+
+    def test_default_server_name_uses_private_runtime_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as runtime_directory:
+            os.chmod(runtime_directory, 0o700)
+            environment = {"XDG_SESSION_ID": "session-a", "XDG_RUNTIME_DIR": runtime_directory}
+            with patch.dict("os.environ", environment, clear=True):
+                name = SingleInstanceGuard.default_server_name()
+                legacy = SingleInstanceGuard.legacy_server_name()
+            self.assertEqual(Path(name).parent, Path(runtime_directory))
+            self.assertTrue(Path(name).name.startswith(SingleInstanceGuard.SERVER_NAME_PREFIX))
+            self.assertFalse(legacy.startswith("/"))
+
+            os.chmod(runtime_directory, 0o755)
+            with patch.dict("os.environ", environment, clear=True):
+                self.assertEqual(SingleInstanceGuard.default_server_name(), legacy)
+        with patch.dict("os.environ", {"XDG_RUNTIME_DIR": "relative/run"}, clear=True):
+            self.assertFalse(SingleInstanceGuard.default_server_name().startswith("/"))
+
+    def test_notify_existing_reaches_an_instance_on_the_legacy_name(self) -> None:
+        with tempfile.TemporaryDirectory() as runtime_directory:
+            os.chmod(runtime_directory, 0o700)
+            environment = {
+                "XDG_SESSION_ID": f"legacy-{os.getpid()}-{time.monotonic_ns()}",
+                "XDG_RUNTIME_DIR": runtime_directory,
+            }
+            with patch.dict("os.environ", environment, clear=True):
+                legacy_guard = SingleInstanceGuard(SingleInstanceGuard.legacy_server_name())
+                activations: list[bool] = []
+                legacy_guard.activated.connect(lambda: activations.append(True))
+                self.assertTrue(legacy_guard.acquire())
+                try:
+                    self.assertTrue(SingleInstanceGuard.notify_existing())
+                    self._process_until(lambda: bool(activations))
+                    self.assertEqual(activations, [True])
+                finally:
+                    legacy_guard.close()
 
     def _process_until(self, condition, *, timeout_ms: int = 1000) -> None:  # noqa: ANN001
         deadline = time.monotonic() + (timeout_ms / 1000)

@@ -50,6 +50,7 @@ TRANSLATION_MARKERS = (
         "Authentication was cancelled. The administrator password is required to continue, so the update has been interrupted.",
     ),
     QT_TRANSLATE_NOOP("BatchUpdateRunner", "pkexec is required for privileged update steps."),
+    QT_TRANSLATE_NOOP("BatchUpdateRunner", "The request for the privileged helper is too large."),
     QT_TRANSLATE_NOOP("BatchUpdateRunner", "ArchUpdater privileged helper is not installed."),
     QT_TRANSLATE_NOOP(
         "BatchUpdateRunner",

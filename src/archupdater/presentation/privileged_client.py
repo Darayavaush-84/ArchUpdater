@@ -21,6 +21,7 @@ class PrivilegedUpdateClient(QObject):
         parent: QObject | None = None,
         helper_path: Path | None = None,
         language_code: str | None = None,
+        authorization_scope: str = "support-packages",
     ) -> None:
         super().__init__(parent)
         self._helper_path = helper_path or self._resolve_default_helper_path()
@@ -43,7 +44,7 @@ class PrivilegedUpdateClient(QObject):
             [
                 "--disable-internal-agent",
                 str(self._helper_path),
-                "--archupdater-auth=support-packages",
+                f"--archupdater-auth={authorization_scope}",
             ]
         )
         self._process.started.connect(self._on_started)
@@ -51,6 +52,13 @@ class PrivilegedUpdateClient(QObject):
         self._process.readyReadStandardError.connect(self._on_stderr_ready)
         self._process.finished.connect(self._on_finished)
         self._process.errorOccurred.connect(self._on_error)
+
+    def start_enable_download_timeouts(self) -> None:
+        self._ensure_not_running()
+        self._start_request(HelperRequest(
+            action=HelperAction.ENABLE_DOWNLOAD_TIMEOUTS,
+            language_code=self._language_code,
+        ))
 
     def start_install_support_packages(
         self,

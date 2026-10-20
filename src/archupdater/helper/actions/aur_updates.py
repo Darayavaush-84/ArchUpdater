@@ -68,17 +68,15 @@ def install_reviewed_aur_group(
     emit_log: EmitLog,
 ) -> int:
     makepkg_path = Path("/usr/bin/makepkg")
-    if not update_commands._require_executable(
-        update_commands.PACMAN_PATH, "pacman", emit_event=emit_event, emit_log=emit_log
+    for executable, name in (
+        (update_commands.PACMAN_PATH, "pacman"),
+        (makepkg_path, "makepkg"),
+        (aur_workspace.SYSTEMD_RUN_PATH, "systemd-run"),
     ):
-        return 2
-    if not update_commands._require_executable(
-        makepkg_path,
-        "makepkg",
-        emit_event=emit_event,
-        emit_log=emit_log,
-    ):
-        return 2
+        if not update_commands._require_executable(
+            executable, name, emit_event=emit_event, emit_log=emit_log,
+        ):
+            return 2
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
@@ -88,13 +86,23 @@ def install_reviewed_aur_group(
         )
     )
     action_root: Path | None = None
+    sandbox: aur_workspace.AurBuildSandbox | None = None
     try:
         aur_review._validate_review_targets(
             review,
             package_names={target.package_name for target in targets},
             expected_package_base=expected_package_base,
         )
+        verify_vcs = any(target.dynamic_version for target in targets)
+        if verify_vcs and not review.vcs_sources:
+            raise validation.PrivilegedUpdateValidationError(
+                QCoreApplication.translate(
+                    "PrivilegedHelper",
+                    "The development AUR update has no approved VCS source commit.",
+                )
+            )
         aur_artifacts._validate_current_aur_versions(targets, emit_log=emit_log)
+        aur_workspace.remove_stale_build_states()
         action_root = Path(
             tempfile.mkdtemp(
                 prefix=f"{review.package_name}-",
@@ -102,43 +110,38 @@ def install_reviewed_aur_group(
             )
         )
         action_root.chmod(0o711)
-        sealed_checkout = aur_workspace._seal_aur_build_checkout(review, build_root=action_root)
-        workspace = action_root / "workspace"
-        workspace.mkdir(mode=0o700)
-        os.chown(workspace, build_user.uid, build_user.gid)
-        checkout_path = aur_workspace._create_user_aur_build_checkout(
-            sealed_checkout,
-            review,
-            build_root=workspace,
-            build_user=build_user,
+        input_directory = action_root / "input"
+        aur_workspace.prepare_build_input(
+            review, input_directory, build_user=build_user, emit_log=emit_log,
         )
-        work_directories = {
-            name: aur_workspace._create_user_build_directory(workspace / name, build_user)
-            for name in ("build", "logs", "packages", "sources", "source-packages", "tmp")
-        }
-        environment = aur_workspace._aur_build_environment(build_user, work_directories)
-
-        def demote_build_process() -> None:
-            os.initgroups(build_user.name, build_user.gid)
-            os.setgid(build_user.gid)
-            os.setuid(build_user.uid)
-            os.umask(0o022)
-
-        return_code, _output = update_commands.stream_subprocess(
-            [
-                str(makepkg_path),
-                "--dir",
-                str(checkout_path),
-                "--force",
-                "--noconfirm",
-                "--noprogressbar",
-            ],
-            emit_log=emit_log,
-            env=environment,
-            preexec_fn=demote_build_process,
-            start_new_session=True,
-            timeout_seconds=6 * 60 * 60,
-        )
+        # The build runs as a transient DynamicUser= account in a unit whose state
+        # is reachable only by root: other processes of the desktop user can no
+        # longer alter the reviewed sources or replace the built package.
+        sandbox = aur_workspace.AurBuildSandbox.create()
+        if verify_vcs:
+            # Verify approved commits before upstream code can run: code built from
+            # a changed remote could otherwise rewrite its own Git metadata.
+            return_code = _run_build_phase(
+                sandbox, input_directory, aur_workspace.BUILD_PHASE_FETCH, emit_log=emit_log,
+            )
+            if return_code == 0:
+                state_directory = aur_workspace.verified_state_directory(
+                    sandbox.state_directory
+                )
+                aur_artifacts._verify_vcs_mirror_commits(
+                    review,
+                    sources_directory=aur_workspace.verified_state_directory(
+                        state_directory / "sources"
+                    ),
+                )
+                return_code = _run_build_phase(
+                    sandbox, input_directory, aur_workspace.BUILD_PHASE_BUILD,
+                    emit_log=emit_log,
+                )
+        else:
+            return_code = _run_build_phase(
+                sandbox, input_directory, aur_workspace.BUILD_PHASE_FULL, emit_log=emit_log,
+            )
         if return_code != 0:
             message = QCoreApplication.translate(
                 "PrivilegedHelper",
@@ -147,24 +150,16 @@ def install_reviewed_aur_group(
             emit_event(HelperEventType.COMPLETED, success=False, message=message, changed=False)
             return 3
 
-        if any(target.dynamic_version for target in targets):
-            if not review.vcs_sources:
-                raise validation.PrivilegedUpdateValidationError(
-                    QCoreApplication.translate(
-                        "PrivilegedHelper",
-                        "The development AUR update has no approved VCS source commit.",
-                    )
-                )
-            aur_artifacts._verify_vcs_source_commits(
-                review,
-                build_directory=work_directories["build"],
-            )
+        state_directory = aur_workspace.verified_state_directory(sandbox.state_directory)
+        packages_directory = aur_workspace.verified_state_directory(
+            state_directory / "packages"
+        )
 
         verified_root = action_root / "verified"
         verified_root.mkdir(mode=0o700)
         verified_artifacts = [
             aur_artifacts._verified_built_artifact(
-                work_directories["packages"],
+                packages_directory,
                 package_name=target.package_name,
                 expected_version=target.version,
                 current_version=target.current_version,
@@ -191,8 +186,40 @@ def install_reviewed_aur_group(
         emit_event(HelperEventType.COMPLETED, success=False, message=message, changed=False)
         return 4
     finally:
+        if sandbox is not None:
+            aur_workspace.stop_build_unit(sandbox)
+            aur_workspace.remove_build_state(sandbox.token)
         if action_root is not None:
-            shutil.rmtree(action_root, ignore_errors=True)
+            _remove_action_root(action_root)
+
+
+def _run_build_phase(
+    sandbox: aur_workspace.AurBuildSandbox,
+    input_directory: Path,
+    phase: str,
+    *,
+    emit_log: EmitLog,
+) -> int:
+    return_code, _output = update_commands.stream_subprocess(
+        aur_workspace.build_unit_command(sandbox, input_directory, phase),
+        emit_log=emit_log,
+        env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+        start_new_session=True,
+        timeout_seconds=aur_workspace.BUILD_UNIT_TIMEOUT_SECONDS,
+    )
+    # Nothing may still write to the state once root starts reading it.
+    aur_workspace.stop_build_unit(sandbox)
+    return return_code
+
+
+def _remove_action_root(action_root: Path) -> None:
+    # The sealed input is read-only; only root may delete inside it without this.
+    for directory, _subdirectories, _files in os.walk(action_root):
+        try:
+            os.chmod(directory, 0o700)
+        except OSError:
+            pass
+    shutil.rmtree(action_root, ignore_errors=True)
 
 
 def _install_verified_artifacts(

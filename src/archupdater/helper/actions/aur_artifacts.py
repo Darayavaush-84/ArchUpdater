@@ -155,20 +155,25 @@ def _compare_pacman_versions(version_a: str, version_b: str) -> int:
     return comparison
 
 
-def _verify_vcs_source_commits(
+def _verify_vcs_mirror_commits(
     review: AurPkgbuildReview,
     *,
-    build_directory: Path,
+    sources_directory: Path,
 ) -> None:
-    source_root = build_directory / review.package_base / "src"
-    resolved_root = source_root.resolve(strict=True)
+    """Check the downloaded mirrors before any upstream code has run.
+
+    makepkg --verifysource only clones each Git source as a mirror into SRCDEST;
+    the later build creates its working copy from that mirror without fetching,
+    so the commit checked here is the commit that gets built.
+    """
+    resolved_root = sources_directory.resolve(strict=True)
     for source in review.vcs_sources:
-        source_path = source_root / source.name
+        mirror = sources_directory / source.name
         try:
-            if source_path.is_symlink() or not source_path.is_dir():
+            if mirror.is_symlink() or not mirror.is_dir():
                 raise OSError("not a directory")
-            resolved_source = source_path.resolve(strict=True)
-            resolved_source.relative_to(resolved_root)
+            resolved_mirror = mirror.resolve(strict=True)
+            resolved_mirror.relative_to(resolved_root)
         except (OSError, ValueError) as exc:
             raise validation.PrivilegedUpdateValidationError(
                 QCoreApplication.translate(
@@ -176,17 +181,23 @@ def _verify_vcs_source_commits(
                     "Could not locate an approved AUR VCS source checkout.",
                 )
             ) from exc
+        # extract_git checks out origin/<branch>, or origin/HEAD without a branch.
+        reference = f"refs/heads/{source.branch}" if source.branch else "HEAD"
         try:
             result = subprocess.run(
                 [
                     "/usr/bin/git",
                     "-c",
-                    f"safe.directory={resolved_source}",
-                    "-C",
-                    str(resolved_source),
+                    "safe.bareRepository=all",
+                    "-c",
+                    f"safe.directory={resolved_mirror}",
+                    "-c",
+                    "core.fsmonitor=false",
+                    f"--git-dir={resolved_mirror}",
                     "rev-parse",
                     "--verify",
-                    "HEAD",
+                    "--quiet",
+                    f"{reference}^{{commit}}",
                 ],
                 check=False,
                 capture_output=True,
@@ -196,6 +207,7 @@ def _verify_vcs_source_commits(
                     "PATH": "/usr/bin:/bin",
                     "HOME": "/nonexistent",
                     "GIT_CONFIG_NOSYSTEM": "1",
+                    "GIT_CONFIG_GLOBAL": "/dev/null",
                     "GIT_OPTIONAL_LOCKS": "0",
                     "LC_ALL": "C.UTF-8",
                 },

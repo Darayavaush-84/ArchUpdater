@@ -8,7 +8,17 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from archupdater.application.helper_protocol import HelperAction, HelperRequest
+import hashlib
+import json
+
+from archupdater.application.helper_protocol import (
+    MAX_AUR_REVIEW_BYTES,
+    MAX_HELPER_REQUEST_CHARACTERS,
+    HelperAction,
+    HelperRequest,
+)
+from archupdater.domain.aur import AurPkgbuildReview, AurReviewFile
+from archupdater.helper.actions.aur_review import validate_aur_build_review
 from archupdater.application.update_session.errors import BatchAuthenticationCancelled
 from archupdater.batch.privileged_helper import BatchPrivilegedHelperInvoker
 
@@ -293,6 +303,66 @@ class BatchPrivilegedHelperInvokerTests(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertIn("invalid result", result.message)
         self.assertEqual(fake_process.terminated, 1)
+
+
+def _review_with_content(pkgbuild: str) -> AurPkgbuildReview:
+    files = []
+    tree = hashlib.sha256()
+    for path, content in ((".SRCINFO", "pkgbase = foo\npkgname = foo\n"), ("PKGBUILD", pkgbuild)):
+        raw = content.encode("utf-8")
+        sha256 = hashlib.sha256(raw).hexdigest()
+        files.append(AurReviewFile(path=path, sha256=sha256, size=len(raw), content=content))
+        for part in (path.encode(), str(len(raw)).encode(), sha256.encode()):
+            tree.update(part + b"\0")
+        tree.update(b"0\0")
+    return AurPkgbuildReview(
+        package_name="foo", package_base="foo", pkgbuild=pkgbuild,
+        digest=tree.hexdigest(), files=tuple(files),
+    )
+
+
+class HelperRequestLimitTests(unittest.TestCase):
+    def test_largest_accepted_review_fits_the_request_limit_after_json_escaping(self) -> None:
+        # Quotes escape to two characters: the worst case for accepted content.
+        srcinfo_size = len("pkgbase = foo\npkgname = foo\n")
+        review = _review_with_content('"' * (MAX_AUR_REVIEW_BYTES - srcinfo_size))
+        payload = HelperRequest(
+            HelperAction.INSTALL_REVIEWED_AUR, aur_review=review, expected_version="1-1",
+        ).to_json_bytes().decode("utf-8")
+        self.assertLessEqual(len(payload), MAX_HELPER_REQUEST_CHARACTERS)
+        parsed = validate_aur_build_review(json.loads(payload)["aur_review"])
+        self.assertEqual(parsed.digest, review.digest)
+
+    def test_oversized_request_is_refused_before_it_reaches_the_helper(self) -> None:
+        fake_process = _FakeProcess(
+            '{"event":"status","value":"ready"}\n'
+            '{"event":"completed","success":true,"message":"initialized"}\n'
+        )
+        invoker = BatchPrivilegedHelperInvoker(
+            translate=lambda text: text,
+            print_line=lambda _message: None,
+            emit_log=lambda _message: None,
+            helper_path=Path(sys.executable),
+            pkexec_path=Path(sys.executable),
+        )
+        review = _review_with_content("x" * (MAX_HELPER_REQUEST_CHARACTERS + 1))
+        with (
+            patch("archupdater.batch.privileged_helper.os.geteuid", return_value=1000),
+            patch(
+                "archupdater.batch.privileged_helper.subprocess.Popen",
+                lambda *_args, **_kwargs: fake_process,
+            ),
+        ):
+            result = invoker.run(
+                HelperRequest(HelperAction.INSTALL_REVIEWED_AUR, aur_review=review,
+                              expected_version="1-1"),
+                failure_message="AUR update failed.",
+            )
+        self.assertFalse(result.success)
+        self.assertIn("too large", result.message)
+        sent = [json.loads(line) for line in fake_process.stdin.getvalue().splitlines()]
+        self.assertEqual([request["action"] for request in sent], ["initialize_update_session"])
+        self.assertIs(invoker._process, fake_process)
 
 
 if __name__ == "__main__":

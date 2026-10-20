@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -124,6 +125,9 @@ class FakeStateCache:
 
 
 class FakeUpdateService:
+    def download_timeouts_disabled(self) -> bool:
+        return False
+
     def __init__(
         self,
         result: UpdateCheckResult,
@@ -1005,6 +1009,9 @@ class MainWindowIntegrationTests(unittest.TestCase):
             cache.store_last_successful_check(checked_at)
         return cache
 
+    def _seconds_until_next_check(self) -> float:
+        return self.window.next_auto_check_at().timestamp() - time.time()
+
     def _close_test_window(self) -> None:
         self.window.update_controller.shutdown()
         self.window._allow_close = True
@@ -1016,7 +1023,8 @@ class MainWindowIntegrationTests(unittest.TestCase):
     def test_restart_before_deadline_preserves_the_remaining_interval(self) -> None:
         for hours, elapsed in ((24, 23), (168, 24)):
             with self.subTest(hours=hours):
-                checked_at = datetime.now() - timedelta(hours=elapsed)
+                # Wall-clock arithmetic on naive datetimes is wrong across DST changes.
+                checked_at = datetime.fromtimestamp(time.time() - elapsed * 3600)
                 cache = self._persistent_check_cache(checked_at)
                 service = FakeUpdateService(UpdateCheckResult([], datetime.now(), []))
                 self.window = MainWindow(service=service, state_cache=cache,
@@ -1024,7 +1032,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
                 self._process_events(60)
                 self.assertEqual(service.check_calls, 0)
                 self.assertAlmostEqual(
-                    (self.window.next_auto_check_at() - datetime.now()).total_seconds() / 3600,
+                    self._seconds_until_next_check() / 3600,
                     hours - elapsed, delta=0.01,
                 )
                 self.assertIn(checked_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1045,8 +1053,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.window = MainWindow(service=service, settings=settings, state_cache=reopened)
         self._process_events(60)
         self.assertEqual(service.check_calls, 1)
-        self.assertAlmostEqual((self.window.next_auto_check_at() - datetime.now()).total_seconds(),
-                               168 * 3600, delta=1)
+        self.assertAlmostEqual(self._seconds_until_next_check(), 168 * 3600, delta=1)
 
     def test_manual_check_before_deadline_resets_the_same_schedule(self) -> None:
         checked_at = datetime.now()
@@ -1059,8 +1066,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertTrue(self.window.start_manual_check())
         self._wait_for_check(self.window)
         self.assertEqual(cache.load_last_successful_check().timestamp(), checked_at.timestamp())
-        self.assertAlmostEqual((self.window.next_auto_check_at() - datetime.now()).total_seconds(),
-                               168 * 3600, delta=1)
+        self.assertAlmostEqual(self._seconds_until_next_check(), 168 * 3600, delta=1)
 
     def test_disabled_automatic_checks_stay_disabled_at_login_and_allow_manual_checks(self) -> None:
         for last_check in (None, datetime.now() - timedelta(days=8)):

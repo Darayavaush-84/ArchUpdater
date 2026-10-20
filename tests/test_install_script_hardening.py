@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -52,6 +55,52 @@ class InstallScriptHardeningTests(unittest.TestCase):
             self.script.index('install -d -o root -g root -m 0755'),
         )
 
+    def run_systemd_check(self, *, booted: bool, executable: bool, skip: str = ""):  # noqa: ANN202
+        start = self.script.index("require_systemd() {")
+        function = self.script[start:self.script.index("\n}\n", start) + 3]
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory) / "systemd-system"
+            systemd_run = Path(directory) / "systemd-run"
+            if booted:
+                runtime.mkdir()
+            systemd_run.write_text("#!/bin/sh\n")
+            systemd_run.chmod(0o755 if executable else 0o644)
+            script = (
+                f'set -euo pipefail\nSYSTEMD_RUNTIME_DIR="{runtime}"\n'
+                f'SYSTEMD_RUN_PATH="{systemd_run}"\n{function}\nrequire_systemd\necho continued\n'
+            )
+            environment = {"PATH": os.environ.get("PATH", "/usr/bin:/bin")}
+            if skip:
+                environment["ARCHUPDATER_SKIP_SYSTEMD_CHECK"] = skip
+            return subprocess.run(
+                ["bash", "-c", script], env=environment, capture_output=True, text=True, timeout=10,
+            )
+
+    def test_installer_requires_running_systemd_and_explains_why(self) -> None:
+        self.assertEqual(self.run_systemd_check(booted=True, executable=True).stdout, "continued\n")
+        for booted, executable in ((False, True), (True, False)):
+            with self.subTest(booted=booted, executable=executable):
+                result = self.run_systemd_check(booted=booted, executable=executable)
+                self.assertEqual(result.returncode, 1)
+                self.assertNotIn("continued", result.stdout)
+                self.assertIn("requires systemd", result.stdout)
+                self.assertIn("isolated, temporary systemd service", result.stdout)
+                self.assertIn("Nothing was installed or changed.", result.stdout)
+        self.assertEqual(self.script.count('SYSTEMD_RUNTIME_DIR="/run/systemd/system"'), 1)
+        self.assertNotIn("pacman -S systemd", self.script)
+
+    def test_systemd_check_can_only_be_skipped_explicitly(self) -> None:
+        skipped = self.run_systemd_check(booted=False, executable=False, skip="1")
+        self.assertEqual(skipped.returncode, 0)
+        self.assertIn("AUR updates will not work", skipped.stdout)
+        self.assertEqual(self.run_systemd_check(booted=False, executable=False, skip="yes").returncode, 1)
+
+    def test_systemd_check_runs_before_any_system_change(self) -> None:
+        main = self.script[self.script.index('if [[ "${EUID}" -ne 0 ]]; then'):]
+        check = main.index("\nrequire_systemd\n")
+        for later in ("ensure_system_dependencies\n", "install -d -o root -g root -m 0755"):
+            self.assertLess(check, main.index(later), later)
+
     def test_uninstaller_removes_only_owned_system_paths(self) -> None:
         for path in (
             "/usr/local/bin/archupdater",
@@ -66,6 +115,8 @@ class InstallScriptHardeningTests(unittest.TestCase):
         self.assertIn("refusing to remove a symlinked install root", self.uninstaller)
         self.assertIn("tree_is_root_locked", self.uninstaller)
         self.assertNotIn("pacman -R", self.uninstaller)
+        self.assertIn('AUR_STATE_DIR="/var/lib/private/archupdater-aur"', self.uninstaller)
+        self.assertIn('AUR_STATE_LINK_DIR="/var/lib/archupdater-aur"', self.uninstaller)
 
     def test_user_data_purge_is_explicit_and_scoped_to_sudo_user(self) -> None:
         self.assertIn("--purge-user-data", self.uninstaller)

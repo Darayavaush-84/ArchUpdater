@@ -2,7 +2,7 @@
 
 **A simple, direct way to keep your Arch desktop up to date.**
 
-[![Version](https://img.shields.io/badge/version-1.0.5-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
 [![CI](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
@@ -106,6 +106,14 @@ pkexec /usr/lib/archupdater/archupdater-self-update --archupdater-auth=self-upda
 ArchUpdater targets **Arch Linux and Arch-based distributions**, with Python **3.12+**.
 It uses PySide6 and the system's package tools. KDE Plasma is needed for Plasma-specific features.
 
+**systemd is required** as the running init system, as it is on Arch Linux. ArchUpdater builds
+each AUR package in an isolated, temporary systemd service (`systemd-run` with `DynamicUser=`):
+the build runs under a short-lived system account, cannot read your home directory, and other
+programs running as your user cannot alter the reviewed build files or replace the built package
+before it is installed. Distributions that use another init system, such as Artix, are not
+supported, and the installer stops without making changes. Installing the `systemd` package
+there would not help, because the service manager must be the running init.
+
 [Download the project ZIP](https://github.com/Darayavaush-84/ArchUpdater/archive/refs/heads/main.zip),
 extract it, and open a terminal in the extracted folder:
 
@@ -117,6 +125,8 @@ The installer detects and installs missing system dependencies (`git`, `python`,
 `pacman-contrib`, `fakeroot`, `polkit`, `qt6-svg`, and `github-cli`). If any are missing, it runs
 `pacman -Syu --needed` and asks you to review the transaction, including system updates.
 If all are installed, this step is skipped. Python dependencies are installed automatically.
+Before changing anything, it checks that systemd is running; otherwise it explains why
+ArchUpdater needs it and exits.
 
 If you already have Git, you can also clone the project:
 
@@ -164,7 +174,8 @@ ArchUpdater keeps the familiar Arch maintenance rules in its workflow:
 
 - Pacman updates remain full system transactions.
 - Package conflicts and replacements that need a decision are presented in the GUI.
-- AUR build files must be reviewed before building; builds run as the unprivileged user.
+- AUR build files must be reviewed before building; builds run in an isolated temporary
+  system account without access to your home directory.
 - Changed Pacman and system Flatpak update plans require confirmation again.
 - If Arch Linux news cannot be checked, proceeding requires an explicit override.
 - Some firmware and Plasma changes require a reboot or session restart.
@@ -195,6 +206,10 @@ scripts/build_distribution.sh
 
 See [the architecture guide](docs/architecture.md) for module boundaries.
 Translation validation checks the existing catalogs without rewriting them.
+
+Containers usually run without systemd. To test installation there, as CI does, run the
+installer as root with `ARCHUPDATER_SKIP_SYSTEMD_CHECK=1`; AUR updates do not work in such an
+environment.
 
 ## Feedback and contributions
 

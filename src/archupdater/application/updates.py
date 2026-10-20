@@ -48,6 +48,7 @@ class UpdateApplication:
     optional_sources_reader: ReadOptionalSources
     plasma_shell_service: PlasmaShellControl
     plasma_widgets_update_service: PlasmaWidgetsUpdateRunner
+    download_timeouts_disabled: Callable[[], bool] = lambda: False
 
     def check_updates(
         self,

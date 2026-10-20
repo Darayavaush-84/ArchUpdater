@@ -9,6 +9,7 @@ import tempfile
 import time
 import unittest
 import xml.etree.ElementTree as ET
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -182,6 +183,7 @@ class PrivilegedHelperTests(unittest.TestCase):
         }
 
         expected_scopes = {
+            "--archupdater-auth=pacman-config",
             "--archupdater-auth=update-session",
             "--archupdater-auth=support-packages",
             "--archupdater-auth=self-update",
@@ -193,7 +195,14 @@ class PrivilegedHelperTests(unittest.TestCase):
         update_session_message = by_argv[
             "--archupdater-auth=update-session"
         ].findtext("message")
-        self.assertIn("update session", update_session_message or "")
+        # The prompt must not understate that AUR builds are installed as root.
+        self.assertIn("as administrator", update_session_message or "")
+        self.assertIn("AUR", update_session_message or "")
+        xml_language = "{http://www.w3.org/XML/1998/namespace}lang"
+        for action in actions:
+            for tag in ("description", "message"):
+                languages = {element.get(xml_language) for element in action.findall(tag)}
+                self.assertEqual(languages, {None, "it", "de", "fr", "es"}, (tag, action.get("id")))
 
         for marker, action in by_argv.items():
             self.assertEqual(
@@ -727,40 +736,85 @@ class PrivilegedHelperTests(unittest.TestCase):
         self.assertEqual(commands[0][1], "-Syu")
         self.assertNotIn("--print", commands[0])
 
-    def test_install_reviewed_aur_builds_unprivileged_and_installs_private_copy(self) -> None:
+    def _aur_sandbox(self, produce):  # noqa: ANN001, ANN202
+        """Patch the systemd unit and return (build fake, recorded state)."""
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        state_root = Path(directory.name) / "private"
+        link_root = Path(directory.name) / "links"
+        state_root.mkdir()
+        link_root.mkdir()
+        record: dict[str, object] = {"stopped": [], "commands": []}
+
+        def run_build(command, **kwargs):  # noqa: ANN001, ANN202
+            record["commands"].append(command)
+            record["kwargs"] = kwargs
+            token = next(
+                argument.rsplit("/", 1)[1]
+                for argument in command
+                if argument.startswith("--property=StateDirectory=")
+            )
+            state = state_root / token
+            (state / "packages").mkdir(parents=True, exist_ok=True)
+            (state / "build").mkdir(exist_ok=True)
+            (state / "sources").mkdir(exist_ok=True)
+            if not (link_root / token).is_symlink():
+                (link_root / token).symlink_to(state)
+            record["state"] = state
+            record.setdefault("phases", []).append(next(
+                argument.split("=", 2)[2]
+                for argument in command
+                if argument.startswith("--setenv=ARCHUPDATER_PHASE=")
+            ))
+            return produce(state / "packages", command)
+
+        patches = (
+            patch.object(aur_workspace, "AUR_STATE_ROOT", state_root),
+            patch.object(aur_workspace, "AUR_STATE_LINK_ROOT", link_root),
+            patch.object(aur_workspace, "_user_makepkg_overrides", return_value=("-j4", "")),
+            patch.object(aur_workspace, "_export_user_pgp_keys", return_value=b""),
+            patch.object(aur_workspace, "remove_stale_build_states"),
+            patch.object(
+                aur_workspace, "stop_build_unit",
+                side_effect=lambda sandbox: record["stopped"].append(sandbox.token),
+            ),
+            patch.object(update_commands, "stream_subprocess", run_build),
+        )
+        for active in patches:
+            active.start()
+            self.addCleanup(active.stop)
+        return record
+
+    def _build_user(self) -> privileged_updates.AurBuildUser:
+        return privileged_updates.AurBuildUser(
+            "test-user", max(1, os.getuid()), os.getgid(), Path("/tmp")
+        )
+
+    def test_install_reviewed_aur_builds_in_isolated_unit_and_installs_private_copy(self) -> None:
         commands: list[list[str]] = []
-        build_commands: list[list[str]] = []
-        with tempfile.TemporaryDirectory() as directory:
-            def run_command(command: list[str], *, emit_log, **_kwargs):  # noqa: ANN001
-                commands.append(command)
-                if "-Qip" in command:
-                    return 0, [
-                        "Name : example",
-                        "Version : 1.0-1",
-                        f"Architecture : {platform.machine()}",
-                    ]
-                return 0, []
 
-            def run_build(command, *, env, preexec_fn, **_kwargs):  # noqa: ANN001
-                build_commands.append(command)
-                self.assertIsNotNone(preexec_fn)
-                package_path = Path(env["PKGDEST"]) / "example-1.0-1-any.pkg.tar.zst"
-                package_path.write_bytes(b"built package")
-                source_dir = Path(command[command.index("--dir") + 1])
-                self.assertEqual((source_dir / "PKGBUILD").read_text(), _review().pkgbuild)
-                self.assertNotEqual((source_dir / "PKGBUILD").stat().st_mode & 0o200, 0)
-                sealed_directories = [
-                    path
-                    for path in source_dir.parent.parent.iterdir()
-                    if path.name != "workspace"
+        def produce(packages: Path, command: list[str]):  # noqa: ANN202
+            mount = next(a for a in command if a.startswith("--property=BindReadOnlyPaths="))
+            input_directory = Path(mount.split("=", 2)[2].split(":", 1)[0])
+            pkgbuild = input_directory / "checkout" / "PKGBUILD"
+            self.assertEqual(pkgbuild.read_text(), _review().pkgbuild)
+            self.assertEqual(pkgbuild.stat().st_mode & 0o222, 0)
+            self.assertIn("MAKEFLAGS=-j4", (input_directory / "makepkg.conf").read_text())
+            (packages / "example-1.0-1-any.pkg.tar.zst").write_bytes(b"built package")
+            return 0, []
+
+        def run_command(command: list[str], *, emit_log, **_kwargs):  # noqa: ANN001
+            commands.append(command)
+            if "-Qip" in command:
+                return 0, [
+                    "Name : example",
+                    "Version : 1.0-1",
+                    f"Architecture : {platform.machine()}",
                 ]
-                self.assertEqual(len(sealed_directories), 1)
-                self.assertEqual(
-                    (sealed_directories[0] / "PKGBUILD").stat().st_mode & 0o222,
-                    0,
-                )
-                return 0, []
+            return 0, []
 
+        record = self._aur_sandbox(produce)
+        with tempfile.TemporaryDirectory() as directory:
             with (
                 patch.object(update_commands, "installed_package_versions",
                              side_effect=[{"example": "0.9-1"}, {"example": "1.0-1"}]),
@@ -768,26 +822,35 @@ class PrivilegedHelperTests(unittest.TestCase):
                 patch.object(update_commands, "_require_executable", return_value=True),
                 patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
                 patch.object(update_commands, "stream_command", run_command),
-                patch.object(update_commands, "stream_subprocess", run_build),
-                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
                     "1.0-1",
                     expected_package_base="example",
-                    build_user=privileged_updates.AurBuildUser(
-                        name="test-user",
-                        uid=max(1, os.getuid()),
-                        gid=os.getgid(),
-                        home=Path("/tmp"),
-                    ),
+                    build_user=self._build_user(),
                     build_root=Path(directory),
                     emit_event=lambda *_args, **_kwargs: None,
                     emit_log=lambda _message: None,
                 )
+            self.assertEqual(list(Path(directory).iterdir()), [])
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(build_commands[0][0], "/usr/bin/makepkg")
+        build_command = record["commands"][0]
+        self.assertEqual(build_command[0], "/usr/bin/systemd-run")
+        for expected in (
+            "--wait", "--pipe", "--property=DynamicUser=yes", "--property=ProtectHome=yes",
+            "--property=PrivateTmp=yes", "--property=NoNewPrivileges=yes",
+        ):
+            self.assertIn(expected, build_command)
+        self.assertEqual(build_command[-4:-2], ["/usr/bin/bash", "-c"])
+        self.assertNotIn("preexec_fn", record["kwargs"])
+        unit = next(a.split("=", 1)[1] for a in build_command if a.startswith("--unit="))
+        self.assertEqual(unit, f"archupdater-aur-{record['stopped'][0]}")
+        self.assertIn("--setenv=ARCHUPDATER_PHASE=full", build_command)
+        self.assertEqual(len(record["commands"]), 1)
+        # The private build state is removed together with its /var/lib link.
+        self.assertFalse(record["state"].exists())
+        self.assertEqual(list(aur_workspace.AUR_STATE_LINK_ROOT.iterdir()), [])
         install_command = commands[-1]
         self.assertEqual(
             install_command[:8],
@@ -804,35 +867,148 @@ class PrivilegedHelperTests(unittest.TestCase):
         )
         self.assertIn("/verified/", install_command[-1])
 
-    def test_install_reviewed_aur_rejects_identity_version_mismatch(self) -> None:
+    def _install_development_package(self, produce, verify):  # noqa: ANN001, ANN202
+        review = replace(_review(), vcs_sources=(
+            AurVcsSource("example", "https://example.invalid/example.git", None, "a" * 40),
+        ))
         commands: list[list[str]] = []
-        with tempfile.TemporaryDirectory() as directory:
-            def run_command(command: list[str], *, emit_log):  # noqa: ANN001
-                commands.append(command)
+
+        def run_command(command: list[str], *, emit_log, **_kwargs):  # noqa: ANN001
+            commands.append(command)
+            if "-Qip" in command:
                 return 0, [
                     "Name : example",
-                    "Version : 2.0-1",
+                    "Version : 1.0.r5-1",
                     f"Architecture : {platform.machine()}",
                 ]
+            if "-Q" in command:
+                return 0, ["example 0.9-1"]
+            return 0, []
 
-            def run_build(_command, *, env, **_kwargs):  # noqa: ANN001
-                (Path(env["PKGDEST"]) / "example.pkg.tar.zst").write_bytes(b"package")
-                return 0, []
+        record = self._aur_sandbox(produce)
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch.object(update_commands, "installed_package_versions",
+                             side_effect=[{"example": "0.9-1"}, {"example": "1.0.r5-1"}]),
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+                patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
+                patch.object(update_commands, "stream_command", run_command),
+                patch.object(aur_artifacts, "_compare_pacman_versions", return_value=1),
+                patch.object(aur_artifacts, "_verify_vcs_mirror_commits", side_effect=verify),
+            ):
+                exit_code = privileged_updates.install_reviewed_aur(
+                    review,
+                    "latest-commit",
+                    expected_package_base="example",
+                    current_version="0.9-1",
+                    dynamic_version=True,
+                    build_user=self._build_user(),
+                    build_root=Path(directory),
+                    emit_event=lambda *_args, **_kwargs: None,
+                    emit_log=lambda _message: None,
+                )
+        return exit_code, record, commands
 
+    def test_development_package_verifies_commits_between_fetch_and_build(self) -> None:
+        order: list[str] = []
+
+        def produce(packages: Path, command: list[str]):  # noqa: ANN202
+            phase = next(a for a in command if a.startswith("--setenv=ARCHUPDATER_PHASE="))
+            order.append(phase.rsplit("=", 1)[1])
+            if phase.endswith("=build"):
+                (packages / "example-1.0.r5-1-any.pkg.tar.zst").write_bytes(b"package")
+            return 0, []
+
+        def verify(review, *, sources_directory):  # noqa: ANN001, ANN202
+            order.append("verify")
+            self.assertEqual(sources_directory.name, "sources")
+            self.assertEqual(review.vcs_sources[0].commit, "a" * 40)
+
+        exit_code, record, commands = self._install_development_package(produce, verify)
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(order, ["fetch", "verify", "build"])
+        units = [
+            next(a.split("=", 1)[1] for a in command if a.startswith("--unit="))
+            for command in record["commands"]
+        ]
+        self.assertEqual([unit.rsplit("-", 1)[1] for unit in units], ["fetch", "build"])
+        # The unit is stopped after each phase, before root reads its state.
+        self.assertGreaterEqual(len(record["stopped"]), 2)
+        self.assertTrue(any("-U" in command for command in commands))
+
+    def test_changed_vcs_commit_stops_before_the_build_phase(self) -> None:
+        def verify(_review, *, sources_directory):  # noqa: ANN001, ANN202
+            raise privileged_updates.PrivilegedUpdateValidationError(
+                "An AUR VCS source changed after the update was approved."
+            )
+
+        exit_code, record, commands = self._install_development_package(
+            lambda _packages, _command: (0, []), verify,
+        )
+        self.assertEqual(exit_code, 4)
+        self.assertEqual(record["phases"], ["fetch"])
+        self.assertFalse(record["state"].exists())
+        self.assertFalse(any("-U" in command for command in commands))
+
+    def test_failed_fetch_phase_does_not_verify_or_build(self) -> None:
+        verify_calls: list[object] = []
+        exit_code, record, _commands = self._install_development_package(
+            lambda _packages, _command: (1, []),
+            lambda review, **_kwargs: verify_calls.append(review),
+        )
+        self.assertEqual(exit_code, 3)
+        self.assertEqual(record["phases"], ["fetch"])
+        self.assertEqual(verify_calls, [])
+
+    def test_development_package_without_commit_lock_starts_no_unit(self) -> None:
+        record = self._aur_sandbox(lambda _packages, _command: (0, []))
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+            ):
+                exit_code = privileged_updates.install_reviewed_aur(
+                    _review(),
+                    "latest-commit",
+                    expected_package_base="example",
+                    current_version="0.9-1",
+                    dynamic_version=True,
+                    build_user=self._build_user(),
+                    build_root=Path(directory),
+                    emit_event=lambda *_args, **_kwargs: None,
+                    emit_log=lambda _message: None,
+                )
+        self.assertEqual(exit_code, 4)
+        self.assertEqual(record["commands"], [])
+
+    def test_install_reviewed_aur_rejects_identity_version_mismatch(self) -> None:
+        commands: list[list[str]] = []
+
+        def produce(packages: Path, _command):  # noqa: ANN001, ANN202
+            (packages / "example.pkg.tar.zst").write_bytes(b"package")
+            return 0, []
+
+        def run_command(command: list[str], *, emit_log):  # noqa: ANN001
+            commands.append(command)
+            return 0, [
+                "Name : example",
+                "Version : 2.0-1",
+                f"Architecture : {platform.machine()}",
+            ]
+
+        self._aur_sandbox(produce)
+        with tempfile.TemporaryDirectory() as directory:
             with (
                 patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
                 patch.object(update_commands, "_require_executable", return_value=True),
                 patch.object(update_commands, "stream_command", run_command),
-                patch.object(update_commands, "stream_subprocess", run_build),
-                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
                     "1.0-1",
                     expected_package_base="example",
-                    build_user=privileged_updates.AurBuildUser(
-                        "test-user", max(1, os.getuid()), os.getgid(), Path("/tmp")
-                    ),
+                    build_user=self._build_user(),
                     build_root=Path(directory),
                     emit_event=lambda *_args, **_kwargs: None,
                     emit_log=lambda _message: None,
@@ -840,6 +1016,28 @@ class PrivilegedHelperTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 4)
         self.assertFalse(any("-U" in command for command in commands))
+
+    def test_failed_build_stops_unit_and_removes_its_state(self) -> None:
+        record = self._aur_sandbox(lambda _packages, _command: (2, []))
+        events: list[dict[str, object]] = []
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+            ):
+                exit_code = privileged_updates.install_reviewed_aur(
+                    _review(),
+                    "1.0-1",
+                    expected_package_base="example",
+                    build_user=self._build_user(),
+                    build_root=Path(directory),
+                    emit_event=lambda _event, **payload: events.append(payload),
+                    emit_log=lambda _message: None,
+                )
+        self.assertEqual(exit_code, 3)
+        self.assertFalse(events[-1]["success"])
+        self.assertTrue(record["stopped"])
+        self.assertFalse(record["state"].exists())
 
     def test_split_aur_artifacts_are_installed_in_one_pacman_transaction(self) -> None:
         commands: list[list[str]] = []
@@ -853,27 +1051,27 @@ class PrivilegedHelperTests(unittest.TestCase):
             declared_names=("example-cli", "example-gui"),
         )
 
+        def produce(packages: Path, _command):  # noqa: ANN001, ANN202
+            for target in targets:
+                (packages / f"{target.package_name}-1.0-1-any.pkg.tar.zst").write_bytes(
+                    target.package_name.encode()
+                )
+            return 0, []
+
+        def run_command(command, *, emit_log, **_kwargs):  # noqa: ANN001
+            commands.append(command)
+            if "-Qip" in command:
+                path = str(command[-1])
+                name = "example-gui" if "example-gui" in path else "example-cli"
+                return 0, [
+                    f"Name : {name}",
+                    "Version : 1.0-1",
+                    f"Architecture : {platform.machine()}",
+                ]
+            return 0, []
+
+        self._aur_sandbox(produce)
         with tempfile.TemporaryDirectory() as directory:
-            def run_command(command, *, emit_log, **_kwargs):  # noqa: ANN001
-                commands.append(command)
-                if "-Qip" in command:
-                    path = str(command[-1])
-                    name = "example-gui" if "example-gui" in path else "example-cli"
-                    return 0, [
-                        f"Name : {name}",
-                        "Version : 1.0-1",
-                        f"Architecture : {platform.machine()}",
-                    ]
-                return 0, []
-
-            def run_build(_command, *, env, **_kwargs):  # noqa: ANN001
-                output = Path(env["PKGDEST"])
-                for target in targets:
-                    (output / f"{target.package_name}-1.0-1-any.pkg.tar.zst").write_bytes(
-                        target.package_name.encode()
-                    )
-                return 0, []
-
             with (
                 patch.object(update_commands, "installed_package_versions",
                              side_effect=[{}, {"example-cli": "1.0-1", "example-gui": "1.0-1"}]),
@@ -881,16 +1079,12 @@ class PrivilegedHelperTests(unittest.TestCase):
                 patch.object(update_commands, "_require_executable", return_value=True),
                 patch.object(update_commands, "SYSTEMD_INHIBIT_PATH", Path("/missing")),
                 patch.object(update_commands, "stream_command", run_command),
-                patch.object(update_commands, "stream_subprocess", run_build),
-                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur_group(
                     review,
                     targets,
                     expected_package_base="example",
-                    build_user=privileged_updates.AurBuildUser(
-                        "test-user", max(1, os.getuid()), os.getgid(), Path("/tmp")
-                    ),
+                    build_user=self._build_user(),
                     build_root=Path(directory),
                     emit_event=lambda *_args, **_kwargs: None,
                     emit_log=lambda _message: None,
@@ -902,27 +1096,50 @@ class PrivilegedHelperTests(unittest.TestCase):
         self.assertEqual(len(install_commands[0][install_commands[0].index("--") + 1 :]), 2)
 
     def test_install_reviewed_aur_rejects_symlink_output(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            def run_build(_command, *, env, **_kwargs):  # noqa: ANN001
-                output = Path(env["PKGDEST"])
-                target = output / "target"
-                target.write_bytes(b"package")
-                (output / "example.pkg.tar.zst").symlink_to(target)
-                return 0, []
+        def produce(packages: Path, _command):  # noqa: ANN001, ANN202
+            target = packages / "target"
+            target.write_bytes(b"package")
+            (packages / "example.pkg.tar.zst").symlink_to(target)
+            return 0, []
 
+        self._aur_sandbox(produce)
+        with tempfile.TemporaryDirectory() as directory:
             with (
                 patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
                 patch.object(update_commands, "_require_executable", return_value=True),
-                patch.object(update_commands, "stream_subprocess", run_build),
-                patch.object(aur_workspace.os, "chown", lambda *_args: None),
             ):
                 exit_code = privileged_updates.install_reviewed_aur(
                     _review(),
                     "1.0-1",
                     expected_package_base="example",
-                    build_user=privileged_updates.AurBuildUser(
-                        "test-user", max(1, os.getuid()), os.getgid(), Path("/tmp")
-                    ),
+                    build_user=self._build_user(),
+                    build_root=Path(directory),
+                    emit_event=lambda *_args, **_kwargs: None,
+                    emit_log=lambda _message: None,
+                )
+
+        self.assertEqual(exit_code, 4)
+
+    def test_install_reviewed_aur_rejects_symlinked_packages_directory(self) -> None:
+        def produce(packages: Path, _command):  # noqa: ANN001, ANN202
+            elsewhere = packages.parent / "elsewhere"
+            elsewhere.mkdir()
+            (elsewhere / "example-1.0-1-any.pkg.tar.zst").write_bytes(b"package")
+            packages.rmdir()
+            packages.symlink_to(elsewhere)
+            return 0, []
+
+        self._aur_sandbox(produce)
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                patch.object(update_commands, "PACMAN_PATH", _ExistingPath()),
+                patch.object(update_commands, "_require_executable", return_value=True),
+            ):
+                exit_code = privileged_updates.install_reviewed_aur(
+                    _review(),
+                    "1.0-1",
+                    expected_package_base="example",
+                    build_user=self._build_user(),
                     build_root=Path(directory),
                     emit_event=lambda *_args, **_kwargs: None,
                     emit_log=lambda _message: None,

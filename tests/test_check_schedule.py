@@ -92,4 +92,58 @@ class CheckScheduleTests(unittest.TestCase):
         self.controller.schedule(86400000)
         self.network.set_reachability(FakeReachability.Online)
         self.start_check.assert_not_called()
-        self.assertGreater(self.controller.timer.remainingTime(), 86399000)
+        self.assertGreater(self.controller.remaining_ms(), 86399000)
+
+
+class CheckScheduleSuspendTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        self.start_check = Mock(return_value=True)
+        self.controller = CheckScheduleController(
+            is_busy=lambda: False, start_check=self.start_check, show_waiting_for_network=Mock(),
+        )
+        self.addCleanup(self.controller.stop)
+        patcher = patch(
+            "archupdater.presentation.check_schedule.QNetworkInformation",
+            FakeNetworkInformationApi(FakeNetworkInformation(FakeReachability.Online)),
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_long_delay_wakes_in_bounded_slices(self) -> None:
+        self.controller.schedule(24 * 3600 * 1000)
+        self.assertLessEqual(self.controller.timer.remainingTime(), self.controller.MAX_TIMER_SLICE_MS)
+        self.assertGreater(self.controller.remaining_ms(), 24 * 3600 * 1000 - 1000)
+        self.controller.timer.timeout.emit()
+        self.start_check.assert_not_called()
+        self.assertTrue(self.controller.timer.isActive())
+
+    def test_deadline_passed_during_suspend_starts_the_check_on_next_slice(self) -> None:
+        wall_clock = [1_000_000.0]
+        monotonic_clock = [500.0]
+        with patch("archupdater.presentation.check_schedule.time.time", lambda: wall_clock[0]), \
+                patch("archupdater.presentation.check_schedule.time.monotonic",
+                      lambda: monotonic_clock[0]):
+            self.controller.schedule(24 * 3600 * 1000)
+            # Suspended for a day: the wall clock advances, the monotonic clock does not.
+            wall_clock[0] += 24 * 3600 + 60
+            monotonic_clock[0] += 60
+            self.assertEqual(self.controller.remaining_ms(), 0)
+            self.controller.timer.timeout.emit()
+        self.start_check.assert_called_once_with()
+
+    def test_clock_set_backwards_does_not_postpone_the_check(self) -> None:
+        wall_clock = [1_000_000.0]
+        monotonic_clock = [500.0]
+        with patch("archupdater.presentation.check_schedule.time.time", lambda: wall_clock[0]), \
+                patch("archupdater.presentation.check_schedule.time.monotonic",
+                      lambda: monotonic_clock[0]):
+            self.controller.schedule(3600 * 1000)
+            wall_clock[0] -= 7 * 24 * 3600
+            monotonic_clock[0] += 3600
+            self.assertEqual(self.controller.remaining_ms(), 0)
+            self.controller.timer.timeout.emit()
+        self.start_check.assert_called_once_with()

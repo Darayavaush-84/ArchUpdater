@@ -31,8 +31,13 @@ from archupdater.helper.actions.support_packages import (
     remove_support_packages,
     validate_package_list,
 )
+from archupdater.helper.actions.pacman_config import enable_download_timeouts
 from archupdater.i18n.manager import TranslationManager, resolve_language_code
-from archupdater.application.helper_protocol import HelperAction, HelperEventType
+from archupdater.application.helper_protocol import (
+    MAX_HELPER_REQUEST_CHARACTERS,
+    HelperAction,
+    HelperEventType,
+)
 from archupdater.domain.aur import AurInstallTarget, AurPkgbuildReview
 from archupdater.process_lifecycle import set_parent_death_signal
 
@@ -41,15 +46,14 @@ class HelperValidationError(ValueError):
     pass
 
 
-MAX_HELPER_REQUEST_CHARACTERS = 24 * 1024 * 1024
-
-
 class HelperAuthorizationScope(str, Enum):
+    PACMAN_CONFIG = "pacman-config"
     SUPPORT_PACKAGES = "support-packages"
     UPDATE_SESSION = "update-session"
 
 
 AUTH_SCOPE_ACTIONS = {
+    HelperAuthorizationScope.PACMAN_CONFIG: frozenset({HelperAction.ENABLE_DOWNLOAD_TIMEOUTS}),
     HelperAuthorizationScope.SUPPORT_PACKAGES: frozenset(
         {
             HelperAction.INSTALL_SUPPORT_PACKAGES,
@@ -131,6 +135,9 @@ def validate_request(
         )
 
     _validate_request_fields(payload, action)
+
+    if action_type is HelperAction.ENABLE_DOWNLOAD_TIMEOUTS:
+        return ValidatedHelperRequest(action=action_type)
 
     if action == HelperAction.INSTALL_SUPPORT_PACKAGES.value:
         package_names = _validated_support_packages(payload.get("package_names"))
@@ -421,6 +428,9 @@ def _execute_request(
     allowed_aur_targets: dict[str, AurInstallTarget] | None = None,
     aur_build_root: Path | None = None,
 ) -> int:
+    if request.action is HelperAction.ENABLE_DOWNLOAD_TIMEOUTS:
+        return enable_download_timeouts(emit_event=emit_event)
+
     if request.action is HelperAction.INITIALIZE_UPDATE_SESSION:
         emit_event(
             HelperEventType.COMPLETED,

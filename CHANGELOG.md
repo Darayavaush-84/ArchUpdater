@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.0] - 2026-10-20
+
+### Added
+
+- **Pacman download timeouts**: when timeouts are disabled in pacman's configuration, ArchUpdater offers once per session to enable them, so an unresponsive mirror can no longer stall the update check. After administrator authentication it comments out `DisableDownloadTimeout` in `/etc/pacman.conf`, and applies the change only if the effective configuration, including included files, confirms it.
+
+### Security
+
+- Build AUR packages in an isolated temporary system account instead of your user account. Other programs running as you can no longer alter the reviewed build files or replace the built package before installation, and builds have no access to your home directory.
+- For development (`-git`) packages, verify the approved Git commit after downloading the sources and before any upstream code runs, then build exactly that commit.
+- The administrator authentication prompt for updates now states that it installs system packages, reviewed AUR packages, system Flatpaks and firmware.
+- Keep the single-instance socket in your private runtime directory, so other local users cannot prevent ArchUpdater from starting.
+
+### Changed
+
+- AUR builds use the system `makepkg.conf`. From your own `makepkg.conf`, only `MAKEFLAGS` job and load limits (`-j`, `-l`) and `PACKAGER` are applied; build caches such as ccache and files in your home directory are not available during builds.
+- AUR updates now require systemd (`systemd-run`).
+- Self-updates keep only the current and the previous release and remove older ones.
+
+### Fixed
+
+- Run periodic checks on time after the computer resumes from suspend.
+- Accept reviewed AUR build files up to the documented size limit, and report an oversized request clearly.
+- Uninstalling now also removes leftover AUR build state.
+
 ## [1.0.5] - 2026-10-08
 
 ### Added
@@ -64,6 +89,7 @@
 
 Initial public stable release, with a unified desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons; Arch News; system tray integration; and five interface languages.
 
+[1.1.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.0
 [1.0.5]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.5
 [1.0.3]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.3
 [1.0.2]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.2
