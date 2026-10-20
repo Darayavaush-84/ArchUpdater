@@ -82,6 +82,7 @@ def check_sdist(path: Path) -> list[str]:
 
     required = {
         PurePosixPath("docs/architecture.md"),
+        PurePosixPath("docs/releasing.md"),
         PurePosixPath("LICENSE"),
         PurePosixPath("MANIFEST.in"),
         PurePosixPath("README.md"),
