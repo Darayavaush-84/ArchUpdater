@@ -2,7 +2,7 @@
 
 **A simple, direct way to keep your Arch desktop up to date.**
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue)](https://github.com/Darayavaush-84/ArchUpdater/releases/latest)
 [![CI](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/Darayavaush-84/ArchUpdater/actions/workflows/ci.yml)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 

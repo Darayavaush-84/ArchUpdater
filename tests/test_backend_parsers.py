@@ -1099,7 +1099,7 @@ class BackendParserTests(unittest.TestCase):
         service = FirmwareUpdateService(
             runner=self._firmware_runner(
                 [
-                    self._command_log(["fwupdmgr", "refresh", "--force"], exit_code=0),
+                    self._command_log(["fwupdmgr", "refresh"], exit_code=0),
                     self._command_log(
                         ["fwupdmgr", "get-updates", "--json", "--no-authenticate"],
                         exit_code=2,
@@ -1114,6 +1114,44 @@ class BackendParserTests(unittest.TestCase):
 
         self.assertEqual(result.packages, [])
         self.assertEqual(result.warnings, [])
+
+    def test_firmware_refresh_exit_code_2_for_fresh_metadata_is_not_warning(self) -> None:
+        service = FirmwareUpdateService(
+            runner=self._firmware_runner(
+                [
+                    self._command_log(["fwupdmgr", "refresh"], exit_code=2),
+                    self._command_log(
+                        ["fwupdmgr", "get-updates", "--json", "--no-authenticate"],
+                        exit_code=2,
+                        stdout="",
+                    ),
+                ]
+            )
+        )
+
+        with patch("archupdater.services.firmware.shutil.which", return_value="/usr/bin/fwupdmgr"):
+            result = service.check_updates()
+
+        self.assertEqual(result.warnings, [])
+
+    def test_firmware_refresh_failure_is_warning(self) -> None:
+        service = FirmwareUpdateService(
+            runner=self._firmware_runner(
+                [
+                    self._command_log(["fwupdmgr", "refresh"], exit_code=1),
+                    self._command_log(
+                        ["fwupdmgr", "get-updates", "--json", "--no-authenticate"],
+                        exit_code=2,
+                        stdout="",
+                    ),
+                ]
+            )
+        )
+
+        with patch("archupdater.services.firmware.shutil.which", return_value="/usr/bin/fwupdmgr"):
+            result = service.check_updates()
+
+        self.assertEqual(result.warnings, ["Failed to refresh firmware metadata."])
 
     def test_firmware_check_updates_reads_nested_child_devices(self) -> None:
         payload = {
@@ -1142,7 +1180,7 @@ class BackendParserTests(unittest.TestCase):
         service = FirmwareUpdateService(
             runner=self._firmware_runner(
                 [
-                    self._command_log(["fwupdmgr", "refresh", "--force"], exit_code=0),
+                    self._command_log(["fwupdmgr", "refresh"], exit_code=0),
                     self._command_log(
                         ["fwupdmgr", "get-updates", "--json", "--no-authenticate"],
                         exit_code=0,

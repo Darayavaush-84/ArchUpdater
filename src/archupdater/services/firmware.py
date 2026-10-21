@@ -116,8 +116,10 @@ class FirmwareDeviceSupportProbe:
 class FirmwareUpdateService:
     runner: CommandRunner
 
-    REFRESH_TIMEOUT_SECONDS = 180
+    REFRESH_TIMEOUT_SECONDS = 60
     QUERY_TIMEOUT_SECONDS = 120
+    # fwupdmgr exits with 2 when the metadata is still within the remote's RefreshInterval.
+    REFRESH_SUCCESS_EXIT_CODES = frozenset({0, 2})
     GET_UPDATES_SUCCESS_EXIT_CODES = frozenset({0, 2})
 
     def check_updates(self) -> SourceCheckResult:
@@ -126,11 +128,11 @@ class FirmwareUpdateService:
 
         result = SourceCheckResult()
         refresh_log = self.runner.run(
-            ["fwupdmgr", "refresh", "--force"],
+            ["fwupdmgr", "refresh"],
             timeout_seconds=self.REFRESH_TIMEOUT_SECONDS,
         )
         result.logs.append(refresh_log)
-        if refresh_log.exit_code != 0:
+        if refresh_log.exit_code not in self.REFRESH_SUCCESS_EXIT_CODES:
             result.warnings.append(
                 QCoreApplication.translate(
                     "FirmwareUpdateService",

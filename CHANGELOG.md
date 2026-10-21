@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2026-10-21
+
+**Fixed**
+- Update checks no longer stall for minutes when the firmware metadata server (LVFS) does not respond: metadata is downloaded at most once a day, and a stuck download is abandoned after 60 seconds instead of 180.
+
 ## [1.1.0] - 2026-10-20
 
 **Added**
@@ -76,6 +81,7 @@
 
 Initial public stable release: one desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons, with Arch News, system tray integration and five interface languages.
 
+[1.1.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.1
 [1.1.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.0
 [1.0.5]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.5
 [1.0.3]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.3
