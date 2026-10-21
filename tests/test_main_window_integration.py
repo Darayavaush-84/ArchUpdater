@@ -34,7 +34,7 @@ from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.services.pacman import PacmanServiceError
 from archupdater.infrastructure.settings import AppSettings
 from archupdater.infrastructure.app_state_cache import AppStateCache
-from archupdater.infrastructure.last_update import LastUpdateStore
+from archupdater.infrastructure.update_history import UpdateHistoryStore
 from archupdater.presentation.theme import build_application_stylesheet
 
 
@@ -364,6 +364,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
             settings=settings,
         )
         started_plans = []
+        started_packages = []
         self.window._preflight_coordinator.confirm = lambda _plan: True  # type: ignore[method-assign]
         self._wait_for_check(self.window)
         self.assertTrue(self.window.build_update_plan().has_any)
@@ -371,11 +372,15 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.window.refresh_selection_actions()
         self.assertTrue(self.window.action_bar.update_button.isEnabled())
 
-        with patch.object(self.window.update_controller, "start_update", started_plans.append):
+        with patch.object(
+            self.window.update_controller, "start_update",
+            lambda plan, packages=(): (started_plans.append(plan), started_packages.extend(packages)),
+        ):
             self.window.action_bar.update_button.click()
             self._process_events(50)
 
         self.assertEqual(len(started_plans), 1)
+        self.assertEqual([package.name for package in started_packages], ["flatseal"])
         self.assertEqual(started_plans[0].cleanup_scopes(UpdateSource.FLATPAK), ["user"])
 
     def test_update_button_stays_disabled_until_post_update_refresh_finishes(self) -> None:
@@ -436,7 +441,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
                             self.window.width(), self.window.minimumSizeHint().width(),
                         )
                         buttons = [
-                            bar.preferences_button, bar.arch_news_button, bar.last_update_button,
+                            bar.preferences_button, bar.arch_news_button, bar.update_history_button,
                             bar.github_button, bar.check_button, bar.update_button,
                         ]
                         centers = [button.geometry().center().y() for button in buttons]
@@ -450,16 +455,16 @@ class MainWindowIntegrationTests(unittest.TestCase):
                     self._close_test_window()
                     self._app.removeTranslator(translator)
 
-    def test_last_update_button_restores_saved_result_after_reopening(self) -> None:
+    def test_update_history_button_restores_saved_result_after_reopening(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "last-update.json"
+            path = Path(directory) / "update-history.json"
             for reopening in (False, True):
                 self.window = MainWindow(
                     service=FakeUpdateService(UpdateCheckResult([], datetime.now(), [])),
                     settings=FakeSettingsService(auto_check_enabled=False),
-                    state_cache=FakeStateCache(), last_update_store=LastUpdateStore(path),
+                    state_cache=FakeStateCache(), update_history_store=UpdateHistoryStore(path),
                 )
-                button = self.window.action_bar.last_update_button
+                button = self.window.action_bar.update_history_button
                 self.assertEqual(button.isEnabled(), reopening)
                 if not reopening:
                     self.window._handle_update_progress(UpdateProgressSnapshot(

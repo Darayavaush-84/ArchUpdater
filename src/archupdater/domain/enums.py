@@ -58,6 +58,14 @@ class UpdateProgressStepState(str, Enum):
     NOT_EXECUTED = "not_executed"
 
 
+class UpdatePackageOutcome(str, Enum):
+    UPDATED = "updated"
+    SKIPPED = "skipped"
+    NOT_UPDATED = "not_updated"
+    NOT_EXECUTED = "not_executed"
+    UNCONFIRMED = "unconfirmed"
+
+
 class UpdateResult(str, Enum):
     IN_PROGRESS = "in_progress"
     SUCCESS = "success"

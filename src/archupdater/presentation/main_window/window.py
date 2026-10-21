@@ -54,7 +54,7 @@ from archupdater.presentation.main_window.ui import build_main_window_ui
 from archupdater.container import ApplicationContainer
 from archupdater.application.updates import UpdateApplication
 from archupdater.infrastructure.app_state_cache import AppStateCache
-from archupdater.infrastructure.last_update import LastUpdateStore
+from archupdater.infrastructure.update_history import UpdateHistoryStore
 from archupdater.infrastructure.autostart import AutostartService
 from archupdater.infrastructure.settings import AppSettings, SettingsService
 
@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         settings: SettingsService | None = None,
         state_cache: AppStateCache | None = None,
         translation_manager: TranslationManager | None = None,
-        last_update_store: LastUpdateStore | None = None,
+        update_history_store: UpdateHistoryStore | None = None,
     ) -> None:
         super().__init__()
         self.restart_application: Callable[[], bool] | None = None
@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         )
         self._progress_presenter = UpdateProgressPresenter(
             self, self._update_controller, settings=self._settings,
-            last_update_store=last_update_store,
+            update_history_store=update_history_store,
         )
         self._flow_coordinator = MainWindowUpdateFlowCoordinator(
             view=self,
@@ -154,7 +154,9 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(960, 680)
 
         self._build_ui()
-        self.action_bar.last_update_button.setEnabled(self._progress_presenter.has_last_update())
+        self.action_bar.update_history_button.setEnabled(
+            self._progress_presenter.has_update_history()
+        )
         self._release_checker = AppReleaseChecker(self)
         self._release_checker.release_checked.connect(self.action_bar.set_github_release)
         self._details_presenter = PackageDetailsPresenter(
@@ -287,7 +289,9 @@ class MainWindow(QMainWindow):
     @Slot(object)
     def _handle_update_progress(self, snapshot: UpdateProgressSnapshot) -> None:
         self._progress_presenter.apply_progress(snapshot)
-        self.action_bar.last_update_button.setEnabled(self._progress_presenter.has_last_update())
+        self.action_bar.update_history_button.setEnabled(
+            self._progress_presenter.has_update_history()
+        )
 
     @Slot(object)
     def _handle_question_request(self, payload: object) -> None:
@@ -340,6 +344,9 @@ class MainWindow(QMainWindow):
 
     def has_post_update_refresh_pending(self) -> bool:
         return self._state.post_update_refresh_pending
+
+    def active_update_packages(self) -> list[PackageUpdate]:
+        return list(self._state.active_update_packages)
 
     def _post_update_refresh_can_use_local_system_db(self) -> bool:
         return any(

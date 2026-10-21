@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from archupdater.domain.enums import UpdateProgressPhase, UpdateProgressStepState, UpdateResult
+from archupdater.domain.enums import (
+    UpdatePackageOutcome, UpdateProgressPhase, UpdateProgressStepState, UpdateResult, UpdateSource,
+)
 
 
 @dataclass(slots=True)
@@ -11,6 +13,16 @@ class UpdateProgressStep:
     label: str
     state: UpdateProgressStepState = UpdateProgressStepState.PENDING
     log_lines: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class UpdateProgressPackage:
+    source: UpdateSource
+    name: str
+    current_version: str = ""
+    new_version: str = ""
+    scope: str = ""
+    outcome: UpdatePackageOutcome | None = None
 
 
 @dataclass(slots=True)
@@ -35,6 +47,8 @@ class UpdateProgressSnapshot:
     activity_text: str | None = None
     activity_percent: int | None = None
     cancelled: bool = False
+    packages: list[UpdateProgressPackage] = field(default_factory=list)
+    session_id: str = ""
 
     @property
     def result(self) -> UpdateResult:

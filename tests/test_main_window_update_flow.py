@@ -32,10 +32,11 @@ class _UpdateControllerStub:
     def is_busy(self) -> bool:
         return self.busy
 
-    def start_update(self, plan: UpdatePlan) -> None:
+    def start_update(self, plan: UpdatePlan, packages: object = ()) -> None:
         if self.start_update_error is not None:
             raise self.start_update_error
         self.started_update_plan = plan
+        self.started_update_packages = packages
 
 
 class _ViewStub:
@@ -48,6 +49,7 @@ class _ViewStub:
         self.plan = plan or UpdatePlan()
         self.post_update_refresh_pending = post_update_refresh_pending
         self.calls: list[str] = []
+        self.packages: list[object] = []
 
     def build_update_plan(self) -> UpdatePlan:
         return self.plan
@@ -64,6 +66,9 @@ class _ViewStub:
     def confirm_update_preconditions(self, plan: UpdatePlan) -> UpdatePlan | None:
         self.calls.append("confirm_update_preconditions")
         return plan
+
+    def active_update_packages(self) -> list[object]:
+        return self.packages
 
     def prepare_update_start_ui(self) -> None:
         self.calls.append("prepare_update_start_ui")
@@ -125,6 +130,7 @@ class MainWindowUpdateFlowCoordinatorTests(unittest.TestCase):
     def test_run_update_plan_prepares_ui_and_starts_controller(self) -> None:
         plan = UpdatePlan([UpdatePlanItem(UpdateSource.SYSTEM, "linux")])
         view = _ViewStub(plan=plan)
+        view.packages = [object()]
         controller = _UpdateControllerStub()
         flow = MainWindowUpdateFlowCoordinator(view=view, update_controller=controller)
 
@@ -132,6 +138,7 @@ class MainWindowUpdateFlowCoordinatorTests(unittest.TestCase):
 
         self.assertEqual(view.calls, ["prepare_update_start_ui"])
         self.assertIs(controller.started_update_plan, plan)
+        self.assertIs(controller.started_update_packages, view.packages)
 
     def test_update_cannot_start_while_post_update_refresh_is_pending(self) -> None:
         plan = UpdatePlan([UpdatePlanItem(UpdateSource.SYSTEM, "linux")])

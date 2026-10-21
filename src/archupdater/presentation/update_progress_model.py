@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from dataclasses import dataclass
+import uuid
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, replace
 
 from archupdater.domain.enums import (
-    UpdateProgressPhase, UpdateProgressStepState, UpdateResult, UpdateSource,
+    UpdatePackageOutcome, UpdateProgressPhase, UpdateProgressStepState, UpdateResult, UpdateSource,
 )
+from archupdater.domain.package_metadata import FlatpakPackageMetadata
+from archupdater.domain.packages import PackageUpdate
 from archupdater.domain.progress import (
+    UpdateProgressPackage,
     UpdateProgressSnapshot,
     UpdateProgressStep,
 )
@@ -80,9 +84,31 @@ class UpdateProgressModel:
         self._phase_progress: dict[UpdateProgressPhase, float] = {}
         self._activity_text: str | None = None
         self._activity_percent: int | None = None
+        self._packages: list[tuple[str, UpdateProgressPackage]] = []
+        self._skipped_aur_targets: set[str] = set()
+        self._possibly_changed_phases: set[UpdateProgressPhase] = set()
+        self._session_id = ""
 
-    def initialize(self, plan: UpdatePlan) -> None:
+    def initialize(self, plan: UpdatePlan, packages: Sequence[PackageUpdate] = ()) -> None:
         self.reset_for_check()
+        self._session_id = uuid.uuid4().hex
+        self._packages = [
+            (
+                package.target_id,
+                UpdateProgressPackage(
+                    source=package.source,
+                    name=package.name,
+                    current_version=package.current_version,
+                    new_version=package.new_version,
+                    scope=(
+                        package.source_metadata.installation_scope or ""
+                        if isinstance(package.source_metadata, FlatpakPackageMetadata)
+                        else ""
+                    ),
+                ),
+            )
+            for package in packages
+        ]
         descriptors = source_descriptors(self._t)
         selected_sources = {
             source for source in descriptors if plan_has_source(plan, source)
@@ -165,6 +191,8 @@ class UpdateProgressModel:
             activity_text=self._activity_text,
             activity_percent=self._activity_percent,
             cancelled=self._cancelled,
+            packages=[replace(package) for _target_id, package in self._packages],
+            session_id=self._session_id,
         )
         snapshot.percent = max(0, min(100, self._calculate_percent(visual_steps, snapshot.result)))
         return snapshot
@@ -183,10 +211,13 @@ class UpdateProgressModel:
         *,
         success: bool,
         incomplete: bool = False,
+        changed: bool = False,
     ) -> bool:
         phase = self.phase_from_step(step_value)
         if phase is None:
             return False
+        if not success and (changed or incomplete):
+            self._possibly_changed_phases.add(phase)
         state = UpdateProgressStepState.FAILED
         if success:
             state = (
@@ -228,9 +259,14 @@ class UpdateProgressModel:
             self._phase_progress[phase] = 1.0
         self._build_summary(success=True, refresh_expected=refresh_expected)
 
+    def mark_aur_package_skipped(self, target_id: str) -> None:
+        self._skipped_aur_targets.add(target_id)
+
     def complete_failure(self) -> None:
         if self._current_running_phase is not None:
             self._set_phase_state(self._current_running_phase, UpdateProgressStepState.FAILED)
+            # The session stopped while this step was running, so it may have changed packages.
+            self._possibly_changed_phases.add(self._current_running_phase)
         self._mark_pending_steps_not_executed()
         self._build_summary(success=False, refresh_expected=False)
 
@@ -454,7 +490,35 @@ class UpdateProgressModel:
             if step.state is UpdateProgressStepState.PENDING:
                 step.state = UpdateProgressStepState.NOT_EXECUTED
 
+    def _resolve_package_outcomes(self) -> None:
+        states = {step.phase: step.state for step in self._steps}
+        descriptors = source_descriptors(self._t)
+        for target_id, package in self._packages:
+            phase = descriptors[package.source].progress_phase
+            state = states.get(phase)
+            if package.source is UpdateSource.AUR and target_id in self._skipped_aur_targets:
+                package.outcome = UpdatePackageOutcome.SKIPPED
+            elif state is UpdateProgressStepState.COMPLETED:
+                package.outcome = UpdatePackageOutcome.UPDATED
+            elif state is UpdateProgressStepState.INCOMPLETE:
+                # A successful AUR step is only incomplete because of PKGBUILD reviews the user
+                # declined; every other package in it was installed.
+                package.outcome = (
+                    UpdatePackageOutcome.UPDATED
+                    if package.source is UpdateSource.AUR and self._skipped_aur_targets
+                    else UpdatePackageOutcome.UNCONFIRMED
+                )
+            elif state is UpdateProgressStepState.FAILED:
+                package.outcome = (
+                    UpdatePackageOutcome.UNCONFIRMED
+                    if phase in self._possibly_changed_phases
+                    else UpdatePackageOutcome.NOT_UPDATED
+                )
+            else:
+                package.outcome = UpdatePackageOutcome.NOT_EXECUTED
+
     def _build_summary(self, *, success: bool, refresh_expected: bool) -> None:
+        self._resolve_package_outcomes()
         actionable_steps = [
             step for step in self._steps if step.phase is not UpdateProgressPhase.COMPLETED
         ]

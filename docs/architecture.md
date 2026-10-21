@@ -115,12 +115,21 @@ checked with `pacman-conf --config` before it replaces the original, so an `Incl
 still disables timeouts leaves `/etc/pacman.conf` unchanged. Declining or cancelling
 authentication resumes the check with the existing configuration and its 60-second limit.
 
-`LastUpdateStore` atomically persists the latest finished update snapshot and completion time
-under `$XDG_STATE_HOME/archupdater/last-update.json` (defaulting to `~/.local/state`).
-The complete snapshot is validated before any existing saved session is replaced.
-`UpdateProgressPresenter` saves final results and opens a separate historical progress dialog.
-That dialog uses the existing summary and export UI, has no automatic closing, and is unaffected
-by live progress or package scans. Missing or invalid saved results leave the history button disabled.
+`UpdateHistoryStore` atomically persists the five most recent finished update snapshots and
+their completion times under `$XDG_STATE_HOME/archupdater/update-history.json` (defaulting to
+`~/.local/state`). A new snapshot is validated before the history is replaced; a damaged entry is
+skipped without hiding the others. Each session has an id, so a final snapshot emitted again
+after completion (for example when a closing message is logged) updates its own entry instead of
+adding one. The single `last-update.json` session written by 1.1.1 and
+earlier is read as the first entry and removed after the next save.
+Each snapshot lists the packages of the session with their versions and outcome. The progress
+model derives the outcome from the step result: completed steps updated their packages, failed
+steps that changed nothing did not, steps that never ran are not executed, and declined AUR
+PKGBUILD reviews are skipped. When a step changed the system only partially, the batch does not
+report which packages were applied, so those packages are marked for checking the log.
+`UpdateProgressPresenter` saves final results and opens `UpdateHistoryDialog`, an expandable
+session → source → package tree with the selected session's log and export. It is unaffected by
+live progress or package scans. An empty or invalid history leaves the history button disabled.
 
 `UpdateProgressSnapshot.result` provides the shared outcome classification for progress,
 automatic closing and exports. It combines completion status with step and summary results;

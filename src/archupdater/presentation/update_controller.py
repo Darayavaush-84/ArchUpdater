@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Sequence
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 from archupdater.domain.check_results import UpdateCheckResult
 from archupdater.domain.enums import UpdateSource
+from archupdater.domain.packages import PackageUpdate
 from archupdater.domain.update_plan import UpdatePlan
 from archupdater.presentation.integrated_batch_client import IntegratedBatchUpdateClient
 from archupdater.presentation.update_progress_model import UpdateProgressModel
@@ -172,13 +174,13 @@ class UpdateController(QObject):
         if self._worker is not None:
             self._worker.resume_after_configuration()
 
-    def start_update(self, plan: UpdatePlan) -> None:
+    def start_update(self, plan: UpdatePlan, packages: Sequence[PackageUpdate] = ()) -> None:
         if self._shutting_down:
             raise RuntimeError(self.tr("The update controller is shutting down."))
         if self.is_busy():
             raise RuntimeError(self.tr("Another operation is already running."))
 
-        self._initialize_progress(plan)
+        self._initialize_progress(plan, packages)
         self._active_update_requires_restart_advisory = False
         self._active_update_has_plasma_widgets = bool(
             plan.update_items(UpdateSource.PLASMA_WIDGET)
@@ -268,8 +270,10 @@ class UpdateController(QObject):
             except (RuntimeError, TypeError):
                 pass
 
-    def _initialize_progress(self, plan: UpdatePlan) -> None:
-        self._progress_model.initialize(plan)
+    def _initialize_progress(
+        self, plan: UpdatePlan, packages: Sequence[PackageUpdate] = (),
+    ) -> None:
+        self._progress_model.initialize(plan, packages)
 
     def _emit_progress_snapshot(
         self,
@@ -301,6 +305,7 @@ class UpdateController(QObject):
             event_type == BatchEventType.PROGRESS.value
             and payload.get("kind") == "aur_pkgbuild_review_skipped"
         ):
+            self._progress_model.mark_aur_package_skipped(str(payload.get("target_id") or ""))
             self.aur_update_skipped.emit(payload)
             return
         if event_type != BatchEventType.STEP_COMPLETED.value:
@@ -316,6 +321,7 @@ class UpdateController(QObject):
             step,
             success=success,
             incomplete=payload.get("incomplete") is True,
+            changed=payload.get("changed") is True,
         ):
             return
         self.update_progress_changed.emit(

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
 
-from PySide6.QtCore import Qt, QTimer, qVersion
+from PySide6.QtCore import QCoreApplication, Qt, QTimer, qVersion
 from PySide6.QtGui import QCloseEvent, QFontDatabase
 from PySide6.QtWidgets import (
     QDialog,
@@ -30,6 +30,50 @@ from archupdater.presentation.update_log_export import (
     clean_console_lines,
     write_update_log_export,
 )
+
+
+def write_logs_to_folder(
+    folder: Path, snapshot: UpdateProgressSnapshot, *, completed_at: datetime | None = None,
+) -> Path:
+    return write_update_log_export(
+        folder=folder,
+        snapshot=snapshot,
+        runtime=RuntimeExportInfo.current(qt_version=qVersion()),
+        completed_at=completed_at,
+    )
+
+
+def export_update_logs(
+    parent: QWidget, snapshot: UpdateProgressSnapshot, *, completed_at: datetime | None = None,
+) -> None:
+    folder = QFileDialog.getExistingDirectory(
+        parent,
+        QCoreApplication.translate("UpdateProgressDialog", "Choose Export Folder"),
+        str(Path.home()),
+        QFileDialog.Option.ShowDirsOnly,
+    )
+    if not folder:
+        return
+
+    try:
+        archive_path = write_logs_to_folder(Path(folder), snapshot, completed_at=completed_at)
+    except OSError as exc:
+        QMessageBox.warning(
+            parent,
+            QCoreApplication.translate("UpdateProgressDialog", "Export Failed"),
+            QCoreApplication.translate(
+                "UpdateProgressDialog", "Could not export update logs: {error}",
+            ).format(error=exc),
+        )
+        return
+
+    QMessageBox.information(
+        parent,
+        QCoreApplication.translate("UpdateProgressDialog", "Logs Exported"),
+        QCoreApplication.translate(
+            "UpdateProgressDialog", "Update logs were exported to:\n{path}",
+        ).format(path=archive_path),
+    )
 
 
 class UpdateStepRow(QFrame):
@@ -73,15 +117,10 @@ class UpdateStepRow(QFrame):
 
 
 class UpdateProgressDialog(QDialog):
-    def __init__(
-        self, parent: QWidget | None = None, *, completed_at: datetime | None = None,
-    ) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._completed_at = completed_at
         self.setObjectName("updateProgressDialog")
-        self.setWindowTitle(
-            self.tr("Last Update") if completed_at is not None else self.tr("Installing Updates")
-        )
+        self.setWindowTitle(self.tr("Installing Updates"))
         self.setWindowModality(Qt.WindowModality.NonModal)
         self.setModal(False)
         self.resize(1080, 740)
@@ -111,14 +150,6 @@ class UpdateProgressDialog(QDialog):
         self.hero_subtitle.setMaximumHeight(70)
         hero_layout.addWidget(self.hero_title)
         hero_layout.addWidget(self.hero_subtitle)
-        self.session_date_label = QLabel()
-        self.session_date_label.setObjectName("mutedText")
-        self.session_date_label.setVisible(completed_at is not None)
-        if completed_at is not None:
-            self.session_date_label.setText(self.tr("Completed: {date}").format(
-                date=completed_at.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
-            ))
-        hero_layout.addWidget(self.session_date_label)
         progress_row = QHBoxLayout()
         self.progress_bar = QProgressBar()
         self.progress_bar.setObjectName("updateProgressBar")
@@ -196,9 +227,7 @@ class UpdateProgressDialog(QDialog):
         log_layout.setContentsMargins(12, 8, 12, 12)
         log_layout.setSpacing(8)
         self.log_toggle = QToolButton()
-        self.log_toggle.setText(
-            self.tr("Update Log") if completed_at is not None else self.tr("Live Activity")
-        )
+        self.log_toggle.setText(self.tr("Live Activity"))
         self.log_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.log_toggle.setCheckable(True)
         self.log_toggle.setChecked(True)
@@ -221,7 +250,6 @@ class UpdateProgressDialog(QDialog):
             self.tr("Close automatically if all updates succeed")
         )
         self.auto_close_checkbox.setChecked(False)
-        self.auto_close_checkbox.setVisible(completed_at is None)
         self.auto_close_checkbox.toggled.connect(self._sync_success_close_timer)
         actions.addWidget(self.auto_close_checkbox)
         actions.addStretch(1)
@@ -325,7 +353,6 @@ class UpdateProgressDialog(QDialog):
         snapshot = self._latest_snapshot
         if (
             snapshot is not None
-            and self._completed_at is None
             and snapshot.result is UpdateResult.SUCCESS
             and self.auto_close_checkbox.isChecked()
         ):
@@ -469,41 +496,13 @@ class UpdateProgressDialog(QDialog):
         body.setText(", ".join(items))
 
     def _export_logs(self) -> None:
-        folder = QFileDialog.getExistingDirectory(
-            self,
-            self.tr("Choose Export Folder"),
-            str(Path.home()),
-            QFileDialog.Option.ShowDirsOnly,
-        )
-        if not folder:
-            return
-
-        try:
-            archive_path = self._write_log_export(Path(folder))
-        except OSError as exc:
-            QMessageBox.warning(
-                self,
-                self.tr("Export Failed"),
-                self.tr("Could not export update logs: {error}").format(error=exc),
-            )
-            return
-
-        QMessageBox.information(
-            self,
-            self.tr("Logs Exported"),
-            self.tr("Update logs were exported to:\n{path}").format(path=archive_path),
-        )
+        if self._latest_snapshot is not None:
+            export_update_logs(self, self._latest_snapshot)
 
     def _write_log_export(self, folder: Path) -> Path:
         if self._latest_snapshot is None:
             raise OSError("No update session is available to export.")
-
-        return write_update_log_export(
-            folder=folder,
-            snapshot=self._latest_snapshot,
-            runtime=RuntimeExportInfo.current(qt_version=qVersion()),
-            completed_at=self._completed_at,
-        )
+        return write_logs_to_folder(folder, self._latest_snapshot)
 
     def reject(self) -> None:
         if self._final_state:

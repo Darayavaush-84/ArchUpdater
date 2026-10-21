@@ -7,8 +7,9 @@ from PySide6.QtWidgets import QWidget
 
 from archupdater.domain.progress import UpdateProgressSnapshot
 from archupdater.infrastructure.settings import SettingsService
-from archupdater.infrastructure.last_update import LastUpdateStore
+from archupdater.infrastructure.update_history import UpdateHistoryStore
 from archupdater.presentation.update_controller import UpdateController
+from archupdater.presentation.update_history_dialog import UpdateHistoryDialog
 from archupdater.presentation.update_interaction_dialogs import handle_question_request
 from archupdater.presentation.update_progress_dialog import UpdateProgressDialog
 
@@ -17,16 +18,16 @@ class UpdateProgressPresenter:
     def __init__(
         self, parent: QWidget, update_controller: UpdateController,
         *, settings: SettingsService | None = None,
-        last_update_store: LastUpdateStore | None = None,
+        update_history_store: UpdateHistoryStore | None = None,
     ) -> None:
         self._parent = parent
         self._update_controller = update_controller
         self._settings = settings or SettingsService()
         self._dialog: UpdateProgressDialog | None = None
-        self._last_update_store = last_update_store or LastUpdateStore()
-        self._last_update = self._last_update_store.load()
-        self._history_dialog: UpdateProgressDialog | None = None
-        self._displayed_update = None
+        self._history_store = update_history_store or UpdateHistoryStore()
+        self._history = self._history_store.load()
+        self._history_dialog: UpdateHistoryDialog | None = None
+        self._displayed_history = None
 
     @property
     def dialog(self) -> UpdateProgressDialog | None:
@@ -38,20 +39,17 @@ class UpdateProgressPresenter:
             for dialog in (self._dialog, self._history_dialog)
         )
 
-    def has_last_update(self) -> bool:
-        return self._last_update is not None
+    def has_update_history(self) -> bool:
+        return bool(self._history)
 
-    def show_last_update(self) -> None:
-        if self._last_update is None:
+    def show_update_history(self) -> None:
+        if not self._history:
             return
-        if self._history_dialog is not None and self._displayed_update is not self._last_update:
+        if self._history_dialog is not None and self._displayed_history is not self._history:
             self._history_dialog.close()
         if self._history_dialog is None:
-            self._history_dialog = UpdateProgressDialog(
-                self._parent, completed_at=self._last_update.completed_at,
-            )
-            self._history_dialog.apply_snapshot(self._last_update.snapshot)
-            self._displayed_update = self._last_update
+            self._history_dialog = UpdateHistoryDialog(self._history, self._parent)
+            self._displayed_history = self._history
             self._history_dialog.finished.connect(self._on_history_dialog_finished)
         self._history_dialog.show()
         self._history_dialog.raise_()
@@ -61,14 +59,16 @@ class UpdateProgressPresenter:
         if self._history_dialog is not None:
             self._history_dialog.deleteLater()
             self._history_dialog = None
-            self._displayed_update = None
+            self._displayed_history = None
 
     def apply_progress(self, snapshot: UpdateProgressSnapshot) -> None:
         if snapshot.final_state:
             try:
-                self._last_update = self._last_update_store.save(snapshot)
+                self._history = self._history_store.save(snapshot)
             except (OSError, ValueError):
-                logging.getLogger(__name__).warning("Could not save the last update", exc_info=True)
+                logging.getLogger(__name__).warning(
+                    "Could not save the update history", exc_info=True,
+                )
         present_dialog = snapshot.present_dialog
         if not present_dialog:
             return

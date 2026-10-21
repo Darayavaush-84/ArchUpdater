@@ -4,7 +4,7 @@ from .palette import ThemeColors, mix_colors
 
 
 def build_styles(c: ThemeColors) -> str:
-    return f"""        QDialog#updateProgressDialog {{
+    return f"""        QDialog#updateProgressDialog, QDialog#updateHistoryDialog {{
             background: {c.window.name()};
         }}
         QWidget#trayNotificationPopup {{

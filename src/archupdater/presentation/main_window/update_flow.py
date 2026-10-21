@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from archupdater.domain.check_results import UpdateCheckResult
+from archupdater.domain.packages import PackageUpdate
 from archupdater.domain.update_plan import UpdatePlan
 from archupdater.presentation.update_controller import UpdateController
 
@@ -17,6 +18,8 @@ class MainWindowUpdateFlowView(Protocol):
     def has_post_update_refresh_pending(self) -> bool: ...
 
     def confirm_update_preconditions(self, plan: UpdatePlan) -> UpdatePlan | None: ...
+
+    def active_update_packages(self) -> list[PackageUpdate]: ...
 
     def prepare_update_start_ui(self) -> None: ...
 
@@ -74,7 +77,7 @@ class MainWindowUpdateFlowCoordinator:
 
         self._view.prepare_update_start_ui()
         try:
-            self._update_controller.start_update(plan)
+            self._update_controller.start_update(plan, self._view.active_update_packages())
         except Exception as exc:
             self._view.handle_update_start_failure(exc)
 

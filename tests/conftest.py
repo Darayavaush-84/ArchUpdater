@@ -11,11 +11,14 @@ from PySide6.QtCore import QCoreApplication
 _runtime_root = tempfile.mkdtemp(prefix="archupdater-tests-")
 _config_home = os.path.join(_runtime_root, "config")
 _cache_home = os.path.join(_runtime_root, "cache")
+_state_home = os.path.join(_runtime_root, "state")
 
 os.makedirs(_config_home, exist_ok=True)
 os.makedirs(_cache_home, exist_ok=True)
+os.makedirs(_state_home, exist_ok=True)
 os.environ.setdefault("XDG_CONFIG_HOME", _config_home)
 os.environ.setdefault("XDG_CACHE_HOME", _cache_home)
+os.environ.setdefault("XDG_STATE_HOME", _state_home)
 
 
 def _cleanup_runtime_root() -> None:

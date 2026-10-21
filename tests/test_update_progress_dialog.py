@@ -22,6 +22,7 @@ from archupdater.application.update_session.protocol import BatchOutcome
 from archupdater.presentation.update_controller import UpdateController
 from archupdater.domain.progress import UpdateProgressSnapshot, UpdateProgressStep
 from archupdater import __version__
+from archupdater.infrastructure.update_history import UpdateHistoryStore
 from archupdater.infrastructure.settings import AppSettings, SettingsService
 from archupdater.presentation.update_progress_dialog import UpdateProgressDialog
 from archupdater.presentation.update_progress_presenter import UpdateProgressPresenter
@@ -45,6 +46,7 @@ class UpdateProgressDialogTests(unittest.TestCase):
     def test_auto_close_preference_survives_new_presenter_and_settings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             settings_path = str(Path(directory) / "settings.ini")
+            store = UpdateHistoryStore(Path(directory) / "update-history.json")
 
             def reopen_settings() -> SettingsService:
                 settings = SettingsService()
@@ -59,7 +61,9 @@ class UpdateProgressDialogTests(unittest.TestCase):
             )
             settings = reopen_settings()
             settings.save_app_settings(AppSettings(aur_updates_enabled=True))
-            presenter = UpdateProgressPresenter(parent, Mock(), settings=settings)
+            presenter = UpdateProgressPresenter(
+                parent, Mock(), settings=settings, update_history_store=store,
+            )
             presenter.apply_progress(snapshot)
             self.assertFalse(presenter.dialog.auto_close_checkbox.isChecked())
             presenter.dialog.auto_close_checkbox.setChecked(True)
@@ -67,7 +71,9 @@ class UpdateProgressDialogTests(unittest.TestCase):
             self.assertTrue(reopen_settings().load_app_settings().aur_updates_enabled)
             presenter.close_dialog()
 
-            presenter = UpdateProgressPresenter(parent, Mock(), settings=reopen_settings())
+            presenter = UpdateProgressPresenter(
+                parent, Mock(), settings=reopen_settings(), update_history_store=store,
+            )
             presenter.apply_progress(snapshot)
             self.assertTrue(presenter.dialog.auto_close_checkbox.isChecked())
             presenter.apply_progress(replace(snapshot, final_state=True, success=True))
@@ -76,7 +82,9 @@ class UpdateProgressDialogTests(unittest.TestCase):
             self.assertFalse(presenter.dialog._success_close_timer.isActive())
             presenter.close_dialog()
 
-            presenter = UpdateProgressPresenter(parent, Mock(), settings=reopen_settings())
+            presenter = UpdateProgressPresenter(
+                parent, Mock(), settings=reopen_settings(), update_history_store=store,
+            )
             presenter.apply_progress(snapshot)
             self.assertFalse(presenter.dialog.auto_close_checkbox.isChecked())
             presenter.close_dialog()
@@ -469,7 +477,12 @@ class UpdateProgressDialogTests(unittest.TestCase):
     def test_result_survives_background_refresh_and_question_displays_waiting_state(self) -> None:
         parent = QWidget()
         self.addCleanup(parent.deleteLater)
-        presenter = UpdateProgressPresenter(parent, Mock())
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        presenter = UpdateProgressPresenter(
+            parent, Mock(),
+            update_history_store=UpdateHistoryStore(Path(directory.name) / "update-history.json"),
+        )
         snapshot = UpdateProgressSnapshot(
             title="Installing Updates", subtitle="Running pacman", steps=[], percent=0,
             present_dialog=True,

@@ -137,6 +137,17 @@ def export_manifest(
             }
             for step in snapshot.steps
         ],
+        "packages": [
+            {
+                "source": package.source.value,
+                "name": package.name,
+                "scope": package.scope or None,
+                "current_version": package.current_version,
+                "new_version": package.new_version,
+                "outcome": package.outcome.value if package.outcome is not None else None,
+            }
+            for package in snapshot.packages
+        ],
     }
 
 
@@ -185,4 +196,13 @@ def export_summary_text(
     lines.extend(["", "Steps"])
     for index, step in enumerate(snapshot.steps, start=1):
         lines.append(f"{index}. {step.label} [{step.phase.value}] - {step.state.value}")
+    if snapshot.packages:
+        lines.extend(["", "Packages"])
+    for package in snapshot.packages:
+        name = f"{package.name} ({package.scope})" if package.scope else package.name
+        versions = " -> ".join(
+            version for version in (package.current_version, package.new_version) if version
+        )
+        outcome = package.outcome.value if package.outcome is not None else "unknown"
+        lines.append(f"- [{package.source.value}] {name} {versions} - {outcome}".replace("  ", " "))
     return "\n".join(lines) + "\n"

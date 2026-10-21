@@ -20,7 +20,7 @@ ArchUpdater focuses on updating the software already on your system, on the shor
 - **Simple to read**: one searchable package list with counters per source.
 - **Direct to use**: check, review and update from the same window.
 - **Details when you need them**: package information, Arch Linux news, prompts and live logs.
-- **A clear finish**: results stay visible after an update, and the latest one can be reopened later.
+- **A clear finish**: results stay visible after an update, and the last five can be reopened later.
 - **Quiet in the background**: tray icon with update count and status, configurable automatic
   checks and notifications.
 
@@ -72,7 +72,8 @@ user and asks for authorization only for privileged operations.
 3. **Choose** the optional updates to install; system packages are always updated as a whole.
 4. **Update** and follow progress, answering any prompts in the app.
 5. **See the result**: what completed, what needs attention and whether a restart is advised.
-   **Last Update** reopens the latest result with its exportable log, even after a reboot.
+   **Update History** keeps the last five sessions, even after a reboot: expand one to see
+   which packages were updated and which were not, with versions and an exportable log.
 
 ![Update dialog with per-source steps, package activity and live log](docs/screenshots/progress.png)
 
