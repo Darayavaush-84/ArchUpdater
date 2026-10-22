@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
             self._optional_sources_snapshot.active_sources
         )
 
-        self._set_operation_state(OperationState.IDLE, self.tr("Ready to check for updates."))
+        self._set_operation_state(OperationState.IDLE, self.tr("Ready to check for updates"))
         initial_counters = UpdateCounters()
         self.header_widget.set_counters(initial_counters)
         self._update_last_checked_label()
@@ -301,7 +301,6 @@ class MainWindow(QMainWindow):
     def _handle_aur_update_skipped(self, payload: object) -> None:
         data = payload if isinstance(payload, dict) else {}
         target_id = str(data.get("target_id") or "")
-        package_name = str(data.get("package_name") or target_id)
         reason = str(data.get("reason") or "").strip() or self.tr(
             "PKGBUILD review was cancelled."
         )
@@ -325,11 +324,6 @@ class MainWindow(QMainWindow):
             ]
             self._refresh_package_updates_view()
             self._update_selection_actions()
-
-        self.action_bar.show_transient_message(
-            self.tr("Skipped AUR update: {package}").format(package=package_name),
-            5000,
-        )
 
     @Slot(str, bool)
     def _on_package_selection_changed(self, _package_id: str, _selected: bool) -> None:
@@ -409,7 +403,12 @@ class MainWindow(QMainWindow):
         self.side_panel.setVisible(has_selection)
         if self._state.packages:
             return
-        if self._state.operation_state is OperationState.ERROR:
+        if self._state.operation_state is OperationState.IDLE:
+            self.package_updates_widget.show_status_placeholder(
+                self._state.operation_message,
+                self.tr("Press Check for Updates to scan the enabled sources."),
+            )
+        elif self._state.operation_state is OperationState.ERROR:
             self.package_updates_widget.show_status_placeholder(
                 self.tr("Update check failed"),
                 self._state.check_failure_message,
@@ -585,13 +584,11 @@ class MainWindow(QMainWindow):
         )
 
     def set_auto_check_schedule(self, interval_hours: int | None) -> None:
-        message = self._background_behavior.set_auto_check_schedule(
+        changed = self._background_behavior.set_auto_check_schedule(
             interval_hours, last_checked_at=self._state.last_checked_at,
         )
-        if message is None:
-            return
-        self.action_bar.show_transient_message(message, 3000)
-        self._update_next_check_label()
+        if changed:
+            self._update_next_check_label()
 
     def show_from_tray(self) -> None:
         if self.isMinimized():
@@ -676,7 +673,6 @@ class MainWindow(QMainWindow):
         self.header_widget.set_system_status(self.tr("Waiting for network..."))
         self.header_widget.set_last_checked(self.tr("Last checked: Waiting for network"))
         self.header_widget.set_next_check("")
-        self.action_bar.clear_status_text()
         self.details_panel.show_placeholder(
             title=self.tr("Waiting for network..."),
             text=self.tr("Waiting for network..."),

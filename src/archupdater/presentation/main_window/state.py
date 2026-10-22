@@ -19,6 +19,7 @@ class MainWindowState:
     last_checked_at: datetime | None = None
     check_failure_message: str = ""
     operation_state: OperationState = OperationState.IDLE
+    operation_message: str = ""
     active_source_filter: UpdateSource | None = None
     plasma_restart_recommended: bool = False
     startup_notice_pending_visibility: bool = False

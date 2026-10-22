@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QCoreApplication
-
 from archupdater.domain.enums import OperationState
 from archupdater.domain.update_plan import UpdatePlan
 from archupdater.presentation.main_window.logic import build_update_plan
@@ -17,18 +15,7 @@ class MainWindowOperationPresenter:
 
     def set_operation_state(self, state: OperationState, message: str) -> None:
         self._state.operation_state = state
-        if state in {
-            OperationState.CHECKING,
-            OperationState.WAITING_AUTH,
-            OperationState.UPDATING,
-            OperationState.COMPLETED,
-        }:
-            self._window.action_bar.clear_status_text()
-        else:
-            self._window.action_bar.set_status_text(
-                f"{self._operation_state_text(state)}: {message}"
-            )
-
+        self._state.operation_message = message
         busy = state in {
             OperationState.CHECKING,
             OperationState.WAITING_AUTH,
@@ -66,16 +53,3 @@ class MainWindowOperationPresenter:
 
     def build_update_plan(self) -> UpdatePlan:
         return build_update_plan(self._state.packages)
-
-    def _operation_state_text(self, state: OperationState) -> str:
-        mapping = {
-            OperationState.IDLE: QCoreApplication.translate("MainWindow", "Idle"),
-            OperationState.CHECKING: QCoreApplication.translate("MainWindow", "Checking"),
-            OperationState.WAITING_AUTH: QCoreApplication.translate(
-                "MainWindow", "Waiting for Authentication"
-            ),
-            OperationState.UPDATING: QCoreApplication.translate("MainWindow", "Updating"),
-            OperationState.COMPLETED: QCoreApplication.translate("MainWindow", "Completed"),
-            OperationState.ERROR: QCoreApplication.translate("MainWindow", "Error"),
-        }
-        return mapping[state]

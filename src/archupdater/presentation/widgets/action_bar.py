@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QSize, QTimer, Signal
+from PySide6.QtCore import QEvent, QSize, Signal
 from PySide6.QtGui import QHelpEvent, QIcon, QPalette
 from PySide6.QtWidgets import (
     QFrame,
@@ -27,7 +27,6 @@ class ActionBarWidget(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("actionBar")
-        self._persistent_status_text = ""
         self._preferences_busy_tooltip = self.tr(
             "Preferences are not available while a scan or installation is running."
         )
@@ -79,19 +78,12 @@ class ActionBarWidget(QFrame):
         self._sync_github_icon()
         self.github_button.clicked.connect(self.github_requested)
 
-        self.status_label = QLabel()
-        self.status_label.setObjectName("statusLabel")
-        self._transient_timer = QTimer(self)
-        self._transient_timer.setSingleShot(True)
-        self._transient_timer.timeout.connect(self._restore_persistent_status)
-
         layout.addWidget(self.preferences_button)
         layout.addWidget(self.arch_news_button)
         layout.addWidget(self.update_history_button)
         self.set_github_release("")
         layout.addWidget(self.github_button)
         layout.addStretch(1)
-        layout.addWidget(self.status_label)
         layout.addWidget(self.check_button)
         layout.addWidget(self.update_button)
 
@@ -126,22 +118,6 @@ class ActionBarWidget(QFrame):
         self.github_button.setFixedWidth(
             max(96, self.github_button.sizeHint().width()) if available else 40
         )
-
-    def set_status_text(self, text: str) -> None:
-        self._persistent_status_text = text
-        self.status_label.setToolTip(text)
-        if not self._transient_timer.isActive():
-            self.status_label.setText(text)
-
-    def clear_status_text(self) -> None:
-        self._persistent_status_text = ""
-        self.status_label.setToolTip("")
-        if not self._transient_timer.isActive():
-            self.status_label.clear()
-
-    def show_transient_message(self, text: str, timeout_ms: int = 3200) -> None:
-        self.status_label.setText(text)
-        self._transient_timer.start(timeout_ms)
 
     def set_notice_text(self, text: str) -> None:
         self.notice_label.setText(text)
@@ -180,9 +156,6 @@ class ActionBarWidget(QFrame):
         self.github_button.setEnabled(not busy)
         if not busy:
             QToolTip.hideText()
-
-    def _restore_persistent_status(self) -> None:
-        self.status_label.setText(self._persistent_status_text)
 
     def eventFilter(self, watched, event) -> bool:  # type: ignore[override]
         if watched in {self, self.preferences_button}:

@@ -4,8 +4,6 @@ from dataclasses import replace
 from datetime import datetime
 from typing import Protocol
 
-from PySide6.QtCore import QCoreApplication
-
 from archupdater.presentation.check_schedule import CheckScheduleController
 
 from archupdater.presentation.tray_controller import TrayController
@@ -109,7 +107,7 @@ class BackgroundBehaviorController:
 
     def set_auto_check_schedule(
         self, interval_hours: int | None, *, last_checked_at: datetime | None = None,
-    ) -> str | None:
+    ) -> bool:
         current_settings = self.load_app_settings()
         normalized_enabled = interval_hours is not None
         normalized_interval = (
@@ -122,7 +120,7 @@ class BackgroundBehaviorController:
             current_settings.auto_check_enabled == normalized_enabled
             and current_settings.auto_check_interval_hours == normalized_interval
         ):
-            return None
+            return False
 
         updated_settings = replace(
             current_settings,
@@ -131,15 +129,7 @@ class BackgroundBehaviorController:
         )
         self._settings.save_app_settings(updated_settings)
         self.apply_auto_check_settings(updated_settings, last_checked_at=last_checked_at)
-
-        if normalized_enabled:
-            return self._translate("Automatic checks set to every {hours} hours.").format(
-                hours=normalized_interval
-            )
-        return self._translate("Automatic update checks disabled.")
-
-    def _translate(self, text: str) -> str:
-        return QCoreApplication.translate("MainWindow", text)
+        return True
 
     def _auto_check_interval_ms(self, app_settings: AppSettings) -> int:
         return max(1, int(app_settings.auto_check_interval_hours)) * 60 * 60 * 1000

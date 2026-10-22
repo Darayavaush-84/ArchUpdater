@@ -95,8 +95,8 @@ class MainWindowCheckPresenter:
             warning_count=len(result.warnings),
         )
         window._set_operation_state(OperationState.COMPLETED, state_message)
-        if result.warnings:
-            window.action_bar.set_status_text(
+        if result.warnings and self._state.packages:
+            window.package_updates_widget.set_check_warnings_text(
                 self.tr("Check warnings: {warnings}").format(warnings="; ".join(result.warnings))
             )
         window._update_selection_actions()
@@ -129,7 +129,6 @@ class MainWindowCheckPresenter:
         window.action_bar.set_update_selection(0)
 
         window._set_operation_state(OperationState.ERROR, message)
-        window.action_bar.clear_status_text()
         window._show_package_details(None)
         window._defer_next_auto_check()
 

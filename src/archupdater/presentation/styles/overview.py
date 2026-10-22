@@ -11,10 +11,6 @@ def build_styles(c: ThemeColors) -> str:
             border-radius: 12px;
             padding: 10px 12px;
         }}
-        QLabel#statusLabel {{
-            color: {c.text.name()};
-            font-weight: 600;
-        }}
         QLabel#progressPercent {{
             color: {c.text.name()};
             font-weight: 700;

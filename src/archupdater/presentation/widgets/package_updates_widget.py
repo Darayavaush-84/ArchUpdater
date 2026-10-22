@@ -439,6 +439,12 @@ class PackageUpdatesWidget(QFrame):
         self.aur_skipped_note_label.hide()
         layout.addWidget(self.aur_skipped_note_label)
 
+        self.check_warnings_label = QLabel()
+        self.check_warnings_label.setObjectName("warningText")
+        self.check_warnings_label.setWordWrap(True)
+        self.check_warnings_label.hide()
+        layout.addWidget(self.check_warnings_label)
+
         self.tree = QTreeWidget()
         self.tree.setObjectName("packageUpdatesTree")
         self.tree.setHeader(PackageSortHeaderView(self.tree))
@@ -596,6 +602,7 @@ class PackageUpdatesWidget(QFrame):
         self._has_skipped_aur_updates = False
         self.tree.clear()
         self.content_stack.setCurrentWidget(self.tree)
+        self.set_check_warnings_text("")
         self._sync_note_labels()
         self.current_package_changed.emit(None)
 
@@ -660,6 +667,10 @@ class PackageUpdatesWidget(QFrame):
         self.empty_title.setText(self.tr("Everything is up to date!"))
         self.empty_message.setText(self.tr("New updates will appear here after the next refresh."))
         self.content_stack.setCurrentWidget(self.empty_state_widget)
+
+    def set_check_warnings_text(self, text: str) -> None:
+        self.check_warnings_label.setText(text)
+        self.check_warnings_label.setVisible(bool(text))
 
     def clear_selection(self) -> None:
         self._clear_initial_selection()

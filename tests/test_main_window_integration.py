@@ -847,10 +847,6 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertEqual(self.window._state.operation_state, OperationState.ERROR)
         self.assertEqual(self.window.header_widget.system_status_label.text(), "Error")
         self.assertEqual(
-            self.window.action_bar.status_label.text(),
-            "",
-        )
-        self.assertEqual(
             self.window.details_panel._details_placeholder.text(),
             "Details are unavailable because the last refresh did not complete.\n\n"
             "Error: post-update refresh failed",
@@ -914,15 +910,39 @@ class MainWindowIntegrationTests(unittest.TestCase):
 
         self.assertEqual(service.local_system_db_calls, [False, False])
 
-    def test_action_bar_does_not_repeat_checking_status_text(self) -> None:
-        self.window = self._create_window(packages=[])
-
-        self.window._set_operation_state(
-            OperationState.CHECKING,
-            "Checking repositories and package metadata...",
+    def test_idle_window_without_packages_shows_status_in_updates_area(self) -> None:
+        self.window = MainWindow(
+            service=FakeUpdateService(
+                UpdateCheckResult(packages=[], checked_at=datetime.now(), logs=[], warnings=[])
+            ),
+            settings=FakeSettingsService(auto_check_enabled=False),
+            state_cache=FakeStateCache(),
         )
 
-        self.assertEqual(self.window.action_bar.status_label.text(), "")
+        widget = self.window.package_updates_widget
+        self.assertIs(widget.content_stack.currentWidget(), widget.empty_state_widget)
+        self.assertTrue(widget.empty_illustration.isHidden())
+        self.assertEqual(widget.empty_title.text(), "Ready to check for updates")
+        self.assertEqual(
+            widget.empty_message.text(),
+            "Press Check for Updates to scan the enabled sources.",
+        )
+
+    def test_check_warnings_are_shown_above_available_updates(self) -> None:
+        result = UpdateCheckResult(
+            packages=[self._package("linux", UpdateSource.SYSTEM, repository="core")],
+            checked_at=datetime.now(),
+            logs=[],
+            warnings=["Flatpak check failed"],
+        )
+        self.window = self._create_window(packages=[], result=result)
+
+        label = self.window.package_updates_widget.check_warnings_label
+        self.assertFalse(label.isHidden())
+        self.assertEqual(label.text(), "Check warnings: Flatpak check failed")
+
+        self.window._check_presenter.reset_for_fresh_check()
+        self.assertTrue(label.isHidden())
 
     def test_unclean_update_session_notice_is_shown_on_startup(self) -> None:
         state_cache = FakeStateCache(unclean=True)
@@ -1117,7 +1137,6 @@ class MainWindowIntegrationTests(unittest.TestCase):
         self.assertFalse(self.window.action_bar.update_button.isEnabled())
         self.assertEqual(self.window.header_widget.system_status_label.text(), "Error")
         self.assertEqual(self.window.header_widget.last_checked_label.text(), "Last checked: Failed")
-        self.assertEqual(self.window.action_bar.status_label.text(), "")
         self.assertIn("Error: checkupdates failed", self.window.details_panel._details_placeholder.text())
 
     def test_due_check_waits_until_network_is_online(self) -> None:

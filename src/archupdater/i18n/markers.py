@@ -152,10 +152,6 @@ TRANSLATION_MARKERS = (
     QT_TRANSLATE_NOOP("MainWindow", "Continue Anyway"),
     # presentation/arch_news_coordinator.py
     QT_TRANSLATE_NOOP("MainWindow", "{count} unread Arch Linux news item(s) may affect updates."),
-    # presentation/background_behavior.py
-    QT_TRANSLATE_NOOP("MainWindow", "Automatic update checks disabled."),
-    # presentation/background_behavior.py
-    QT_TRANSLATE_NOOP("MainWindow", "Automatic checks set to every {hours} hours."),
     # presentation/main_window/logic.py, presentation/tray_status.py
     QT_TRANSLATE_NOOP("MainWindow", "Starting update session..."),
     # presentation/main_window/logic.py

@@ -4,61 +4,61 @@
 <context>
     <name>ActionBarWidget</name>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="32"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="31"/>
         <source>Preferences are not available while a scan or installation is running.</source>
         <translation>Die Einstellungen sind nicht verfügbar, während eine Prüfung oder Installation läuft.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="43"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="42"/>
         <source>Check for Updates</source>
         <translation>Nach Aktualisierungen suchen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="49"/>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="117"/>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="160"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="48"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="109"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="136"/>
         <source>Update</source>
         <translation>Aktualisieren</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="55"/>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="170"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="54"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="146"/>
         <source>Arch News</source>
         <translation>Arch-Nachrichten</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="61"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="60"/>
         <source>Update History</source>
         <translation>Aktualisierungsverlauf</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="67"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="66"/>
         <source>Preferences</source>
         <translation>Einstellungen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="76"/>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="121"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="75"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="113"/>
         <source>GitHub</source>
         <translation>GitHub</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="120"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="112"/>
         <source>ArchUpdater {version} is available on GitHub</source>
         <translation>ArchUpdater {version} ist auf GitHub verfügbar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="162"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="138"/>
         <source>Update 1 item</source>
         <translation>1 Element aktualisieren</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="165"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="141"/>
         <source>Update {count} items</source>
         <translation>{count} Elemente aktualisieren</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="172"/>
+        <location filename="../../src/archupdater/presentation/widgets/action_bar.py" line="148"/>
         <source>Arch News ({count})</source>
         <translation>Arch-Nachrichten ({count})</translation>
     </message>
@@ -860,19 +860,14 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="264"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="260"/>
         <source>Update completed with issues</source>
         <translation>Aktualisierung mit Problemen abgeschlossen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="262"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="258"/>
         <source>Selected updates completed with incomplete or failed steps.</source>
         <translation>Ausgewählte Aktualisierungen mit unvollständigen oder fehlgeschlagenen Schritten beendet.</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="188"/>
-        <source>Ready to check for updates.</source>
-        <translation>Bereit, nach Aktualisierungen zu suchen.</translation>
     </message>
     <message>
         <location filename="../../src/archupdater/presentation/main_window/window.py" line="193"/>
@@ -968,282 +963,272 @@
     </message>
     <message>
         <location filename="../../src/archupdater/i18n/markers.py" line="156"/>
-        <source>Automatic update checks disabled.</source>
-        <translation>Automatische Aktualisierungsprüfungen deaktiviert.</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="158"/>
-        <source>Automatic checks set to every {hours} hours.</source>
-        <translation>Automatische Prüfungen auf alle {hours} Stunden eingestellt.</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="160"/>
         <source>Starting update session...</source>
         <translation>Aktualisierungssitzung wird gestartet...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="162"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="158"/>
         <source>Installing updates</source>
         <translation>Aktualisierungen werden installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="164"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="160"/>
         <source>Running pacman update...</source>
         <translation>Pacman-Aktualisierung läuft...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="166"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="162"/>
         <source>Updating pacman packages</source>
         <translation>Pacman-Pakete werden aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="168"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="164"/>
         <source>Running AUR update...</source>
         <translation>AUR-Aktualisierung läuft...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="170"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="166"/>
         <source>Updating AUR packages</source>
         <translation>AUR-Pakete werden aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="172"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="168"/>
         <source>Running Flatpak update...</source>
         <translation>Flatpak-Aktualisierung läuft...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="174"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="170"/>
         <source>Updating Flatpak apps</source>
         <translation>Flatpak-Anwendungen werden aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="176"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="172"/>
         <source>Running firmware update...</source>
         <translation>Firmware-Aktualisierung läuft...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="178"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="174"/>
         <source>Updating firmware</source>
         <translation>Firmware wird aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="180"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="176"/>
         <source>Running KDE Store add-on update...</source>
         <translation>KDE-Store-Erweiterungen werden aktualisiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="182"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="178"/>
         <source>Updating KDE Store add-ons</source>
         <translation>KDE-Store-Erweiterungen werden aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="184"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="180"/>
         <source>Package Details</source>
         <translation>Paketdetails</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="186"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="182"/>
         <source>Not available</source>
         <translation>Nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="188"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="184"/>
         <source>No description provided.</source>
         <translation>Keine Beschreibung vorhanden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="190"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="186"/>
         <source>KDE Store add-ons were updated. Restart plasmashell manually to fully apply the changes.</source>
         <translation>Die KDE-Store-Erweiterungen wurden aktualisiert. Starten Sie plasmashell manuell neu, um alle Änderungen anzuwenden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="197"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="193"/>
         <source>Plasma shell restart requested successfully.</source>
         <translation>Neustart der Plasma-Shell erfolgreich angefordert.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="199"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="195"/>
         <source>Preferences Saved</source>
         <translation>Einstellungen gespeichert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="201"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="197"/>
         <source>Language preference saved as {language}. Restart ArchUpdater to apply the new language.</source>
         <translation>Spracheinstellung als {language} gespeichert. Starten Sie ArchUpdater neu, um die neue Sprache anzuwenden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="206"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="202"/>
         <source>Startup Preference Failed</source>
         <translation>Starteinstellung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="208"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="204"/>
         <source>ArchUpdater will start automatically when you sign in.</source>
         <translation>ArchUpdater startet automatisch bei der Anmeldung.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="210"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="206"/>
         <source>ArchUpdater will no longer start automatically when you sign in.</source>
         <translation>ArchUpdater startet nicht mehr automatisch bei der Anmeldung.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="214"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="210"/>
         <source>Could not update the startup preference: {error}</source>
         <translation>Die Starteinstellung konnte nicht aktualisiert werden: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="216"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="419"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="212"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="418"/>
         <source>Checking for updates...</source>
         <translation>Es wird nach Aktualisierungen gesucht...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="218"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="214"/>
         <source>Update check failed. Open ArchUpdater.</source>
         <translation>Aktualisierungsprüfung fehlgeschlagen. Öffnen Sie ArchUpdater.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="220"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="216"/>
         <source>Selected updates completed. Refreshing update status...</source>
         <translation>Ausgewählte Aktualisierungen abgeschlossen. Status wird aktualisiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="222"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="218"/>
         <source>Unknown error.</source>
         <translation>Unbekannter Fehler.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="224"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="220"/>
         <source>1 update is ready to install.</source>
         <translation>1 Update ist zur Installation bereit.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="226"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="222"/>
         <source>ArchUpdater: Refreshing update status...</source>
         <translation>ArchUpdater: Status wird aktualisiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="228"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="224"/>
         <source>ArchUpdater: Last check failed</source>
         <translation>ArchUpdater: Letzte Prüfung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="230"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="226"/>
         <source>ArchUpdater: Up to date</source>
         <translation>ArchUpdater: aktuell</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="232"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="228"/>
         <source>ArchUpdater</source>
         <translation>ArchUpdater</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="234"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="230"/>
         <source>ArchUpdater: 1 update available</source>
         <translation>ArchUpdater: 1 Aktualisierung verfügbar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="236"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="232"/>
         <source>Waiting for authentication...</source>
         <translation>Warten auf Authentifizierung...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="238"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="234"/>
         <source>Installing system updates...</source>
         <translation>Systemaktualisierungen werden installiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="240"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="236"/>
         <source>Installing AUR updates...</source>
         <translation>AUR-Aktualisierungen werden installiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="242"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="238"/>
         <source>Installing Flatpak updates...</source>
         <translation>Flatpak-Aktualisierungen werden installiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="244"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="240"/>
         <source>Installing firmware updates...</source>
         <translation>Firmware-Aktualisierungen werden installiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="246"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="242"/>
         <source>Installing KDE Store add-ons...</source>
         <translation>KDE-Store-Erweiterungen werden installiert...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="248"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="244"/>
         <source>ArchUpdater: {count} updates available</source>
         <translation>ArchUpdater: {count} Aktualisierungen verfügbar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="250"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="246"/>
         <source>{count} updates are ready to install.</source>
         <translation>{count} Updates sind zur Installation bereit.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="252"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="248"/>
         <source>ArchUpdater: {status}</source>
         <translation>ArchUpdater: {status}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="254"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="250"/>
         <source>{count} ignored by pacman.conf.</source>
         <translation>{count} durch pacman.conf ignoriert.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="256"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="252"/>
         <source>Ignored by pacman.conf: {count}</source>
         <translation>Durch pacman.conf ignoriert: {count}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="258"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="254"/>
         <source>Next check: {time}</source>
         <translation>Nächste Prüfung: {time}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="260"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="256"/>
         <source>Updates installed</source>
         <translation>Aktualisierungen installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="266"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="262"/>
         <source>No selected updates were installed.</source>
         <translation>Keine der ausgewählten Aktualisierungen wurde installiert.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="268"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="264"/>
         <source>No updates installed</source>
         <translation>Keine Aktualisierungen installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="270"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="266"/>
         <source>Authentication cancelled</source>
         <translation>Authentifizierung abgebrochen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="272"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="268"/>
         <source>Update failed</source>
         <translation>Aktualisierung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="274"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="270"/>
         <source>The update was cancelled.</source>
         <translation>Die Aktualisierung wurde abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="276"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="272"/>
         <source>Update cancelled</source>
         <translation>Aktualisierung abgebrochen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="278"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="274"/>
         <source>The system upgrade could not be completed</source>
         <translation>Die Systemaktualisierung konnte nicht abgeschlossen werden</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="280"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="276"/>
         <source>Pacman could not complete the full system transaction.
 
 There may be a dependency, mirror, signature, or package conflict.
@@ -1256,42 +1241,21 @@ Möglicherweise liegt ein Problem mit Abhängigkeiten, Spiegelservern oder Signa
 Prüfen Sie das laufende Aktivitätsprotokoll, bevor Sie es erneut versuchen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="285"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="281"/>
         <source>System update completed.</source>
         <translation>Systemaktualisierung abgeschlossen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="287"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="283"/>
         <source>System update completed successfully.</source>
         <translation>Systemaktualisierung erfolgreich abgeschlossen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="289"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="285"/>
         <source>System update failed.</source>
         <translation>Systemaktualisierung fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="72"/>
-        <source>Idle</source>
-        <translation>Bereit</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="73"/>
-        <source>Checking</source>
-        <translation>Prüfung</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="77"/>
-        <source>Updating</source>
-        <translation>Aktualisierung</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="78"/>
-        <source>Completed</source>
-        <translation>Abgeschlossen</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="79"/>
         <location filename="../../src/archupdater/presentation/main_window/window.py" line="261"/>
         <source>Error</source>
         <translation>Fehler</translation>
@@ -1302,57 +1266,62 @@ Prüfen Sie das laufende Aktivitätsprotokoll, bevor Sie es erneut versuchen.</t
         <translation>Integrierter Updater wird gestartet...</translation>
     </message>
     <message>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="188"/>
+        <source>Ready to check for updates</source>
+        <translation>Bereit zur Suche nach Aktualisierungen</translation>
+    </message>
+    <message>
         <location filename="../../src/archupdater/presentation/main_window/window.py" line="255"/>
         <source>Starting updater</source>
         <translation>Updater wird gestartet</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="306"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="305"/>
         <source>PKGBUILD review was cancelled.</source>
         <translation>PKGBUILD-Prüfung abgebrochen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="330"/>
-        <source>Skipped AUR update: {package}</source>
-        <translation>AUR-Aktualisierung übersprungen: {package}</translation>
-    </message>
-    <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="376"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="370"/>
         <source>Last checked: Never</source>
         <translation>Zuletzt geprüft: nie</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="381"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="375"/>
         <source>Last checked: {timestamp}</source>
         <translation>Zuletzt geprüft: {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="396"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="390"/>
         <source>Next check: {timestamp}</source>
         <translation>Nächste Prüfung: {timestamp}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="414"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="409"/>
+        <source>Press Check for Updates to scan the enabled sources.</source>
+        <translation>Klicken Sie auf „Nach Aktualisierungen suchen“, um die aktivierten Quellen zu prüfen.</translation>
+    </message>
+    <message>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="413"/>
         <source>Update check failed</source>
         <translation>Aktualisierungsprüfung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="428"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="427"/>
         <source>Checked with Warnings</source>
         <translation>Mit Warnungen geprüft</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="442"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="441"/>
         <source>Pacman packages are selected and installed together as one full system upgrade.</source>
         <translation>Pacman-Pakete werden gemeinsam als vollständige Systemaktualisierung ausgewählt und installiert.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="536"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="535"/>
         <source>Shutdown Required</source>
         <translation>Ausschalten erforderlich</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="538"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="537"/>
         <source>The updated firmware requires a full shutdown. Save your work and power the computer off completely before using it again.
 
 Devices: {devices}</source>
@@ -1361,12 +1330,12 @@ Devices: {devices}</source>
 Geräte: {devices}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="547"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="546"/>
         <source>Restart Recommended</source>
         <translation>Neustart empfohlen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="549"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="548"/>
         <source>Some updated system components are already running. Restart when convenient to fully apply them.
 
 Packages: {packages}</source>
@@ -1375,53 +1344,52 @@ Packages: {packages}</source>
 Pakete: {packages}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="556"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="555"/>
         <source>Restart Plasma Shell</source>
         <translation>Plasma-Shell neu starten</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="558"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="557"/>
         <source>KDE Store add-ons were updated. Restart plasmashell now to fully apply the changes?</source>
         <translation>KDE-Store-Add-ons wurden aktualisiert. Plasmashell jetzt neu starten, um die Änderungen vollständig anzuwenden?</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="568"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="567"/>
         <source>Restart Failed</source>
         <translation>Neustart fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="195"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="569"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="191"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="568"/>
         <source>Plasma shell could not be restarted automatically.</source>
         <translation>Die Plasma-Shell konnte nicht automatisch neu gestartet werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="615"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="612"/>
         <source>Operation in progress</source>
         <translation>Vorgang läuft</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="617"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="614"/>
         <source>ArchUpdater cannot quit while an update check or installation is running. Wait for the operation to finish.</source>
         <translation>ArchUpdater kann während einer Aktualisierungsprüfung oder Installation nicht beendet werden. Warten Sie, bis der Vorgang abgeschlossen ist.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="676"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="681"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="682"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="687"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="688"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="673"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="677"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="678"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="683"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="684"/>
         <source>Waiting for network...</source>
         <translation>Warten auf Netzwerk...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="677"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="674"/>
         <source>Last checked: Waiting for network</source>
         <translation>Zuletzt geprüft: Warten auf Netzwerk</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/main_window/operation_presenter.py" line="74"/>
-        <location filename="../../src/archupdater/presentation/main_window/window.py" line="423"/>
+        <location filename="../../src/archupdater/presentation/main_window/window.py" line="422"/>
         <source>Waiting for Authentication</source>
         <translation>Warten auf Authentifizierung</translation>
     </message>
@@ -1810,52 +1778,52 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
 <context>
     <name>OptionalSourcesService</name>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="329"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="325"/>
         <source>Installed, ready to check device firmware</source>
         <translation>Installiert, bereit zur Prüfung auf Geräte-Firmware-Aktualisierungen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="331"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="327"/>
         <source>Missing</source>
         <translation>Fehlt</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="333"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="329"/>
         <source>Missing; install an AUR helper manually, then reopen this page</source>
         <translation>Fehlt; installieren Sie einen AUR-Helfer manuell und öffnen Sie diese Seite erneut</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="337"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="333"/>
         <source>AUR preference persistence is unavailable.</source>
         <translation>Die AUR-Einstellung kann nicht dauerhaft gespeichert werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="339"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="335"/>
         <source>Installed, no compatible firmware devices detected</source>
         <translation>Installiert, keine kompatiblen Firmware-Geräte erkannt</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="343"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="339"/>
         <source>Installed, device support unavailable</source>
         <translation>Installiert, Geräteunterstützung nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="345"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="341"/>
         <source>Installed</source>
         <translation>Installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="347"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="343"/>
         <source>Installed but inactive</source>
         <translation>Installiert, aber inaktiv</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="349"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="345"/>
         <source>Enabled ({helpers})</source>
         <translation>Aktiviert ({helpers})</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="351"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="347"/>
         <source>Installed, disabled in ArchUpdater ({helpers})</source>
         <translation>Installiert, in ArchUpdater deaktiviert ({helpers})</translation>
     </message>
@@ -1940,29 +1908,29 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
         <translation>Einige AUR-Aktualisierungen wurden nach dem Abbruch der PKGBUILD-Prüfung übersprungen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="445"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="451"/>
         <source>Package</source>
         <translation>Paket</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="445"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="451"/>
         <source>Source</source>
         <translation>Quelle</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="445"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="451"/>
         <source>Version</source>
         <translation>Version</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="634"/>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="660"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="641"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="667"/>
         <source>Everything is up to date!</source>
         <translation>Alles ist auf dem neuesten Stand!</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="640"/>
-        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="661"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="647"/>
+        <location filename="../../src/archupdater/presentation/widgets/package_updates_widget.py" line="668"/>
         <source>New updates will appear here after the next refresh.</source>
         <translation>Neue Aktualisierungen werden nach der nächsten Prüfung hier angezeigt.</translation>
     </message>
@@ -2047,27 +2015,27 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
 <context>
     <name>PlasmaWidgetsStoreClient</name>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="407"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="403"/>
         <source>This widget publishes multiple package files, and ArchUpdater could not choose one safely.</source>
         <translation>Dieses Widget bietet mehrere Paketdateien an, und ArchUpdater konnte keine davon sicher auswählen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="412"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="408"/>
         <source>KDE Store is temporarily unavailable. Try again later.</source>
         <translation>KDE Store ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="416"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="412"/>
         <source>The downloaded KDE Store add-on package is incomplete or incompatible.</source>
         <translation>Das heruntergeladene Paket der KDE-Store-Erweiterung ist unvollständig oder inkompatibel.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="421"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="417"/>
         <source>KDE Store is temporarily limiting requests. Try again in a few minutes.</source>
         <translation>KDE Store begrenzt vorübergehend die Anfragen. Versuchen Sie es in einigen Minuten erneut.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="426"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="422"/>
         <source>The KDE Store download version does not match the advertised update.</source>
         <translation>Die Download-Version aus KDE Store entspricht nicht der angekündigten Aktualisierung.</translation>
     </message>
@@ -2075,122 +2043,122 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
 <context>
     <name>PlasmaWidgetsUpdateService</name>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="353"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="349"/>
         <source>The downloaded KDE Store add-on package is incomplete or incompatible.</source>
         <translation>Das heruntergeladene Paket der KDE-Store-Erweiterung ist unvollständig oder inkompatibel.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="358"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="354"/>
         <source>The downloaded KDE Store add-on archive could not be extracted.</source>
         <translation>Das heruntergeladene Archiv der KDE-Store-Erweiterung konnte nicht entpackt werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="363"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="359"/>
         <source>The downloaded KDE Store add-on archive does not contain metadata.json.</source>
         <translation>Das heruntergeladene Archiv der KDE-Store-Erweiterung enthält keine metadata.json.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="368"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="364"/>
         <source>The downloaded KDE Store add-on metadata does not match the installed add-on.</source>
         <translation>Die Metadaten der heruntergeladenen KDE-Store-Erweiterung stimmen nicht mit der installierten Erweiterung überein.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="373"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="369"/>
         <source>The downloaded KDE Store add-on metadata is invalid.</source>
         <translation>Die Metadaten der heruntergeladenen KDE-Store-Erweiterung sind ungültig.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="377"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="373"/>
         <source>The downloaded KDE Store add-on type does not match the installed add-on.</source>
         <translation>Der Typ der heruntergeladenen KDE-Store-Erweiterung stimmt nicht mit der installierten Erweiterung überein.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="382"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="378"/>
         <source>The downloaded KDE Store add-on version does not match the advertised update.</source>
         <translation>Die Version der heruntergeladenen KDE-Store-Erweiterung entspricht nicht der angekündigten Aktualisierung.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="387"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="383"/>
         <source>Failed to read KDE Store add-on metadata from {path}.</source>
         <translation>Die Metadaten der KDE-Store-Erweiterung konnten nicht aus {path} gelesen werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="391"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="387"/>
         <source>Some KDE Store add-ons may require restarting plasmashell after updating.</source>
         <translation>Einige KDE-Store-Erweiterungen benötigen nach der Aktualisierung möglicherweise einen Neustart von plasmashell.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="396"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="392"/>
         <source>KDE Store</source>
         <translation>KDE Store</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="398"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="394"/>
         <source>KDE Store is temporarily unavailable. Try again later.</source>
         <translation>KDE Store ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="402"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="398"/>
         <source>KDE Store is temporarily limiting requests. Try again in a few minutes.</source>
         <translation>KDE Store begrenzt vorübergehend die Anfragen. Versuchen Sie es in einigen Minuten erneut.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="431"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="427"/>
         <source>KDE Store add-on update failed.</source>
         <translation>Aktualisierung der KDE-Store-Erweiterung fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="433"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="429"/>
         <source>KDE Store add-on updates completed successfully. Some add-ons may require restarting plasmashell.</source>
         <translation>KDE-Store-Erweiterungen erfolgreich aktualisiert. Einige Erweiterungen benötigen möglicherweise einen Neustart von plasmashell.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="438"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="434"/>
         <source>Archive extracted successfully.</source>
         <translation>Archiv erfolgreich entpackt.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="440"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="436"/>
         <source>Fetching KDE Store metadata for {name}...</source>
         <translation>KDE-Store-Metadaten für {name} werden abgerufen...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="442"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="438"/>
         <source>KDE Store type: {kind}.</source>
         <translation>KDE-Store-Typ: {kind}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="444"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="440"/>
         <source>Selected download: {file}.</source>
         <translation>Ausgewählter Download: {file}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="446"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="442"/>
         <source>Downloading {name} {version}...</source>
         <translation>{name} {version} wird heruntergeladen...</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="448"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="444"/>
         <source>Installing from extracted package: {path}</source>
         <translation>Installation aus dem entpackten Paket: {path}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="450"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="446"/>
         <source>Updated {updated} KDE Store add-ons. Failed: {failed}.</source>
         <translation>Aktualisierte KDE-Store-Erweiterungen: {updated}. Fehlgeschlagen: {failed}.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="454"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="450"/>
         <source>kpackagetool6 exited with code {code}.</source>
         <translation>kpackagetool6 wurde mit Code {code} beendet.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="456"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="452"/>
         <source>KDE Store add-on update failed for {name}: {error}</source>
         <translation>Aktualisierung der KDE-Store-Erweiterung {name} fehlgeschlagen: {error}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="460"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="456"/>
         <source>Details: {details}</source>
         <translation>Details: {details}</translation>
     </message>
@@ -3137,82 +3105,82 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
 <context>
     <name>UpdateController</name>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="291"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="287"/>
         <source>KDE Store Add-ons</source>
         <translation>KDE-Store-Add-ons</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="292"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="288"/>
         <source>Device Firmware</source>
         <translation>Geräte-Firmware</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="319"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="315"/>
         <source>Applying selected Flatpak updates</source>
         <translation>Ausgewählte Flatpak-Aktualisierungen werden angewendet</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="325"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="321"/>
         <source>Downloading {package}</source>
         <translation>{package} wird heruntergeladen</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="317"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="313"/>
         <source>Installing selected AUR packages</source>
         <translation>Ausgewählte AUR-Pakete werden installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="321"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="317"/>
         <source>Installing selected firmware updates</source>
         <translation>Ausgewählte Firmware-Aktualisierungen werden installiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="315"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="311"/>
         <source>Running the full Pacman system upgrade</source>
         <translation>Vollständige Systemaktualisierung mit Pacman läuft</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="323"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="319"/>
         <source>Updating selected KDE Store add-ons</source>
         <translation>Ausgewählte KDE-Store-Erweiterungen werden aktualisiert</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="327"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="323"/>
         <source>{action} {package} — {current} of {total}</source>
         <translation>{action} {package} — {current} von {total}</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="308"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="304"/>
         <source>{count} selected. Some add-ons may need a plasmashell restart after installation.</source>
         <translation>{count} ausgewählt. Einige Erweiterungen benötigen nach der Installation möglicherweise einen Neustart von plasmashell.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="293"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="289"/>
         <source>Session Summary</source>
         <translation>Sitzungsübersicht</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="294"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="290"/>
         <source>ArchUpdater will refresh package status automatically.</source>
         <translation>ArchUpdater aktualisiert den Paketstatus automatisch.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="297"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="293"/>
         <source>No package status refresh is required.</source>
         <translation>Der Paketstatus muss nicht aktualisiert werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="298"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="294"/>
         <source>Skipped AUR updates remain available and can be retried later.</source>
         <translation>Übersprungene AUR-Aktualisierungen bleiben verfügbar und können später erneut versucht werden.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="301"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="297"/>
         <source>Review the live activity log, then run the remaining updates again.</source>
         <translation>Prüfe das Live-Aktivitätsprotokoll und führe die verbleibenden Updates erneut aus.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="304"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="300"/>
         <source>Review the live activity log, then try the update again.</source>
         <translation>Prüfe das Live-Aktivitätsprotokoll und versuche das Update erneut.</translation>
     </message>
@@ -3232,7 +3200,7 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
         <translation>Es läuft bereits ein anderer Vorgang.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="313"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="309"/>
         <location filename="../../src/archupdater/presentation/update_controller.py" line="190"/>
         <location filename="../../src/archupdater/presentation/update_controller.py" line="242"/>
         <location filename="../../src/archupdater/presentation/update_controller.py" line="329"/>
@@ -3559,7 +3527,7 @@ Sie werden möglicherweise von anderen Programmen außerhalb von ArchUpdater ver
         <translation>Geräte-Firmware-Aktualisierungen benötigen fwupdmgr.</translation>
     </message>
     <message>
-        <location filename="../../src/archupdater/i18n/markers.py" line="462"/>
+        <location filename="../../src/archupdater/i18n/markers.py" line="458"/>
         <source>Command not found: {command}</source>
         <translation>Befehl nicht gefunden: {command}</translation>
     </message>
