@@ -921,7 +921,7 @@ class MainWindowIntegrationTests(unittest.TestCase):
 
         widget = self.window.package_updates_widget
         self.assertIs(widget.content_stack.currentWidget(), widget.empty_state_widget)
-        self.assertTrue(widget.empty_illustration.isHidden())
+        self.assertEqual(widget._animation_name, "ready.webp")
         self.assertEqual(widget.empty_title.text(), "Ready to check for updates")
         self.assertEqual(
             widget.empty_message.text(),
@@ -1169,6 +1169,12 @@ class MainWindowIntegrationTests(unittest.TestCase):
                 self.window.details_panel._details_placeholder.text(),
                 "Waiting for network...",
             )
+            widget = self.window.package_updates_widget
+            self.assertEqual(widget.empty_title.text(), "Waiting for network...")
+            self.assertEqual(widget._animation_name, "waiting_network.webp")
+
+            self.window._on_source_filter_changed(None)
+            self.assertEqual(widget.empty_title.text(), "Waiting for network...")
 
             network_information.set_reachability(FakeReachability.Online)
             self._process_events(50)

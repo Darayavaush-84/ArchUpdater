@@ -160,7 +160,7 @@ PY
 }
 
 ensure_system_dependencies() {
-    local required_packages=(git python pacman-contrib fakeroot polkit qt6-svg github-cli)
+    local required_packages=(git python pacman-contrib fakeroot polkit qt6-svg qt6-imageformats github-cli)
     local missing_packages=()
     local package
 

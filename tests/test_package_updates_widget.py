@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QMovie
 from PySide6.QtWidgets import QApplication, QLabel
 
 from archupdater.domain.enums import FlatpakRefKind, UpdateSource
@@ -158,6 +159,50 @@ class PackageUpdatesWidgetTests(unittest.TestCase):
         self.assertIsNotNone(illustration)
         assert illustration is not None
         self.assertFalse(illustration.pixmap().isNull())
+
+    @unittest.skipUnless(
+        b"webp" in QMovie.supportedFormats(), "Qt WebP image plugin is not installed"
+    )
+    def test_status_placeholder_plays_animation_only_while_visible(self) -> None:
+        self.widget.show()
+        self.widget.show_status_placeholder("Checking", "", animation="checking.webp")
+        movie = self.widget._animation
+
+        self.assertIsNotNone(movie)
+        assert movie is not None
+        self.assertFalse(self.widget.empty_illustration.isHidden())
+        self.assertFalse(self.widget.empty_illustration.pixmap().isNull())
+        self.assertIs(movie.state(), QMovie.MovieState.Running)
+
+        self.widget.show_status_placeholder("Checking", "", animation="checking.webp")
+        self.assertIs(self.widget._animation, movie)
+
+        self.widget.hide()
+        self.assertIs(movie.state(), QMovie.MovieState.Paused)
+        self.widget.show()
+        self.assertIs(movie.state(), QMovie.MovieState.Running)
+
+        self.widget.content_stack.setCurrentWidget(self.widget.tree)
+        self.assertIs(movie.state(), QMovie.MovieState.Paused)
+
+    def test_status_placeholder_without_usable_animation_hides_illustration(self) -> None:
+        self.widget.show_status_placeholder("Failed", "boom")
+        self.assertTrue(self.widget.empty_illustration.isHidden())
+
+        self.widget.show_status_placeholder("Failed", "boom", animation="missing.webp")
+        self.assertIsNone(self.widget._animation)
+        self.assertTrue(self.widget.empty_illustration.isHidden())
+
+    def test_up_to_date_replaces_animation_with_static_illustration(self) -> None:
+        self.widget.show_status_placeholder("Checking", "", animation="checking.webp")
+        self.widget.show_up_to_date()
+
+        self.assertIsNone(self.widget._animation)
+        self.assertFalse(self.widget.empty_illustration.isHidden())
+        self.assertEqual(
+            self.widget.empty_illustration.pixmap().cacheKey(),
+            self.widget._up_to_date_pixmap.cacheKey(),
+        )
 
     def test_source_column_is_shown_between_package_and_version(self) -> None:
         item = self._item_by_name("linux")

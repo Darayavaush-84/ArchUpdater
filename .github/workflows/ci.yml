@@ -63,7 +63,7 @@ jobs:
       - name: Install Arch runtime and test dependencies
         run: >-
           pacman -Syu --noconfirm --needed
-          git python python-pip pyside6 python-packaging qt6-svg
+          git python python-pip pyside6 python-packaging qt6-svg qt6-imageformats
           pacman-contrib fakeroot polkit desktop-file-utils libxml2 github-cli
 
       - name: Run test suite on Arch

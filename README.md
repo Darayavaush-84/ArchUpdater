@@ -56,9 +56,10 @@ sudo ./install.sh
 
 The installer first checks that systemd is running, and stops without changes if it is not.
 It then installs any missing system dependencies (`git`, `python`, `pacman-contrib`, `fakeroot`,
-`polkit`, `qt6-svg`, `github-cli`) through a `pacman -Syu --needed` transaction you review,
-and the Python dependencies automatically. ArchUpdater goes into a versioned environment under
-`/opt/archupdater`, together with the launcher, the privileged helper and its Polkit policy.
+`polkit`, `qt6-svg`, `qt6-imageformats`, `github-cli`) through a `pacman -Syu --needed`
+transaction you review, and the Python dependencies automatically. ArchUpdater goes into a
+versioned environment under `/opt/archupdater`, together with the launcher, the privileged helper
+and its Polkit policy.
 Run `sudo ./install.sh` again to install a newer checked-out version.
 
 Launch **ArchUpdater** from the application menu or with `archupdater`. It runs as your normal

@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPalette, QPen, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QHideEvent,
+    QIcon,
+    QMovie,
+    QPainter,
+    QPalette,
+    QPen,
+    QPixmap,
+    QShowEvent,
+)
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
@@ -382,6 +392,8 @@ class PackageUpdatesWidget(QFrame):
         self._has_ignored_system_updates = False
         self._has_skipped_aur_updates = False
         self._icon_resolver = icon_resolver or PackageIconResolver()
+        self._animation: QMovie | None = None
+        self._animation_name = ""
         self._package_sort_order = Qt.SortOrder.AscendingOrder
 
         layout = QVBoxLayout(self)
@@ -475,6 +487,7 @@ class PackageUpdatesWidget(QFrame):
         self.content_stack.addWidget(self.tree)
         self.content_stack.addWidget(self.empty_state_widget)
         self.content_stack.setCurrentWidget(self.tree)
+        self.content_stack.currentChanged.connect(self._sync_animation_running)
         layout.addWidget(self.content_stack, stretch=1)
         self._update_filter_status_label()
 
@@ -621,18 +634,18 @@ class PackageUpdatesWidget(QFrame):
         illustration_label.setObjectName("updatesEmptyIllustration")
         illustration_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         illustration_label.setFixedSize(220, 220)
+        self._up_to_date_pixmap = QPixmap()
         asset_path = illustration_path("up_to_date.png")
         if asset_path is not None:
             pixmap = QPixmap(str(asset_path))
             if not pixmap.isNull():
-                illustration_label.setPixmap(
-                    pixmap.scaled(
-                        210,
-                        210,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
+                self._up_to_date_pixmap = pixmap.scaled(
+                    210,
+                    210,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
                 )
+                illustration_label.setPixmap(self._up_to_date_pixmap)
         layout.addWidget(
             illustration_label,
             alignment=Qt.AlignmentFlag.AlignHCenter,
@@ -656,17 +669,81 @@ class PackageUpdatesWidget(QFrame):
         self.empty_message = message
         return empty_state
 
-    def show_status_placeholder(self, title: str, message: str) -> None:
-        self.empty_illustration.hide()
+    def show_status_placeholder(self, title: str, message: str, animation: str = "") -> None:
+        self._set_animation(animation)
+        self.empty_illustration.setVisible(self._animation is not None)
         self.empty_title.setText(title)
         self.empty_message.setText(message)
         self.content_stack.setCurrentWidget(self.empty_state_widget)
+        self._sync_animation_running()
 
     def show_up_to_date(self) -> None:
+        self._set_animation("")
+        self.empty_illustration.setPixmap(self._up_to_date_pixmap)
         self.empty_illustration.show()
         self.empty_title.setText(self.tr("Everything is up to date!"))
         self.empty_message.setText(self.tr("New updates will appear here after the next refresh."))
         self.content_stack.setCurrentWidget(self.empty_state_widget)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._sync_animation_running()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        super().hideEvent(event)
+        self._sync_animation_running()
+
+    def _set_animation(self, name: str) -> None:
+        # Keep the running movie when the same state is shown again, so repeated
+        # state syncs do not restart the loop from its first frame.
+        if name == self._animation_name:
+            return
+        if self._animation is not None:
+            self._animation.stop()
+            self._animation.deleteLater()
+        self._animation = None
+        self._animation_name = name
+        asset_path = illustration_path(name) if name else None
+        if asset_path is None:
+            return
+        movie = QMovie(str(asset_path), parent=self)
+        # Animated WebP needs the qt6-imageformats plugin; without it the
+        # placeholder simply shows no illustration.
+        if not movie.isValid():
+            movie.deleteLater()
+            return
+        movie.frameChanged.connect(self._show_animation_frame)
+        self._animation = movie
+        movie.jumpToFrame(0)
+        self._show_animation_frame()
+
+    def _show_animation_frame(self, _frame: int = 0) -> None:
+        if self._animation is None:
+            return
+        ratio = self.devicePixelRatioF()
+        side = round(210 * ratio)
+        pixmap = QPixmap.fromImage(
+            self._animation.currentImage().scaled(
+                side,
+                side,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        pixmap.setDevicePixelRatio(ratio)
+        self.empty_illustration.setPixmap(pixmap)
+
+    def _sync_animation_running(self) -> None:
+        movie = self._animation
+        if movie is None:
+            return
+        visible = self.isVisible() and self.content_stack.currentWidget() is self.empty_state_widget
+        if visible and movie.state() is QMovie.MovieState.NotRunning:
+            movie.start()
+        elif visible and movie.state() is QMovie.MovieState.Paused:
+            movie.setPaused(False)
+        elif not visible and movie.state() is QMovie.MovieState.Running:
+            movie.setPaused(True)
 
     def set_check_warnings_text(self, text: str) -> None:
         self.check_warnings_label.setText(text)

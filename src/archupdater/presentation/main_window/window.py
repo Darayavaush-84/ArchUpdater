@@ -404,10 +404,14 @@ class MainWindow(QMainWindow):
         if self._state.packages:
             return
         if self._state.operation_state is OperationState.IDLE:
-            self.package_updates_widget.show_status_placeholder(
-                self._state.operation_message,
-                self.tr("Press Check for Updates to scan the enabled sources."),
-            )
+            if self._check_schedule.is_waiting_for_network():
+                self._show_waiting_for_network_placeholder()
+            else:
+                self.package_updates_widget.show_status_placeholder(
+                    self._state.operation_message,
+                    self.tr("Press Check for Updates to scan the enabled sources."),
+                    animation="ready.webp",
+                )
         elif self._state.operation_state is OperationState.ERROR:
             self.package_updates_widget.show_status_placeholder(
                 self.tr("Update check failed"),
@@ -415,11 +419,11 @@ class MainWindow(QMainWindow):
             )
         elif self._state.operation_state is OperationState.CHECKING:
             self.package_updates_widget.show_status_placeholder(
-                self.tr("Checking for updates..."), "",
+                self.tr("Checking for updates..."), "", animation="checking.webp",
             )
         elif self._state.operation_state is OperationState.WAITING_AUTH:
             self.package_updates_widget.show_status_placeholder(
-                self.tr("Waiting for Authentication"), "",
+                self.tr("Waiting for Authentication"), "", animation="checking.webp",
             )
         elif self._state.operation_state is OperationState.COMPLETED:
             if self._state.check_warnings:
@@ -679,9 +683,13 @@ class MainWindow(QMainWindow):
             icon=QStyle.StandardPixmap.SP_BrowserReload,
         )
         self.side_panel.hide()
+        self._show_waiting_for_network_placeholder()
+
+    def _show_waiting_for_network_placeholder(self) -> None:
         self.package_updates_widget.show_status_placeholder(
             self.tr("Waiting for network..."),
-            self.tr("Waiting for network..."),
+            self.tr("The check will start as soon as the network is available."),
+            animation="waiting_network.webp",
         )
 
     def _load_arch_news_history(self) -> None:
