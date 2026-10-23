@@ -200,8 +200,8 @@ class PackageUpdatesWidgetTests(unittest.TestCase):
         self.assertIsNone(self.widget._animation)
         self.assertFalse(self.widget.empty_illustration.isHidden())
         self.assertEqual(
-            self.widget.empty_illustration.pixmap().cacheKey(),
-            self.widget._up_to_date_pixmap.cacheKey(),
+            self.widget.empty_illustration.pixmap().deviceIndependentSize().toSize().width(),
+            210,
         )
 
     def test_source_column_is_shown_between_package_and_version(self) -> None:

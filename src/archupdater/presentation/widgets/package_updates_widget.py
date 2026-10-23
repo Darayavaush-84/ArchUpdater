@@ -5,6 +5,7 @@ from PySide6.QtGui import (
     QColor,
     QHideEvent,
     QIcon,
+    QImage,
     QMovie,
     QPainter,
     QPalette,
@@ -634,18 +635,8 @@ class PackageUpdatesWidget(QFrame):
         illustration_label.setObjectName("updatesEmptyIllustration")
         illustration_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         illustration_label.setFixedSize(220, 220)
-        self._up_to_date_pixmap = QPixmap()
         asset_path = illustration_path("up_to_date.png")
-        if asset_path is not None:
-            pixmap = QPixmap(str(asset_path))
-            if not pixmap.isNull():
-                self._up_to_date_pixmap = pixmap.scaled(
-                    210,
-                    210,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-                illustration_label.setPixmap(self._up_to_date_pixmap)
+        self._up_to_date_image = QImage(str(asset_path)) if asset_path is not None else QImage()
         layout.addWidget(
             illustration_label,
             alignment=Qt.AlignmentFlag.AlignHCenter,
@@ -665,6 +656,7 @@ class PackageUpdatesWidget(QFrame):
         layout.addWidget(message)
         layout.addStretch(1)
         self.empty_illustration = illustration_label
+        self._show_up_to_date_illustration()
         self.empty_title = title
         self.empty_message = message
         return empty_state
@@ -679,7 +671,7 @@ class PackageUpdatesWidget(QFrame):
 
     def show_up_to_date(self) -> None:
         self._set_animation("")
-        self.empty_illustration.setPixmap(self._up_to_date_pixmap)
+        self._show_up_to_date_illustration()
         self.empty_illustration.show()
         self.empty_title.setText(self.tr("Everything is up to date!"))
         self.empty_message.setText(self.tr("New updates will appear here after the next refresh."))
@@ -718,12 +710,22 @@ class PackageUpdatesWidget(QFrame):
         self._show_animation_frame()
 
     def _show_animation_frame(self, _frame: int = 0) -> None:
-        if self._animation is None:
-            return
+        if self._animation is not None:
+            self._show_illustration_image(self._animation.currentImage())
+
+    def _show_up_to_date_illustration(self) -> None:
+        if self._up_to_date_image.isNull():
+            self.empty_illustration.clear()
+        else:
+            self._show_illustration_image(self._up_to_date_image)
+
+    def _show_illustration_image(self, image: QImage) -> None:
+        # Illustrations ship at 2x; scale to the screen's pixel density so they
+        # stay sharp on HiDPI displays.
         ratio = self.devicePixelRatioF()
         side = round(210 * ratio)
         pixmap = QPixmap.fromImage(
-            self._animation.currentImage().scaled(
+            image.scaled(
                 side,
                 side,
                 Qt.AspectRatioMode.KeepAspectRatio,
