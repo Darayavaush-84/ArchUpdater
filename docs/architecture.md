@@ -172,6 +172,16 @@ Strings translated through callbacks are registered with `QT_TRANSLATE_NOOP` in
 sites. `test_translation_catalogs.py` checks callback coverage, Python/Qt placeholders,
 compiled catalog contents, and translated GUI/service behavior in all four target languages.
 
+## Illustration Maintenance
+
+The empty-state illustrations in `src/archupdater/resources/img/illustrations` are rendered
+from code. `artwork/illustrations/build_scenes.py` builds the Blender scenes and
+`artwork/illustrations/render_illustrations.py` renders them with Cycles and writes
+`ready.webp`, `checking.webp`, `waiting_network.webp` and `up_to_date.png`. It needs
+Blender 5.2 or newer, ImageMagick and ffmpeg with libwebp; `--save-blend` keeps the scenes
+for editing in Blender. Scene animation uses simple driver expressions only, so it renders
+without enabling Python auto-execution.
+
 ## Development Gates
 
 Before considering an architectural change complete, run:
