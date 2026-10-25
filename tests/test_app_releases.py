@@ -36,7 +36,7 @@ class AppReleaseTests(unittest.TestCase):
 
     def test_explicit_refresh_bypasses_cache_but_not_an_active_request(self) -> None:
         manager = FakeNetworkAccessManager(FakeNetworkReply(b'{"tag_name":"v1.1.0"}'))
-        checker = AppReleaseChecker(manager=manager, clock=lambda: 100.0)
+        checker = AppReleaseChecker(manager=manager, current_version="1.0.0", clock=lambda: 100.0)
         checker.check()
         checker.check(force=True)
         self.assertEqual(len(manager.requests), 1)
@@ -105,7 +105,7 @@ class AppReleaseTests(unittest.TestCase):
                 manager = FakeNetworkAccessManager(FakeNetworkReply(b'{"tag_name":"v1.1.0"}'))
                 manager.reply = FakeNetworkReply(payload, error)
                 now = [100.0]
-                checker = AppReleaseChecker(manager=manager, clock=lambda: now[0])
+                checker = AppReleaseChecker(manager=manager, current_version="1.0.0", clock=lambda: now[0])
                 checker.available_tag = "v1.1.0"
                 received, finished = [], []
                 checker.release_checked.connect(received.append)

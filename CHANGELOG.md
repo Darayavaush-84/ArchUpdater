@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0] - 2026-10-25
+
+**Added**
+- **Update History** replaces Last Update and keeps the last five update sessions, newest first. Expand a session to see each source and package with its versions and outcome (updated, skipped, not updated, not executed, or check the log when a step changed the system only in part). The log of any session can be viewed and exported. Your previous last update result becomes the first history entry.
+- While ArchUpdater waits, the updates area shows a looping illustration: a rocket on the launch pad before the first check, a scanning satellite while checking or waiting for authentication, and a satellite searching for a signal while waiting for the network. The illustrations scale to the screen's pixel density and pause while the window is hidden.
+
+**Changed**
+- Operation status appears in the updates area instead of the action bar. Before the first check, the area shows "Ready to check for updates". Check warnings found alongside available updates appear in a note above the list. Messages that only repeated what is already on screen were removed.
+- The waiting-for-network message says when the check will start.
+- The up-to-date illustration has been redrawn to match the animated states and is sharp on HiDPI displays.
+- Exported logs list the packages with their outcome.
+- The installer now also requires `qt6-imageformats`.
+
+**Fixed**
+- Clicking a source counter while waiting for the network no longer replaces the waiting message with the ready message.
+
 ## [1.1.1] - 2026-10-21
 
 **Fixed**
@@ -81,6 +97,7 @@
 
 Initial public stable release: one desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons, with Arch News, system tray integration and five interface languages.
 
+[1.2.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.2.0
 [1.1.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.1
 [1.1.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.0
 [1.0.5]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.0.5
