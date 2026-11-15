@@ -13,6 +13,7 @@ from archupdater.application.helper_protocol import (
     HelperAction,
     HelperEventType,
     HelperRequest,
+    translated_helper_message,
 )
 from archupdater.application.update_session.backend import CommandRunResult
 from archupdater.application.update_session.errors import BatchAuthenticationCancelled
@@ -20,8 +21,13 @@ from archupdater.domain.aur import AurInstallTarget
 
 
 Translate = Callable[[str], str]
+TranslateInContext = Callable[[str, str], str]
 PrintLine = Callable[[str], None]
 EmitLog = Callable[[str], None]
+
+
+def _untranslated(_context: str, text: str) -> str:
+    return text
 
 
 @dataclass(slots=True)
@@ -35,6 +41,8 @@ class BatchPrivilegedHelperInvoker:
     auth_purpose: str = "update-session"
     aur_targets: list[AurInstallTarget] = field(default_factory=list)
     request_question: Callable[[dict[str, object]], object | None] | None = None
+    # The privileged helper has no translator; its messages carry the catalog key.
+    translate_helper_text: TranslateInContext = _untranslated
     _process: subprocess.Popen[str] | None = field(default=None, init=False, repr=False)
     _authorized: bool = field(default=False, init=False, repr=False)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False, repr=False)
@@ -179,7 +187,7 @@ class BatchPrivilegedHelperInvoker:
                 continue
             event_type, payload = parsed
             if event_type == HelperEventType.LOG.value:
-                message = str(payload.get("message") or "")
+                message = translated_helper_message(payload, self.translate_helper_text)
                 if message:
                     self._log_helper_output(message)
                 continue
@@ -210,7 +218,9 @@ class BatchPrivilegedHelperInvoker:
                         accepted = self.request_question({
                             "question_id": question_id,
                             "question_type": "pacman_confirmation",
-                            "message": message,
+                            "message": translated_helper_message(
+                                payload, self.translate_helper_text
+                            ),
                             **({"details": details} if details else {}),
                         }) is True
                 finally:
@@ -228,7 +238,7 @@ class BatchPrivilegedHelperInvoker:
                         False,
                         self.translate("The privileged helper returned an invalid result."),
                     )
-                message = str(payload.get("message") or "")
+                message = translated_helper_message(payload, self.translate_helper_text)
                 return CommandRunResult(
                     raw_success,
                     "" if raw_success else message or failure_message,
@@ -278,7 +288,7 @@ class BatchPrivilegedHelperInvoker:
                 continue
             event_type, payload = parsed
             if event_type == HelperEventType.LOG.value:
-                message = str(payload.get("message") or "")
+                message = translated_helper_message(payload, self.translate_helper_text)
                 if message:
                     self._log_helper_output(message)
                 continue
@@ -301,7 +311,7 @@ class BatchPrivilegedHelperInvoker:
                         False,
                         self.translate("The privileged helper returned an invalid result."),
                     )
-                message = str(payload.get("message") or "")
+                message = translated_helper_message(payload, self.translate_helper_text)
                 return CommandRunResult(raw_success, "" if raw_success else message)
             self._log_helper_output(line)
 

@@ -13,9 +13,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, HelperText, translate
 from archupdater.process_lifecycle import arm_parent_death_signal
 
 
@@ -29,11 +27,18 @@ MAX_COLLECTED_OUTPUT_BYTES = 2 * 1024 * 1024
 DEFAULT_PRIVILEGED_COMMAND_TIMEOUT_SECONDS = 6 * 60 * 60
 
 
+def exception_message(exc: BaseException) -> str:
+    """Return an exception's text, keeping a helper message translatable."""
+    if len(exc.args) == 1 and isinstance(exc.args[0], HelperText):
+        return exc.args[0]
+    return str(exc)
+
+
 def require_pacman(*, emit_event: EmitEvent, emit_log: EmitLog) -> bool:
     if PACMAN_PATH.exists():
         return True
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "pacman executable not found at /usr/bin/pacman.",
         )
@@ -41,7 +46,7 @@ def require_pacman(*, emit_event: EmitEvent, emit_log: EmitLog) -> bool:
     emit_event(
         HelperEventType.COMPLETED,
         success=False,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "pacman is not available on this system.",
         ),
@@ -214,7 +219,7 @@ def _stream_subprocess(
                 # EOF declines pending prompts, but leaves an install running.
                 connection.disconnected = True
             if output_limit_exceeded:
-                connection.log(emit_log, QCoreApplication.translate(
+                connection.log(emit_log, translate(
                     "PrivilegedHelper",
                     "The command was terminated after exceeding the output safety limit.",
                 ))

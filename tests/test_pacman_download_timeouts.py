@@ -297,13 +297,13 @@ class PacmanTimeoutUiTests(unittest.TestCase):
         resume.assert_called_once()
 
     def test_privileged_client_uses_configuration_authentication_scope(self) -> None:
-        client = PrivilegedUpdateClient(authorization_scope="pacman-config", language_code="it")
+        client = PrivilegedUpdateClient(authorization_scope="pacman-config")
         self.assertIn("--archupdater-auth=pacman-config", client._process.arguments())
         with patch.object(client, "_start_request") as start:
             client.start_enable_download_timeouts()
-        self.assertEqual(start.call_args.args[0], HelperRequest(
-            action=HelperAction.ENABLE_DOWNLOAD_TIMEOUTS, language_code="it",
-        ))
+        self.assertEqual(
+            start.call_args.args[0], HelperRequest(action=HelperAction.ENABLE_DOWNLOAD_TIMEOUTS)
+        )
 
 
 if __name__ == "__main__":

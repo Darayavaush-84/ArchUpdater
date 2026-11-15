@@ -518,7 +518,6 @@ class PrivilegedHelperTests(unittest.TestCase):
         )
         events: list[tuple[object, dict[str, object]]] = []
         executed: list[HelperAction] = []
-        translation_manager = type("Translations", (), {"install": lambda self, _value: None})()
         with (
             tempfile.TemporaryDirectory() as directory,
             patch.object(privileged_helper.sys, "stdin", io.StringIO(requests)),
@@ -534,7 +533,6 @@ class PrivilegedHelperTests(unittest.TestCase):
             ),
         ):
             exit_code = privileged_helper._run_initialized_session(
-                translation_manager,
                 initialized=False,
                 allowed_aur_targets={},
                 attempted_aur_targets=set(),

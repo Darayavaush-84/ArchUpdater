@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions import update_commands
 from archupdater.helper.actions.common import (
     EmitEvent,
@@ -28,7 +26,7 @@ def run_firmware_update(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Running firmware update for device {device}.",
         ).format(device=device_id)
@@ -46,11 +44,11 @@ def run_firmware_update(
                 expected_version,
             ]
         ),
-        success_message=QCoreApplication.translate(
+        success_message=translate(
             "PrivilegedHelper",
             "Firmware update completed successfully.",
         ),
-        failure_message=QCoreApplication.translate(
+        failure_message=translate(
             "PrivilegedHelper",
             "fwupdmgr exited with code {code}.",
         ),

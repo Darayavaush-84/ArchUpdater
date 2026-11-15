@@ -6,9 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.domain.aur import (
     AurInstallTarget,
     AurPkgbuildReview,
@@ -23,6 +21,7 @@ from archupdater.helper.actions import (
 from archupdater.helper.actions.common import (
     EmitEvent,
     EmitLog,
+    exception_message,
 )
 
 
@@ -80,7 +79,7 @@ def install_reviewed_aur_group(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Building the reviewed AUR package as an unprivileged user.",
         )
@@ -96,7 +95,7 @@ def install_reviewed_aur_group(
         verify_vcs = any(target.dynamic_version for target in targets)
         if verify_vcs and not review.vcs_sources:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "The development AUR update has no approved VCS source commit.",
                 )
@@ -143,7 +142,7 @@ def install_reviewed_aur_group(
                 sandbox, input_directory, aur_workspace.BUILD_PHASE_FULL, emit_log=emit_log,
             )
         if return_code != 0:
-            message = QCoreApplication.translate(
+            message = translate(
                 "PrivilegedHelper",
                 "makepkg exited with code {code}.",
             ).format(code=return_code)
@@ -178,7 +177,7 @@ def install_reviewed_aur_group(
             artifacts, expected_versions, emit_event=emit_event, emit_log=emit_log,
         )
     except (OSError, subprocess.SubprocessError, validation.PrivilegedUpdateValidationError) as exc:
-        message = str(exc) or QCoreApplication.translate(
+        message = exception_message(exc) or translate(
             "PrivilegedHelper",
             "Could not build or verify the reviewed AUR package.",
         )
@@ -231,7 +230,7 @@ def _install_verified_artifacts(
 ) -> int:
     # Query after the potentially long build, immediately around pacman -U.
     before = update_commands.installed_package_versions()
-    failure_message = QCoreApplication.translate(
+    failure_message = translate(
         "PrivilegedHelper", "Could not build or verify the reviewed AUR package.",
     )
     if before is None:
@@ -263,7 +262,7 @@ def _install_verified_artifacts(
                     success=False, message=failure_message, reason="postcondition_failed",
                 )
             elif payload.get("success") is True and payload["changed"] is False:
-                payload["message"] = QCoreApplication.translate(
+                payload["message"] = translate(
                     "BatchUpdateRunner", "No selected updates were installed.",
                 )
         emit_event(event, **payload)
@@ -273,10 +272,10 @@ def _install_verified_artifacts(
             str(update_commands.PACMAN_PATH), "-U", "--confirm", "--needed",
             "--color", "never", "--", *map(str, artifacts),
         ]),
-        success_message=QCoreApplication.translate(
+        success_message=translate(
             "PrivilegedHelper", "Reviewed AUR package installed successfully.",
         ),
-        failure_message=QCoreApplication.translate(
+        failure_message=translate(
             "PrivilegedHelper", "pacman exited with code {code}.",
         ),
         emit_event=report_result, emit_log=emit_log, survive_parent_exit=True,

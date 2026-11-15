@@ -107,6 +107,71 @@ class BatchPrivilegedHelperInvokerTests(unittest.TestCase):
         self.assertIn("pacman output", logs)
         invoker.close()
 
+    def test_invoker_translates_helper_messages_with_their_catalog_key(self) -> None:
+        def event(**payload: object) -> str:
+            return json.dumps(payload)
+
+        def key(source: str, **arguments: str) -> dict[str, object]:
+            return {"context": "PrivilegedHelper", "source": source, "arguments": arguments}
+
+        fake_process = _FakeProcess(
+            "\n".join(
+                (
+                    '{"event":"status","value":"ready"}',
+                    '{"event":"completed","success":true,"message":"initialized"}',
+                    event(
+                        event="log",
+                        message="Running system package update with pacman.",
+                        message_translation=key("Running system package update with pacman."),
+                    ),
+                    event(
+                        event="question",
+                        question_type="pacman_confirmation",
+                        question_id="q1",
+                        message="Review the new versions.",
+                        message_translation=key("Review the new versions."),
+                    ),
+                    event(
+                        event="completed",
+                        success=False,
+                        message="pacman exited with code 1.",
+                        message_translation=key("pacman exited with code {code}.", code="1"),
+                    ),
+                    "",
+                )
+            )
+        )
+        logs: list[str] = []
+        questions: list[dict[str, object]] = []
+        invoker = BatchPrivilegedHelperInvoker(
+            translate=lambda text: text,
+            print_line=lambda _message: None,
+            emit_log=logs.append,
+            helper_path=Path(sys.executable),
+            pkexec_path=Path(sys.executable),
+            auth_purpose="update-session",
+            request_question=lambda payload: questions.append(payload) or True,
+            translate_helper_text=lambda context, source: f"[{context}] {source}",
+        )
+
+        with (
+            patch("archupdater.batch.privileged_helper.os.geteuid", return_value=1000),
+            patch(
+                "archupdater.batch.privileged_helper.subprocess.Popen",
+                lambda *_args, **_kwargs: fake_process,
+            ),
+        ):
+            result = invoker.run(
+                HelperRequest(action=HelperAction.RUN_SYSTEM_UPDATE),
+                failure_message="System update failed.",
+            )
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.message, "[PrivilegedHelper] pacman exited with code 1.")
+        self.assertIn("[PrivilegedHelper] Running system package update with pacman.", logs)
+        self.assertEqual(questions[0]["message"], "[PrivilegedHelper] Review the new versions.")
+        invoker.close()
+
     def test_invoker_reuses_single_authorized_helper_process(self) -> None:
         fake_process = _FakeProcess(
             "\n".join(

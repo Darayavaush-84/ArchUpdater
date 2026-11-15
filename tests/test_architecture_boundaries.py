@@ -99,10 +99,10 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         )
         self.assertEqual(offenders, [])
 
-    def test_helper_does_not_import_presentation(self) -> None:
+    def test_helper_does_not_import_presentation_or_qt(self) -> None:
         offenders = self._imports_with_forbidden_prefixes(
             "helper",
-            ("archupdater.presentation",),
+            ("archupdater.presentation", "archupdater.i18n", "PySide6"),
         )
         self.assertEqual(offenders, [])
 

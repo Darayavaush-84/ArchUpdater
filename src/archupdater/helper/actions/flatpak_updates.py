@@ -3,9 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions import update_commands
 from archupdater.helper.actions.common import (
     EmitEvent,
@@ -29,7 +27,7 @@ def run_flatpak_system_update(
 
     emit_event(HelperEventType.STATUS, value="preparing")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Running system Flatpak update.",
         )
@@ -45,7 +43,7 @@ def run_flatpak_system_update(
         emit_log=emit_log,
     )
     if preview_code != 0:
-        message = QCoreApplication.translate(
+        message = translate(
             "PrivilegedHelper",
             "Could not prepare the Flatpak transaction (exit code {code}).",
         ).format(code=preview_code)
@@ -66,7 +64,7 @@ def run_flatpak_system_update(
         and columns[0] in refs
     }
     if actual_versions != expected_versions or set(target_commits) != set(refs):
-        message = QCoreApplication.translate(
+        message = translate(
             "PrivilegedHelper",
             "The Flatpak transaction changed after it was reviewed.",
         )
@@ -96,7 +94,7 @@ def run_flatpak_system_update(
         survive_parent_exit=True,
     )
     if update_code != 0:
-        message = QCoreApplication.translate(
+        message = translate(
             "PrivilegedHelper",
             "flatpak exited with code {code}.",
         ).format(code=update_code)
@@ -117,7 +115,7 @@ def run_flatpak_system_update(
         ):
             completed_refs.add(ref)
     if completed_refs != set(refs):
-        message = QCoreApplication.translate(
+        message = translate(
             "PrivilegedHelper",
             "Flatpak finished without installing all selected updates.",
         )
@@ -132,7 +130,7 @@ def run_flatpak_system_update(
     emit_event(
         HelperEventType.COMPLETED,
         success=True,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "System Flatpak update completed successfully.",
         ),
@@ -152,7 +150,7 @@ def run_flatpak_system_cleanup(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Removing unused system Flatpak runtimes.",
         )
@@ -165,11 +163,11 @@ def run_flatpak_system_cleanup(
             "--unused",
             "--noninteractive",
         ],
-        success_message=QCoreApplication.translate(
+        success_message=translate(
             "PrivilegedHelper",
             "System Flatpak cleanup completed successfully.",
         ),
-        failure_message=QCoreApplication.translate(
+        failure_message=translate(
             "PrivilegedHelper",
             "flatpak exited with code {code}.",
         ),

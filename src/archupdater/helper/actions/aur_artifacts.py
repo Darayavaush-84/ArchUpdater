@@ -6,8 +6,7 @@ import stat
 import subprocess
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
+from archupdater.application.helper_protocol import translate
 from archupdater.domain.aur import (
     AurInstallTarget,
     AurPkgbuildReview,
@@ -42,7 +41,7 @@ def _verified_built_artifact(
     entries = sorted(output_directory.iterdir(), key=lambda path: path.name)
     if len(entries) > MAX_AUR_BUILD_OUTPUT_FILES:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The AUR build produced too many output files.",
             )
@@ -59,7 +58,7 @@ def _verified_built_artifact(
             or candidate_stat.st_size > aur_workspace.MAX_AUR_ARTIFACT_BYTES
         ):
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "AUR build output is not a valid regular package file.",
                 )
@@ -75,21 +74,21 @@ def _verified_built_artifact(
                 or _compare_pacman_versions(identity[1], current_version) <= 0
             ):
                 raise validation.PrivilegedUpdateValidationError(
-                    QCoreApplication.translate(
+                    translate(
                         "PrivilegedHelper",
                         "Built development AUR package did not produce a newer concrete version.",
                     )
                 )
         elif identity[1] != expected_version:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Built AUR package version mismatch: expected {expected}, found {actual}.",
                 ).format(expected=expected_version, actual=identity[1])
             )
         if identity[2] not in {platform.machine(), "any"}:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Built AUR package architecture is not valid for this system.",
                 )
@@ -97,7 +96,7 @@ def _verified_built_artifact(
         matches.append((candidate, identity))
     if len(matches) != 1:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Expected exactly one verified artifact for {package}; found {count}.",
             ).format(package=package_name, count=len(matches))
@@ -110,7 +109,7 @@ def _verified_built_artifact(
     )
     if _package_file_identity(copied, emit_log=emit_log) != expected_identity:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "AUR artifact identity changed while it was being secured.",
             )
@@ -134,7 +133,7 @@ def _compare_pacman_versions(version_a: str, version_b: str) -> int:
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper", "Could not compare AUR package versions."
             )
         ) from exc
@@ -142,13 +141,13 @@ def _compare_pacman_versions(version_a: str, version_b: str) -> int:
         comparison = int(result.stdout.strip())
     except ValueError as exc:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper", "Could not compare AUR package versions."
             )
         ) from exc
     if result.returncode != 0 or comparison not in {-1, 0, 1}:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper", "Could not compare AUR package versions."
             )
         )
@@ -176,7 +175,7 @@ def _verify_vcs_mirror_commits(
             resolved_mirror.relative_to(resolved_root)
         except (OSError, ValueError) as exc:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Could not locate an approved AUR VCS source checkout.",
                 )
@@ -214,14 +213,14 @@ def _verify_vcs_mirror_commits(
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper", "Could not verify an AUR VCS source commit."
                 )
             ) from exc
         actual_commit = result.stdout.strip().lower()
         if result.returncode != 0 or actual_commit != source.commit:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "An AUR VCS source changed after the update was approved.",
                 )
@@ -256,7 +255,7 @@ def _validate_current_aur_versions(
     expected_versions = {target.package_name: target.current_version for target in dynamic_targets}
     if return_code != 0 or actual_versions != expected_versions:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The installed AUR development package changed after the update was approved.",
             )
@@ -279,7 +278,7 @@ def _package_file_identity(path: Path, *, emit_log: EmitLog) -> tuple[str, str, 
     )
     if return_code != 0:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Could not inspect an AUR package artifact.",
             )
@@ -297,7 +296,7 @@ def _package_file_identity(path: Path, *, emit_log: EmitLog) -> tuple[str, str, 
     )
     if not all(identity):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid AUR package artifact identity.",
             )

@@ -64,6 +64,7 @@ class BatchRunner:
             emit_log=self._emit_log,
             auth_purpose="update-session",
             request_question=self._request_question,
+            translate_helper_text=QCoreApplication.translate,
             aur_targets=[
                 AurInstallTarget(
                     package_name=item.package_name or item.target_id,

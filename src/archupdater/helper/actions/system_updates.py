@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions import update_commands
 from archupdater.helper.actions.common import (
     EmitEvent,
@@ -24,7 +22,7 @@ def run_system_update(
         return 2
 
     before = _installed_package_versions()
-    failure_message = QCoreApplication.translate("BatchUpdateRunner", "System update failed.")
+    failure_message = translate("BatchUpdateRunner", "System update failed.")
     if before is None:
         emit_log("Could not read installed package versions before the system transaction.")
         emit_event(
@@ -55,7 +53,7 @@ def run_system_update(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Running system package update with pacman.",
         )
@@ -63,11 +61,11 @@ def run_system_update(
     command = [str(update_commands.PACMAN_PATH), "-Syu", "--confirm", "--color", "never"]
     return_code = update_commands._run_helper_command(
         update_commands._critical_command(command),
-        success_message=QCoreApplication.translate(
+        success_message=translate(
             "PrivilegedHelper",
             "System update completed successfully.",
         ),
-        failure_message=QCoreApplication.translate(
+        failure_message=translate(
             "PrivilegedHelper",
             "pacman exited with code {code}.",
         ),

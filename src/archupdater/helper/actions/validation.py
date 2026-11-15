@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
+from archupdater.application.helper_protocol import translate
 
 FLATPAK_REF_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 
@@ -27,7 +27,7 @@ def validate_flatpak_refs(raw_refs: object) -> list[str]:
 def validate_firmware_device_id(raw_device_id: object) -> str:
     if not isinstance(raw_device_id, str):
         raise PrivilegedUpdateValidationError(
-            QCoreApplication.translate("PrivilegedHelper", "`device_id` must be a string.")
+            translate("PrivilegedHelper", "`device_id` must be a string.")
         )
     device_id = raw_device_id.strip()
     if (
@@ -38,7 +38,7 @@ def validate_firmware_device_id(raw_device_id: object) -> str:
         or not FIRMWARE_DEVICE_ID_RE.fullmatch(device_id)
     ):
         raise PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid firmware device id: {device_id}",
             ).format(device_id=repr(raw_device_id))
@@ -55,14 +55,14 @@ def _validate_string_list(
 ) -> list[str]:
     if not isinstance(raw_values, list):
         raise PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "`{field_name}` must be an array.",
             ).format(field_name=field_name)
         )
     if not raw_values and not allow_empty:
         raise PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "`{field_name}` must contain at least one item.",
             ).format(field_name=field_name)
@@ -72,7 +72,7 @@ def _validate_string_list(
     for raw_value in raw_values:
         if not isinstance(raw_value, str):
             raise PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid `{field_name}` item: {value}",
                 ).format(field_name=field_name, value=repr(raw_value))
@@ -87,7 +87,7 @@ def _validate_string_list(
             or ".." in Path(value).parts
         ):
             raise PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid `{field_name}` item: {value}",
                 ).format(field_name=field_name, value=repr(raw_value))

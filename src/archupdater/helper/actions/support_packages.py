@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import re
 
-from PySide6.QtCore import QCoreApplication
-
 from archupdater.helper.actions.common import (
     EmitEvent,
     EmitLog,
@@ -11,7 +9,7 @@ from archupdater.helper.actions.common import (
     require_pacman,
     stream_command,
 )
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 
 
 PACKAGE_NAME_RE = re.compile(r"^[A-Za-z0-9@._+-]+$")
@@ -25,14 +23,14 @@ class SupportPackageValidationError(ValueError):
 def validate_package_list(raw_packages: object, field_name: str) -> list[str]:
     if not isinstance(raw_packages, list):
         raise SupportPackageValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "`{field_name}` must be an array.",
             ).format(field_name=field_name)
         )
     if not raw_packages:
         raise SupportPackageValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "`{field_name}` must contain at least one package.",
             ).format(field_name=field_name)
@@ -47,7 +45,7 @@ def validate_package_list(raw_packages: object, field_name: str) -> list[str]:
             or package not in MANAGED_SUPPORT_PACKAGES
         ):
             raise SupportPackageValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid package name: {package}",
                 ).format(package=repr(package))
@@ -68,7 +66,7 @@ def install_support_packages(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Installing support packages: {packages}",
         ).format(packages=", ".join(package_names))
@@ -79,7 +77,7 @@ def install_support_packages(
         emit_event(
             HelperEventType.COMPLETED,
             success=False,
-            message=QCoreApplication.translate(
+            message=translate(
                 "PrivilegedHelper",
                 "pacman exited with code {code}.",
             ).format(code=return_code),
@@ -89,7 +87,7 @@ def install_support_packages(
     emit_event(
         HelperEventType.COMPLETED,
         success=True,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "Optional source support installed successfully.",
         ),
@@ -123,7 +121,7 @@ def remove_support_packages(
 
     emit_event(HelperEventType.STATUS, value="running")
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Removing support packages: {packages}",
         ).format(packages=", ".join(package_names))
@@ -142,7 +140,7 @@ def remove_support_packages(
         emit_event(
             HelperEventType.COMPLETED,
             success=True,
-            message=QCoreApplication.translate(
+            message=translate(
                 "PrivilegedHelper",
                 "Optional source support removed successfully.",
             ),
@@ -152,7 +150,7 @@ def remove_support_packages(
     emit_event(
         HelperEventType.COMPLETED,
         success=False,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "pacman exited with code {code}.",
         ).format(code=return_code),

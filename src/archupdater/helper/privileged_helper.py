@@ -10,8 +10,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
 from archupdater.helper.actions.privileged_updates import (
     PrivilegedUpdateValidationError,
     install_reviewed_aur,
@@ -31,12 +29,14 @@ from archupdater.helper.actions.support_packages import (
     remove_support_packages,
     validate_package_list,
 )
+from archupdater.helper.actions.common import exception_message
 from archupdater.helper.actions.pacman_config import enable_download_timeouts
-from archupdater.i18n.manager import TranslationManager, resolve_language_code
 from archupdater.application.helper_protocol import (
     MAX_HELPER_REQUEST_CHARACTERS,
     HelperAction,
     HelperEventType,
+    HelperText,
+    translate,
 )
 from archupdater.domain.aur import AurInstallTarget, AurPkgbuildReview
 from archupdater.process_lifecycle import set_parent_death_signal
@@ -88,6 +88,9 @@ class ValidatedHelperRequest:
 
 def emit_event(event_type: HelperEventType, **payload: object) -> None:
     event = {"event": event_type.value, **payload}
+    message = payload.get("message")
+    if isinstance(message, HelperText):
+        event["message_translation"] = message.translation_payload()
     sys.stdout.write(json.dumps(event) + "\n")
     sys.stdout.flush()
 
@@ -100,15 +103,6 @@ def _raise_termination(signum: int, _frame: object) -> None:
     raise SystemExit(128 + signum)
 
 
-def _requested_language_code(payload: object) -> str | None:
-    if not isinstance(payload, dict):
-        return None
-    raw_value = str(payload.get("language_code") or "").strip()
-    if not raw_value:
-        return None
-    return resolve_language_code(raw_value)
-
-
 def validate_request(
     payload: object,
     *,
@@ -116,13 +110,13 @@ def validate_request(
 ) -> ValidatedHelperRequest:
     if not isinstance(payload, dict):
         raise HelperValidationError(
-            QCoreApplication.translate("PrivilegedHelper", "Request must be a JSON object.")
+            translate("PrivilegedHelper", "Request must be a JSON object.")
         )
 
     action = payload.get("action")
     if action not in {helper_action.value for helper_action in HelperAction}:
         raise HelperValidationError(
-            QCoreApplication.translate("PrivilegedHelper", "Unsupported action.")
+            translate("PrivilegedHelper", "Unsupported action.")
         )
 
     action_type = HelperAction(action)
@@ -131,7 +125,7 @@ def validate_request(
         and action_type not in AUTH_SCOPE_ACTIONS[authorization_scope]
     ):
         raise HelperValidationError(
-            QCoreApplication.translate("PrivilegedHelper", "Unsupported action.")
+            translate("PrivilegedHelper", "Unsupported action.")
         )
 
     _validate_request_fields(payload, action)
@@ -170,7 +164,7 @@ def validate_request(
         )
         if set(refs) != set(expected_versions):
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Flatpak references and expected versions do not match.",
                 )
@@ -214,7 +208,7 @@ def validate_request(
             or review.package_name not in {target.package_name for target in targets}
         ):
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid reviewed AUR package group.",
                 )
@@ -226,11 +220,13 @@ def validate_request(
         )
 
     raise HelperValidationError(
-        QCoreApplication.translate("PrivilegedHelper", "Unsupported action.")
+        translate("PrivilegedHelper", "Unsupported action.")
     )
 
 
 def _validate_request_fields(payload: dict[object, object], action: object) -> None:
+    # Clients translate helper messages now; an ArchUpdater window started before a
+    # self-update may still send its language.
     allowed_fields = {"action", "language_code"}
     if action in {
         HelperAction.INSTALL_SUPPORT_PACKAGES.value,
@@ -253,7 +249,7 @@ def _validate_request_fields(payload: dict[object, object], action: object) -> N
     unexpected_fields = sorted(str(key) for key in payload if str(key) not in allowed_fields)
     if unexpected_fields:
         raise HelperValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Unsupported request field: {field}",
             ).format(field=unexpected_fields[0])
@@ -264,27 +260,27 @@ def _validated_support_packages(raw_packages: object) -> list[str]:
     try:
         return validate_package_list(raw_packages, "package_names")
     except SupportPackageValidationError as exc:
-        raise HelperValidationError(str(exc)) from exc
+        raise HelperValidationError(exception_message(exc)) from exc
 
 
 def _validated_flatpak_refs(raw_refs: object) -> list[str]:
     try:
         return validate_flatpak_refs(raw_refs)
     except PrivilegedUpdateValidationError as exc:
-        raise HelperValidationError(str(exc)) from exc
+        raise HelperValidationError(exception_message(exc)) from exc
 
 
 def _validated_firmware_device_id(raw_device_id: object) -> str:
     try:
         return validate_firmware_device_id(raw_device_id)
     except PrivilegedUpdateValidationError as exc:
-        raise HelperValidationError(str(exc)) from exc
+        raise HelperValidationError(exception_message(exc)) from exc
 
 
 def _validated_aur_targets(raw_targets: object) -> list[AurInstallTarget]:
     if not isinstance(raw_targets, list):
         raise HelperValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "`aur_targets` must be an array.",
             )
@@ -300,7 +296,7 @@ def _validated_aur_targets(raw_targets: object) -> list[AurInstallTarget]:
             "dynamic_version",
         }:
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid AUR install target.",
                 )
@@ -334,7 +330,7 @@ def _validated_aur_targets(raw_targets: object) -> list[AurInstallTarget]:
             or (dynamic_version and not current_version)
         ):
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid AUR install target.",
                 )
@@ -356,7 +352,7 @@ def _validated_aur_build_review(raw_review: object) -> AurPkgbuildReview:
     try:
         return validate_aur_build_review(raw_review)
     except PrivilegedUpdateValidationError as exc:
-        raise HelperValidationError(str(exc)) from exc
+        raise HelperValidationError(exception_message(exc)) from exc
 
 
 def _validated_aur_version(raw_version: object) -> str:
@@ -372,7 +368,7 @@ def _validated_version(raw_version: object) -> str:
         or any(character in raw_version for character in ("\x00", "\n", "\r", "\t"))
     ):
         raise HelperValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid expected version.",
             )
@@ -387,7 +383,7 @@ def _validated_expected_versions(
 ) -> dict[str, str]:
     if not isinstance(raw_versions, dict) or not raw_versions:
         raise HelperValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Expected versions must be a non-empty object.",
             )
@@ -403,23 +399,13 @@ def _validated_expected_versions(
             or ".." in Path(raw_name).parts
         ):
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid expected-version target.",
                 )
             )
         versions[raw_name] = _validated_version(raw_version)
     return versions
-
-
-def _validated_request_from_payload(
-    payload: object,
-    translation_manager: TranslationManager,
-    *,
-    authorization_scope: HelperAuthorizationScope,
-) -> ValidatedHelperRequest:
-    translation_manager.install(_requested_language_code(payload))
-    return validate_request(payload, authorization_scope=authorization_scope)
 
 
 def _execute_request(
@@ -435,7 +421,7 @@ def _execute_request(
         emit_event(
             HelperEventType.COMPLETED,
             success=True,
-            message=QCoreApplication.translate(
+            message=translate(
                 "PrivilegedHelper",
                 "Privileged update session initialized.",
             ),
@@ -462,7 +448,7 @@ def _execute_request(
                 emit_log=emit_log,
             )
         except (OSError, PrivilegedUpdateValidationError) as exc:
-            message = str(exc) or QCoreApplication.translate(
+            message = exception_message(exc) or translate(
                 "PrivilegedHelper",
                 "Could not build or install the reviewed AUR package.",
             )
@@ -484,7 +470,7 @@ def _execute_request(
                 emit_log=emit_log,
             )
         except (OSError, PrivilegedUpdateValidationError) as exc:
-            message = str(exc) or QCoreApplication.translate(
+            message = exception_message(exc) or translate(
                 "PrivilegedHelper",
                 "Could not build or install the reviewed AUR package group.",
             )
@@ -537,7 +523,7 @@ def _execute_request(
     emit_event(
         HelperEventType.COMPLETED,
         success=False,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "No handler available for requested action.",
         ),
@@ -548,7 +534,7 @@ def _execute_request(
 def _authorization_scope(argv: list[str]) -> HelperAuthorizationScope:
     if len(argv) != 2:
         raise HelperValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid privileged helper authorization scope.",
             )
@@ -560,14 +546,14 @@ def _authorization_scope(argv: list[str]) -> HelperAuthorizationScope:
             return scope
 
     raise HelperValidationError(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "Invalid privileged helper authorization scope.",
         )
     )
 
 
-def _run_session(translation_manager: TranslationManager) -> int:
+def _run_session() -> int:
     emit_event(HelperEventType.STATUS, value="ready")
     initialized = False
     allowed_aur_targets: dict[str, AurInstallTarget] = {}
@@ -576,7 +562,6 @@ def _run_session(translation_manager: TranslationManager) -> int:
         aur_build_root = Path(raw_build_root)
         aur_build_root.chmod(0o755)
         return _run_initialized_session(
-            translation_manager,
             initialized=initialized,
             allowed_aur_targets=allowed_aur_targets,
             attempted_aur_targets=attempted_aur_targets,
@@ -585,7 +570,6 @@ def _run_session(translation_manager: TranslationManager) -> int:
 
 
 def _run_initialized_session(
-    translation_manager: TranslationManager,
     *,
     initialized: bool,
     allowed_aur_targets: dict[str, AurInstallTarget],
@@ -602,7 +586,7 @@ def _run_initialized_session(
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate(
+                message=translate(
                     "PrivilegedHelper",
                     "Privileged helper request exceeds the safety limit.",
                 ),
@@ -613,26 +597,25 @@ def _run_initialized_session(
             continue
         try:
             payload = json.loads(line)
-            request = _validated_request_from_payload(
+            request = validate_request(
                 payload,
-                translation_manager,
                 authorization_scope=HelperAuthorizationScope.UPDATE_SESSION,
             )
         except json.JSONDecodeError:
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate("PrivilegedHelper", "Invalid JSON request."),
+                message=translate("PrivilegedHelper", "Invalid JSON request."),
             )
             continue
         except HelperValidationError as exc:
-            emit_event(HelperEventType.COMPLETED, success=False, message=str(exc))
+            emit_event(HelperEventType.COMPLETED, success=False, message=exception_message(exc))
             continue
         except Exception as exc:  # pragma: no cover - last resort
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate(
+                message=translate(
                     "PrivilegedHelper",
                     "Unexpected helper error: {error}",
                 ).format(error=exc),
@@ -643,7 +626,7 @@ def _run_initialized_session(
                 emit_event(
                     HelperEventType.COMPLETED,
                     success=False,
-                    message=QCoreApplication.translate(
+                    message=translate(
                         "PrivilegedHelper",
                         "The privileged update session was not initialized.",
                     ),
@@ -664,7 +647,7 @@ def _run_initialized_session(
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate(
+                message=translate(
                     "PrivilegedHelper",
                     "The privileged update session is already initialized.",
                 ),
@@ -683,7 +666,7 @@ def _run_initialized_session(
                 emit_event(
                     HelperEventType.COMPLETED,
                     success=False,
-                    message=QCoreApplication.translate(
+                    message=translate(
                         "PrivilegedHelper",
                         "The reviewed AUR package is not part of the authorized update plan.",
                     ),
@@ -713,7 +696,7 @@ def _run_initialized_session(
                 emit_event(
                     HelperEventType.COMPLETED,
                     success=False,
-                    message=QCoreApplication.translate(
+                    message=translate(
                         "PrivilegedHelper",
                         "The reviewed AUR package group is not part of the authorized update plan.",
                     ),
@@ -738,16 +721,12 @@ def _run_initialized_session(
 
 
 def main() -> int:
-    app = QCoreApplication.instance() or QCoreApplication([sys.argv[0]])
-    translation_manager = TranslationManager(app)
-    translation_manager.install(None)
-
     try:
         if os.geteuid() != 0:
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate(
+                message=translate(
                     "PrivilegedHelper",
                     "The privileged helper must run as root.",
                 ),
@@ -761,7 +740,7 @@ def main() -> int:
             emit_event(
                 HelperEventType.COMPLETED,
                 success=False,
-                message=QCoreApplication.translate(
+                message=translate(
                     "PrivilegedHelper",
                     "The privileged helper lost its requesting process.",
                 ),
@@ -770,41 +749,40 @@ def main() -> int:
 
         authorization_scope = _authorization_scope(sys.argv)
         if authorization_scope is HelperAuthorizationScope.UPDATE_SESSION:
-            return _run_session(translation_manager)
+            return _run_session()
 
         raw_payload = sys.stdin.read(MAX_HELPER_REQUEST_CHARACTERS + 1)
         if len(raw_payload) > MAX_HELPER_REQUEST_CHARACTERS:
             raise HelperValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Privileged helper request exceeds the safety limit.",
                 )
             )
         payload = json.loads(raw_payload)
-        request = _validated_request_from_payload(
+        request = validate_request(
             payload,
-            translation_manager,
             authorization_scope=authorization_scope,
         )
     except json.JSONDecodeError:
         emit_event(
             HelperEventType.COMPLETED,
             success=False,
-            message=QCoreApplication.translate("PrivilegedHelper", "Invalid JSON request."),
+            message=translate("PrivilegedHelper", "Invalid JSON request."),
         )
         return 5
     except HelperValidationError as exc:
         emit_event(
             HelperEventType.COMPLETED,
             success=False,
-            message=str(exc),
+            message=exception_message(exc),
         )
         return 6
     except Exception as exc:  # pragma: no cover - last resort
         emit_event(
             HelperEventType.COMPLETED,
             success=False,
-            message=QCoreApplication.translate(
+            message=translate(
                 "PrivilegedHelper",
                 "Unexpected helper error: {error}",
             ).format(error=exc),

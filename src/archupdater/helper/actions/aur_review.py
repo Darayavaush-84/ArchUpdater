@@ -5,8 +5,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
+from archupdater.application.helper_protocol import translate
 from archupdater.application import helper_protocol
 from archupdater.domain.aur import (
     AurPkgbuildReview,
@@ -42,7 +41,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
         "vcs_sources",
     }:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid reviewed AUR build manifest.",
             )
@@ -66,7 +65,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
         or len(raw_vcs_sources) > 64
     ):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Invalid reviewed AUR build manifest.",
             )
@@ -85,7 +84,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             "executable",
         }:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid reviewed AUR build manifest.",
                 )
@@ -117,7 +116,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             )
         ):
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Invalid reviewed AUR build manifest.",
                 )
@@ -130,7 +129,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             or total_size > MAX_AUR_REVIEW_BYTES
         ):
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "Reviewed AUR file content does not match its manifest.",
                 )
@@ -150,14 +149,14 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
 
     if paths != sorted(paths) or tree_digest.hexdigest() != digest.lower():
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Reviewed AUR tree digest does not match its manifest.",
             )
         )
     if not {"PKGBUILD", ".SRCINFO"}.issubset(set(paths)):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The reviewed AUR build manifest is incomplete.",
             )
@@ -172,7 +171,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             "commit",
         }:
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper", "Invalid reviewed AUR VCS source lock."
                 )
             )
@@ -202,7 +201,7 @@ def validate_aur_build_review(raw_review: object) -> AurPkgbuildReview:
             or not VCS_COMMIT_RE.fullmatch(commit)
         ):
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper", "Invalid reviewed AUR VCS source lock."
                 )
             )
@@ -234,7 +233,7 @@ def _validate_review_targets(
 ) -> None:
     if review.package_base != expected_package_base:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The reviewed AUR package base does not match the authorized update plan.",
             )
@@ -262,7 +261,7 @@ def _validate_review_targets(
         or review.package_name not in package_names
     ):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The reviewed .SRCINFO does not declare the authorized AUR package.",
             )

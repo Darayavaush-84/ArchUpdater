@@ -53,8 +53,8 @@ class PrivilegedUpdateClientTests(unittest.TestCase):
             ],
         )
 
-    def test_request_payload_includes_resolved_language_code(self) -> None:
-        client = PrivilegedUpdateClient(language_code="it")
+    def test_request_payload_leaves_translation_to_the_client(self) -> None:
+        client = PrivilegedUpdateClient()
         client._process = _FakeProcess()  # type: ignore[assignment]
 
         client.start_install_support_packages(["flatpak"])
@@ -62,11 +62,11 @@ class PrivilegedUpdateClientTests(unittest.TestCase):
 
         self.assertEqual(len(client._process.writes), 1)
         payload = json.loads(client._process.writes[0].decode("utf-8"))
-        self.assertEqual(payload["language_code"], "it")
+        self.assertNotIn("language_code", payload)
         self.assertEqual(payload["package_names"], ["flatpak"])
 
     def test_support_install_payload_has_no_removed_aur_bootstrap_field(self) -> None:
-        client = PrivilegedUpdateClient(language_code="it")
+        client = PrivilegedUpdateClient()
         client._process = _FakeProcess()  # type: ignore[assignment]
 
         client.start_install_support_packages(["flatpak"])

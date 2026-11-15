@@ -4,9 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions.common import (
     PACMAN_PATH,
     EmitEvent,
@@ -44,7 +42,7 @@ def _require_executable(
     if path.exists():
         return True
     emit_log(
-        QCoreApplication.translate(
+        translate(
             "PrivilegedHelper",
             "{command} executable not found at {path}.",
         ).format(command=command_name, path=path)
@@ -52,7 +50,7 @@ def _require_executable(
     emit_event(
         HelperEventType.COMPLETED,
         success=False,
-        message=QCoreApplication.translate(
+        message=translate(
             "PrivilegedHelper",
             "{command} is not available on this system.",
         ).format(command=command_name),
@@ -95,7 +93,7 @@ def _run_helper_command(
         emit_event(
             HelperEventType.COMPLETED,
             success=False,
-            message=QCoreApplication.translate(
+            message=translate(
                 "BatchUpdateRunner", "The changed system transaction was not approved.",
             ),
             reason="plan_changed",

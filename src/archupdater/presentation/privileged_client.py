@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QProcess, QTimer, Signal, Slot
+from PySide6.QtCore import QCoreApplication, QObject, QProcess, QTimer, Signal, Slot
 
-from archupdater.i18n.manager import resolve_language_code
-from archupdater.application.helper_protocol import HelperAction, HelperEventType, HelperRequest
-from archupdater.infrastructure.settings import SettingsService
+from archupdater.application.helper_protocol import (
+    HelperAction,
+    HelperEventType,
+    HelperRequest,
+    translated_helper_message,
+)
 
 
 class PrivilegedUpdateClient(QObject):
@@ -20,14 +23,10 @@ class PrivilegedUpdateClient(QObject):
         self,
         parent: QObject | None = None,
         helper_path: Path | None = None,
-        language_code: str | None = None,
         authorization_scope: str = "support-packages",
     ) -> None:
         super().__init__(parent)
         self._helper_path = helper_path or self._resolve_default_helper_path()
-        self._language_code = language_code or resolve_language_code(
-            SettingsService().language_preference()
-        )
         self._process = QProcess(self)
         self._stdout_buffer = ""
         self._stderr_buffer = ""
@@ -55,10 +54,7 @@ class PrivilegedUpdateClient(QObject):
 
     def start_enable_download_timeouts(self) -> None:
         self._ensure_not_running()
-        self._start_request(HelperRequest(
-            action=HelperAction.ENABLE_DOWNLOAD_TIMEOUTS,
-            language_code=self._language_code,
-        ))
+        self._start_request(HelperRequest(action=HelperAction.ENABLE_DOWNLOAD_TIMEOUTS))
 
     def start_install_support_packages(
         self,
@@ -69,7 +65,6 @@ class PrivilegedUpdateClient(QObject):
             HelperRequest(
                 action=HelperAction.INSTALL_SUPPORT_PACKAGES,
                 package_names=package_names,
-                language_code=self._language_code,
             )
         )
 
@@ -79,7 +74,6 @@ class PrivilegedUpdateClient(QObject):
             HelperRequest(
                 action=HelperAction.REMOVE_SUPPORT_PACKAGES,
                 package_names=package_names,
-                language_code=self._language_code,
             )
         )
 
@@ -155,7 +149,7 @@ class PrivilegedUpdateClient(QObject):
             return
 
         if event_name == HelperEventType.LOG.value:
-            message = str(payload.get("message", ""))
+            message = translated_helper_message(payload, QCoreApplication.translate)
             if message:
                 self.log_received.emit(message)
             return
@@ -168,7 +162,7 @@ class PrivilegedUpdateClient(QObject):
                     self.tr("The privileged helper returned an invalid result."),
                 )
                 return
-            message = str(payload.get("message", ""))
+            message = translated_helper_message(payload, QCoreApplication.translate)
             self._completed_payload = (raw_success, message)
             return
 

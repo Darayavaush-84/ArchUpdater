@@ -6,9 +6,7 @@ import stat
 import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions.common import EmitEvent
 from archupdater.services.command_runner import CommandRunner, CommandRunnerError
 
@@ -75,7 +73,7 @@ def enable_download_timeouts(*, emit_event: EmitEvent) -> int:
     except (OSError, UnicodeError, CommandRunnerError) as exc:
         emit_event(
             HelperEventType.COMPLETED, success=False,
-            message=QCoreApplication.translate(
+            message=translate(
                 "PrivilegedHelper",
                 "Could not enable download timeouts. Check /etc/pacman.conf and its included files: {error}",
             ).format(error=exc),
@@ -83,6 +81,6 @@ def enable_download_timeouts(*, emit_event: EmitEvent) -> int:
         return 1
     emit_event(
         HelperEventType.COMPLETED, success=True,
-        message=QCoreApplication.translate("PrivilegedHelper", "Download timeouts enabled."),
+        message=translate("PrivilegedHelper", "Download timeouts enabled."),
     )
     return 0

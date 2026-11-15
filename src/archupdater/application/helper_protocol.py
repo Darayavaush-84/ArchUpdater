@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 
@@ -33,13 +34,90 @@ class HelperEventType(str, Enum):
     COMPLETED = "completed"
 
 
+class HelperText(str):
+    """English helper text that carries its Qt catalog key.
+
+    The privileged helper runs without Qt, so it emits the English text together with
+    the catalog key and lets the unprivileged client translate it. String operations
+    see the English text; composing it into a new string drops the key.
+    """
+
+    __slots__ = ("context", "source", "arguments")
+
+    context: str
+    source: str
+    arguments: dict[str, str]
+
+    def __new__(
+        cls,
+        context: str,
+        source: str,
+        arguments: Mapping[str, object] | None = None,
+    ) -> HelperText:
+        values = {name: str(value) for name, value in (arguments or {}).items()}
+        text = super().__new__(cls, source.format(**values) if values else source)
+        text.context = context
+        text.source = source
+        text.arguments = values
+        return text
+
+    def format(self, /, **arguments: object) -> HelperText:  # type: ignore[override]
+        return HelperText(self.context, self.source, {**self.arguments, **arguments})
+
+    def translation_payload(self) -> dict[str, object]:
+        return {
+            "context": self.context,
+            "source": self.source,
+            "arguments": dict(self.arguments),
+        }
+
+
+def translate(context: str, source: str) -> HelperText:
+    """Mark helper text for lupdate; the client translates it with this key."""
+    return HelperText(context, source)
+
+
+def translated_helper_message(
+    payload: Mapping[str, object],
+    translate_text: Callable[[str, str], str],
+) -> str:
+    """Translate a helper event message, falling back to its English text."""
+    message = str(payload.get("message") or "")
+    raw_translation = payload.get("message_translation")
+    if not isinstance(raw_translation, dict) or set(raw_translation) != {
+        "context",
+        "source",
+        "arguments",
+    }:
+        return message
+    context = raw_translation["context"]
+    source = raw_translation["source"]
+    arguments = raw_translation["arguments"]
+    if (
+        not isinstance(context, str)
+        or not isinstance(source, str)
+        or not isinstance(arguments, dict)
+        or not all(
+            isinstance(name, str) and isinstance(value, str)
+            for name, value in arguments.items()
+        )
+    ):
+        return message
+    translated = translate_text(context, source)
+    if not arguments:
+        return translated
+    try:
+        return translated.format(**arguments)
+    except (AttributeError, IndexError, KeyError, ValueError):
+        return message
+
+
 @dataclass(slots=True)
 class HelperRequest:
     action: HelperAction
     package_names: list[str] | None = None
     refs: list[str] | None = None
     device_id: str | None = None
-    language_code: str | None = None
     aur_targets: list[AurInstallTarget] | None = None
     aur_review: AurPkgbuildReview | None = None
     expected_version: str | None = None
@@ -55,8 +133,6 @@ class HelperRequest:
             payload["refs"] = self.refs
         if self.device_id:
             payload["device_id"] = self.device_id
-        if self.language_code:
-            payload["language_code"] = self.language_code
         if self.aur_targets is not None:
             payload["aur_targets"] = [
                 {

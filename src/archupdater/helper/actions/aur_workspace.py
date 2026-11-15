@@ -15,8 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-
+from archupdater.application.helper_protocol import translate
 from archupdater.domain.aur import (
     AurPkgbuildReview,
 )
@@ -183,14 +182,14 @@ def resolve_aur_build_user(raw_uid: str | None = None) -> AurBuildUser:
         uid = int(uid_text, 10)
     except (TypeError, ValueError) as exc:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Could not identify the unprivileged user for the AUR build.",
             )
         ) from exc
     if uid <= 0:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "AUR packages must not be built as root.",
             )
@@ -199,7 +198,7 @@ def resolve_aur_build_user(raw_uid: str | None = None) -> AurBuildUser:
         account = pwd.getpwuid(uid)
     except KeyError as exc:
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Could not identify the unprivileged user for the AUR build.",
             )
@@ -207,7 +206,7 @@ def resolve_aur_build_user(raw_uid: str | None = None) -> AurBuildUser:
     home = Path(account.pw_dir)
     if not home.is_absolute() or not home.is_dir():
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "The AUR build user has no usable home directory.",
             )
@@ -326,7 +325,7 @@ def verified_state_directory(path: Path) -> Path:
     info = path.lstat()
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "AUR build output is not a valid regular package file.",
             )
@@ -403,7 +402,7 @@ def _user_makepkg_overrides(
     if raw_makeflags and not makeflags:
         # Other make options (for example --eval) could run code inside the build.
         emit_log(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "Ignoring MAKEFLAGS from makepkg.conf: only -j and -l are allowed for isolated AUR builds.",
             )
@@ -498,7 +497,7 @@ def _copy_untrusted_artifact(
     source_stat = source.lstat()
     if stat.S_ISLNK(source_stat.st_mode) or not stat.S_ISREG(source_stat.st_mode):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "AUR artifact is not a regular non-symlink file: {path}",
             ).format(path=source)
@@ -515,7 +514,7 @@ def _copy_untrusted_artifact(
             or opened_stat.st_ino != source_stat.st_ino
         ):
             raise validation.PrivilegedUpdateValidationError(
-                QCoreApplication.translate(
+                translate(
                     "PrivilegedHelper",
                     "AUR artifact changed while it was being opened.",
                 )
@@ -526,7 +525,7 @@ def _copy_untrusted_artifact(
                     copied_size += len(chunk)
                     if copied_size > MAX_AUR_ARTIFACT_BYTES:
                         raise validation.PrivilegedUpdateValidationError(
-                            QCoreApplication.translate(
+                            translate(
                                 "PrivilegedHelper",
                                 "AUR artifact exceeds the allowed size.",
                             )
@@ -547,7 +546,7 @@ def _copy_untrusted_artifact(
         or copied_size != source_stat.st_size
     ):
         raise validation.PrivilegedUpdateValidationError(
-            QCoreApplication.translate(
+            translate(
                 "PrivilegedHelper",
                 "AUR artifact changed while it was being copied.",
             )

@@ -50,6 +50,8 @@ important rules:
 - application does not import infrastructure, presentation, helper, Qt, or concrete
   process/filesystem adapters such as `subprocess`, `shutil`, and `os`;
 - infrastructure does not import application, presentation, or helper code;
+- the privileged helper does not import Qt or `archupdater.i18n`: it emits English text with
+  its catalog key (`HelperText`), and the unprivileged GUI and batch processes translate it;
 - services do not own Qt process/object adapters.
 
 When adding a feature, prefer extending these tests if a new boundary becomes important.

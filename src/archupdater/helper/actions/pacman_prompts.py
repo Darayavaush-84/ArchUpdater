@@ -6,9 +6,7 @@ import sys
 import uuid
 from collections.abc import Callable
 
-from PySide6.QtCore import QCoreApplication
-
-from archupdater.application.helper_protocol import HelperEventType
+from archupdater.application.helper_protocol import HelperEventType, translate
 from archupdater.helper.actions.pacman_transaction import PacmanTransactionPreview
 from archupdater.helper.actions.common import EmitEvent, EmitLog
 
@@ -60,7 +58,7 @@ class PacmanPromptHandler:
                 self._emit_log("Could not verify the final pacman transaction summary; installation declined.")
                 return "n\n"
             accepted = self._request_confirmation(
-                QCoreApplication.translate(
+                translate(
                     "BatchUpdateRunner",
                     "The available transaction changed after the original review. Review the new versions before continuing.",
                 ),

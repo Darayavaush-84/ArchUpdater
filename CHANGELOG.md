@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+**Security**
+- The privileged helper no longer loads Qt. It reports its messages in English together with their translation key, and ArchUpdater translates them as your user.
+
+**Changed**
+- During update sessions, messages from privileged steps follow the language chosen in ArchUpdater instead of the system language.
+
 ## [1.2.0] - 2026-10-25
 
 **Added**
