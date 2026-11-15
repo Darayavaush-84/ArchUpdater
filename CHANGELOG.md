@@ -4,6 +4,7 @@
 
 **Security**
 - The privileged helper no longer loads Qt. It reports its messages in English together with their translation key, and ArchUpdater translates them as your user.
+- Self-updates and rollbacks check that the release starts as the unprivileged `nobody` account instead of as administrator. Self-updates now require this account, which Arch Linux provides by default.
 
 **Changed**
 - During update sessions, messages from privileged steps follow the language chosen in ArchUpdater instead of the system language.

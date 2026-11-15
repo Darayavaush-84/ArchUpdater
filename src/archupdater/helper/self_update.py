@@ -8,6 +8,7 @@ import fcntl
 import importlib.metadata
 import os
 from pathlib import Path
+import pwd
 import shutil
 import stat
 import subprocess
@@ -20,6 +21,9 @@ from packaging.version import Version
 
 from archupdater.domain.self_update import MAX_BUNDLE_BYTES, MAX_WHEEL_BYTES, release_version
 from archupdater.services.self_update import verify_artifact
+
+# The release check needs no privileges; this keeps the GUI and Qt out of root.
+SMOKE_TEST_ACCOUNT = "nobody"
 
 
 def private_copy(source: Path, destination: Path, *, uid: int, limit: int) -> None:
@@ -154,8 +158,8 @@ class ManagedInstall:
                         str(sealed_wheel),
                     ]
                 )
-                self.smoke_test(stage, version)
-                # New release must be readable by the normal desktop user.
+                # The desktop user and the unprivileged smoke test must be able to read
+                # the new release.
                 stage.chmod(0o755)
                 for base, directories, files in os.walk(stage):
                     for name in directories + files:
@@ -164,6 +168,7 @@ class ManagedInstall:
                             path.chmod(
                                 (path.stat().st_mode & 0o755) | (0o755 if path.is_dir() else 0o644)
                             )
+                self.smoke_test(stage, version)
                 self.switch("previous", current)
                 self.switch("current", stage)
                 committed = True
@@ -185,15 +190,26 @@ class ManagedInstall:
             if stat.S_ISDIR(info.st_mode) and info.st_uid == owner:
                 shutil.rmtree(candidate, ignore_errors=True)
 
-    def run(self, command: list[str]) -> None:
+    def run(self, command: list[str], *, account: pwd.struct_passwd | None = None) -> None:
+        env = {
+            "PATH": "/usr/bin:/bin",
+            "HOME": "/root",
+            "LANG": "C.UTF-8",
+            "QT_QPA_PLATFORM": "offscreen",
+        }
+        identity: dict[str, object] = {}
+        if account is not None:
+            env.update(HOME="/nonexistent", PYTHONDONTWRITEBYTECODE="1")
+            identity = {
+                "user": account.pw_uid,
+                "group": account.pw_gid,
+                "extra_groups": [],
+                "cwd": "/",
+            }
         result = subprocess.run(
             command,
-            env={
-                "PATH": "/usr/bin:/bin",
-                "HOME": "/root",
-                "LANG": "C.UTF-8",
-                "QT_QPA_PLATFORM": "offscreen",
-            },
+            env=env,
+            **identity,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -208,6 +224,12 @@ class ManagedInstall:
             )
 
     def smoke_test(self, release: Path, version: str) -> None:
+        try:
+            account = pwd.getpwnam(SMOKE_TEST_ACCOUNT)
+        except KeyError as exc:
+            raise ValueError(
+                f"The {SMOKE_TEST_ACCOUNT} account is required to check the new release."
+            ) from exc
         self.run(
             [
                 str(release / "venv/bin/python"),
@@ -229,7 +251,8 @@ for raw in metadata.requires("archupdater") or []:
 app = QApplication([])
 """,
                 version,
-            ]
+            ],
+            account=account,
         )
 
 

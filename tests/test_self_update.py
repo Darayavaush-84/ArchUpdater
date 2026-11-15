@@ -4,6 +4,7 @@ import copy
 import io
 import os
 from pathlib import Path
+import pwd
 import subprocess
 import sys
 import tempfile
@@ -260,7 +261,11 @@ class ManagedInstallTests(unittest.TestCase):
 
         def smoke(stage, version):
             self.assertEqual(self.installation.link_target("current"), self.current)
-            self.assertEqual((site_packages(stage) / "dependency.py").read_text(), "VALUE = 42")
+            dependency = site_packages(stage) / "dependency.py"
+            self.assertEqual(dependency.read_text(), "VALUE = 42")
+            # The unprivileged smoke test must already be able to read the release.
+            self.assertEqual(stage.stat().st_mode & 0o777, 0o755)
+            self.assertEqual(dependency.stat().st_mode & 0o777, 0o644)
 
         with (
             patch("archupdater.helper.self_update.verify_artifact", side_effect=verify),
@@ -343,6 +348,48 @@ class ManagedInstallTests(unittest.TestCase):
     def test_rejects_unprotected_installation_ancestors(self):
         with self.assertRaisesRegex(ValueError, "not protected"):
             self.installation.validate()
+
+    def test_smoke_test_runs_as_unprivileged_account(self):
+        account = pwd.struct_passwd(
+            ("nobody", "x", 65534, 65534, "Kernel Overflow User", "/", "/usr/bin/nologin")
+        )
+        with (
+            patch("archupdater.helper.self_update.pwd.getpwnam", return_value=account) as lookup,
+            patch(
+                "archupdater.helper.self_update.subprocess.run",
+                return_value=subprocess.CompletedProcess([], 0),
+            ) as run,
+        ):
+            self.installation.smoke_test(self.current, "1.0.0")
+        lookup.assert_called_once_with("nobody")
+        command = run.call_args.args[0]
+        options = run.call_args.kwargs
+        self.assertEqual(command[0], str(self.current / "venv/bin/python"))
+        self.assertIn("MainWindow", command[3])
+        self.assertEqual(
+            (options["user"], options["group"], options["extra_groups"], options["cwd"]),
+            (65534, 65534, [], "/"),
+        )
+        self.assertEqual(options["env"]["HOME"], "/nonexistent")
+        self.assertEqual(options["env"]["PYTHONDONTWRITEBYTECODE"], "1")
+
+    def test_preparation_commands_keep_administrator_identity(self):
+        with patch(
+            "archupdater.helper.self_update.subprocess.run",
+            return_value=subprocess.CompletedProcess([], 0),
+        ) as run:
+            self.installation.run(["true"])
+        self.assertNotIn("user", run.call_args.kwargs)
+        self.assertEqual(run.call_args.kwargs["env"]["HOME"], "/root")
+
+    def test_smoke_test_requires_unprivileged_account(self):
+        with (
+            patch("archupdater.helper.self_update.pwd.getpwnam", side_effect=KeyError("nobody")),
+            patch("archupdater.helper.self_update.subprocess.run") as run,
+            self.assertRaisesRegex(ValueError, "nobody"),
+        ):
+            self.installation.smoke_test(self.current, "1.0.0")
+        run.assert_not_called()
 
     def test_subprocess_failure_is_reported(self):
         with (
