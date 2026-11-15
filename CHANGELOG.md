@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.1] - 2026-11-15
 
 **Security**
 - The privileged helper no longer loads Qt. It reports its messages in English together with their translation key, and ArchUpdater translates them as your user.
@@ -106,6 +106,7 @@
 
 Initial public stable release: one desktop interface for system packages, optional AUR and Flatpak updates, firmware and Plasma add-ons, with Arch News, system tray integration and five interface languages.
 
+[1.2.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.2.1
 [1.2.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.2.0
 [1.1.1]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.1
 [1.1.0]: https://github.com/Darayavaush-84/ArchUpdater/releases/tag/v1.1.0
